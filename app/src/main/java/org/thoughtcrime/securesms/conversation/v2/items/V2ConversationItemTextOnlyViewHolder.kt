@@ -266,7 +266,7 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
       bodyBubbleDrawable.clearLocalChatColors()
     }
 
-    if(binding.isIncoming && conversationMessage.messageRecord.isRemoteDelete)
+    if(conversationMessage.messageRecord.isRemoteDelete)
       binding.reply.setBackgroundColor(themeDelegate.getReplyIconBackgroundColor())
 
     itemView.updateLayoutParams<ViewGroup.MarginLayoutParams> {
@@ -424,7 +424,7 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
     binding.body.visible = bodyText.isNotEmpty()
     binding.body.text = bodyText
-    if(binding.isIncoming && record.isRemoteDelete)
+    if(record.isRemoteDelete)
       binding.bodyWrapper.setBackgroundColor(context.getColor(R.color.core_red_highlight_50))
   }
 
