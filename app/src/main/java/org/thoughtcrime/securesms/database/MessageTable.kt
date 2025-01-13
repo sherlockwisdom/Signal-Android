@@ -2098,25 +2098,25 @@ open class MessageTable(context: Context?, databaseHelper: SignalDatabase) : Dat
       db.update(TABLE_NAME)
         .values(
           REMOTE_DELETED to 1,
-          BODY to null,
-          QUOTE_BODY to null,
-          QUOTE_AUTHOR to null,
-          QUOTE_TYPE to null,
-          QUOTE_ID to null,
-          LINK_PREVIEWS to null,
-          SHARED_CONTACTS to null,
-          ORIGINAL_MESSAGE_ID to null,
-          LATEST_REVISION_ID to null
+//          BODY to null,
+//          QUOTE_BODY to null,
+//          QUOTE_AUTHOR to null,
+//          QUOTE_TYPE to null,
+//          QUOTE_ID to null,
+//          LINK_PREVIEWS to null,
+//          SHARED_CONTACTS to null,
+//          ORIGINAL_MESSAGE_ID to null,
+//          LATEST_REVISION_ID to null
         )
         .where("$ID = ?", messageId)
         .run()
 
-      deletedAttachments = attachments.deleteAttachmentsForMessage(messageId)
-      mentions.deleteMentionsForMessage(messageId)
-      SignalDatabase.messageLog.deleteAllRelatedToMessage(messageId)
-      reactions.deleteReactions(MessageId(messageId))
-      deleteGroupStoryReplies(messageId)
-      disassociateStoryQuotes(messageId)
+//      deletedAttachments = attachments.deleteAttachmentsForMessage(messageId)
+//      mentions.deleteMentionsForMessage(messageId)
+//      SignalDatabase.messageLog.deleteAllRelatedToMessage(messageId)
+//      reactions.deleteReactions(MessageId(messageId))
+//      deleteGroupStoryReplies(messageId)
+//      disassociateStoryQuotes(messageId)
 
       val threadId = getThreadIdForMessage(messageId)
       threads.update(threadId, false)
