@@ -9,7 +9,6 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import androidx.annotation.RequiresApi
 import androidx.core.content.ContextCompat
 import androidx.core.os.bundleOf
 import androidx.fragment.app.FragmentManager
@@ -23,7 +22,6 @@ import org.thoughtcrime.securesms.util.BottomSheetUtil
 import org.thoughtcrime.securesms.util.LocalMetrics
 import org.thoughtcrime.securesms.util.PowerManagerCompat
 
-@RequiresApi(23)
 class PromptBatterySaverDialogFragment : FixedRoundedCornerBottomSheetDialogFragment() {
 
   companion object {
@@ -33,11 +31,12 @@ class PromptBatterySaverDialogFragment : FixedRoundedCornerBottomSheetDialogFrag
     @JvmStatic
     fun show(fragmentManager: FragmentManager) {
       if (fragmentManager.findFragmentByTag(BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG) == null) {
-        PromptBatterySaverDialogFragment().apply {
+        val dialog = PromptBatterySaverDialogFragment().apply {
           arguments = bundleOf(
             ARG_LEARN_MORE_LINK to DeviceSpecificNotificationConfig.currentConfig.link
           )
-        }.show(fragmentManager, BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG)
+        }
+        BottomSheetUtil.show(fragmentManager, BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG, dialog)
         SignalStore.uiHints.lastBatterySaverPrompt = System.currentTimeMillis()
       }
     }

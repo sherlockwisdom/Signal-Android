@@ -5,9 +5,9 @@ import okio.ByteString
 import org.signal.core.util.isNotEmpty
 import org.signal.core.util.logging.Log
 import org.signal.core.util.nullIfEmpty
-import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.storage.StorageSyncHelper.applyAccountStorageSyncUpdates
+import org.whispersystems.signalservice.api.storage.IAPSubscriptionId
 import org.whispersystems.signalservice.api.storage.SignalAccountRecord
 import org.whispersystems.signalservice.api.storage.StorageId
 import org.whispersystems.signalservice.api.storage.safeSetBackupsSubscriber
@@ -88,14 +88,15 @@ class AccountRecordProcessor(
     }
 
     val backupsSubscriberId: ByteString
-    val backupsSubscriberCurrencyCode: String
+    val backupsPurchaseToken: IAPSubscriptionId?
 
-    if (remote.proto.backupsSubscriberId.isNotEmpty()) {
-      backupsSubscriberId = remote.proto.backupsSubscriberId
-      backupsSubscriberCurrencyCode = remote.proto.backupsSubscriberCurrencyCode
+    val remoteBackupSubscriberData = remote.proto.backupSubscriberData
+    if (remoteBackupSubscriberData != null && remoteBackupSubscriberData.subscriberId.isNotEmpty()) {
+      backupsSubscriberId = remoteBackupSubscriberData.subscriberId
+      backupsPurchaseToken = IAPSubscriptionId.from(remoteBackupSubscriberData)
     } else {
-      backupsSubscriberId = local.proto.backupsSubscriberId
-      backupsSubscriberCurrencyCode = remote.proto.backupsSubscriberCurrencyCode
+      backupsSubscriberId = local.proto.backupSubscriberData?.subscriberId ?: ByteString.EMPTY
+      backupsPurchaseToken = IAPSubscriptionId.from(local.proto.backupSubscriberData)
     }
 
     val storyViewReceiptsState = if (remote.proto.storyViewReceiptsEnabled == OptionalBool.UNSET) {
@@ -123,7 +124,6 @@ class AccountRecordProcessor(
       preferContactAvatars = remote.proto.preferContactAvatars
       universalExpireTimer = remote.proto.universalExpireTimer
       primarySendsSms = false
-      e164 = if (SignalStore.account.isPrimaryDevice) local.proto.e164 else remote.proto.e164
       preferredReactionEmoji = remote.proto.preferredReactionEmoji.takeIf { it.isNotEmpty() } ?: local.proto.preferredReactionEmoji
       displayBadgesOnProfile = remote.proto.displayBadgesOnProfile
       subscriptionManuallyCancelled = remote.proto.subscriptionManuallyCancelled
@@ -136,10 +136,11 @@ class AccountRecordProcessor(
       hasCompletedUsernameOnboarding = remote.proto.hasCompletedUsernameOnboarding || local.proto.hasCompletedUsernameOnboarding
       username = remote.proto.username
       usernameLink = remote.proto.usernameLink
+      notificationProfileManualOverride = remote.proto.notificationProfileManualOverride
 
       safeSetPayments(payments?.enabled == true, payments?.entropy?.toByteArray())
       safeSetSubscriber(donationSubscriberId, donationSubscriberCurrencyCode)
-      safeSetBackupsSubscriber(backupsSubscriberId, backupsSubscriberCurrencyCode)
+      safeSetBackupsSubscriber(backupsSubscriberId, backupsPurchaseToken)
     }.toSignalAccountRecord(StorageId.forAccount(keyGenerator.generate()))
 
     return if (doParamsMatch(remote, merged)) {

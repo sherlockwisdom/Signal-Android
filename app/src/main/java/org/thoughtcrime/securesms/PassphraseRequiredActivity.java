@@ -20,6 +20,7 @@ import org.thoughtcrime.securesms.components.settings.app.changenumber.ChangeNum
 import org.thoughtcrime.securesms.crypto.MasterSecretUtil;
 import org.thoughtcrime.securesms.dependencies.AppDependencies;
 import org.thoughtcrime.securesms.devicetransfer.olddevice.OldDeviceTransferActivity;
+import org.thoughtcrime.securesms.keyvalue.RestoreDecisionStateUtil;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
 import org.thoughtcrime.securesms.lock.v2.CreateSvrPinActivity;
 import org.thoughtcrime.securesms.migrations.ApplicationMigrationActivity;
@@ -33,7 +34,6 @@ import org.thoughtcrime.securesms.restore.RestoreActivity;
 import org.thoughtcrime.securesms.service.KeyCachingService;
 import org.thoughtcrime.securesms.util.AppForegroundObserver;
 import org.thoughtcrime.securesms.util.AppStartup;
-import org.thoughtcrime.securesms.util.RemoteConfig;
 import org.thoughtcrime.securesms.util.TextSecurePreferences;
 
 import java.util.Locale;
@@ -167,10 +167,10 @@ public abstract class PassphraseRequiredActivity extends BaseActivity implements
       return STATE_UI_BLOCKING_UPGRADE;
     } else if (!TextSecurePreferences.hasPromptedPushRegistration(this)) {
       return STATE_WELCOME_PUSH_SCREEN;
-    } else if (SignalStore.storageService().getNeedsAccountRestore()) {
-      return STATE_ENTER_SIGNAL_PIN;
     } else if (userCanTransferOrRestore()) {
       return STATE_TRANSFER_OR_RESTORE;
+    } else if (SignalStore.storageService().getNeedsAccountRestore()) {
+      return STATE_ENTER_SIGNAL_PIN;
     } else if (userMustSetProfileName()) {
       return STATE_CREATE_PROFILE_NAME;
     } else if (userMustCreateSignalPin()) {
@@ -187,14 +187,16 @@ public abstract class PassphraseRequiredActivity extends BaseActivity implements
   }
 
   private boolean userCanTransferOrRestore() {
-    return !SignalStore.registration().isRegistrationComplete() && RemoteConfig.restoreAfterRegistration() && !SignalStore.registration().hasSkippedTransferOrRestore() && !SignalStore.registration().hasCompletedRestore();
+    return !SignalStore.registration().isRegistrationComplete() &&
+           RestoreDecisionStateUtil.isDecisionPending(SignalStore.registration().getRestoreDecisionState());
   }
 
   private boolean userMustCreateSignalPin() {
     return !SignalStore.registration().isRegistrationComplete() &&
-           !SignalStore.svr().hasOptedInWithAccess() &&
+           !SignalStore.svr().hasPin() &&
            !SignalStore.svr().lastPinCreateFailed() &&
-           !SignalStore.svr().hasOptedOut();
+           !SignalStore.svr().hasOptedOut() &&
+           SignalStore.account().isPrimaryDevice();
   }
 
   private boolean userMustSetProfileName() {

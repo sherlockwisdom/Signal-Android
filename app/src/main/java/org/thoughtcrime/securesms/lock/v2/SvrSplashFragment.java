@@ -115,7 +115,7 @@ public final class SvrSplashFragment extends Fragment {
   private void onCreatePin() {
     SvrSplashFragmentDirections.ActionCreateKbsPin action = SvrSplashFragmentDirections.actionCreateKbsPin();
 
-    action.setIsPinChange(SignalStore.svr().hasOptedInWithAccess());
+    action.setIsPinChange(SignalStore.svr().hasPin());
 
     SafeNavigation.safeNavigate(Navigation.findNavController(requireView()), action);
   }
@@ -125,6 +125,6 @@ public final class SvrSplashFragment extends Fragment {
   }
 
   private void onPinSkipped() {
-    PinOptOutDialog.show(requireContext(), () -> requireActivity().finish());
+    PinOptOutDialog.show(requireContext(), false, () -> requireActivity().finish());
   }
 }

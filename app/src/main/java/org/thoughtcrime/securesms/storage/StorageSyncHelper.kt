@@ -5,10 +5,13 @@ import androidx.annotation.VisibleForTesting
 import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import org.signal.core.util.Base64.encodeWithPadding
+import org.signal.core.util.SqlUtil
 import org.signal.core.util.logging.Log
+import org.thoughtcrime.securesms.backup.v2.MessageBackupTier
 import org.thoughtcrime.securesms.components.settings.app.subscription.InAppPaymentsRepository.getSubscriber
 import org.thoughtcrime.securesms.components.settings.app.subscription.InAppPaymentsRepository.isUserManuallyCancelled
 import org.thoughtcrime.securesms.components.settings.app.subscription.InAppPaymentsRepository.setSubscriber
+import org.thoughtcrime.securesms.database.NotificationProfileTables
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.model.InAppPaymentSubscriberRecord
 import org.thoughtcrime.securesms.database.model.RecipientRecord
@@ -18,6 +21,7 @@ import org.thoughtcrime.securesms.jobs.StorageSyncJob
 import org.thoughtcrime.securesms.keyvalue.AccountValues
 import org.thoughtcrime.securesms.keyvalue.PhoneNumberPrivacyValues.PhoneNumberDiscoverabilityMode
 import org.thoughtcrime.securesms.keyvalue.SignalStore
+import org.thoughtcrime.securesms.notifications.profiles.NotificationProfileId
 import org.thoughtcrime.securesms.payments.Entropy
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.Recipient.Companion.self
@@ -162,6 +166,7 @@ object StorageSyncHelper {
       storyViewReceiptsEnabled = storyViewReceiptsState
       hasSeenGroupStoryEducationSheet = SignalStore.story.userHasSeenGroupStoryEducationSheet
       hasCompletedUsernameOnboarding = SignalStore.uiHints.hasCompletedUsernameOnboarding()
+      avatarColor = StorageSyncModels.localToRemoteAvatarColor(self.avatarColor)
       username = SignalStore.account.username ?: ""
       usernameLink = SignalStore.account.usernameLink?.let { linkComponents ->
         AccountRecord.UsernameLink(
@@ -171,18 +176,57 @@ object StorageSyncHelper {
         )
       }
 
+      hasBackup = SignalStore.backup.areBackupsEnabled && SignalStore.backup.hasBackupBeenUploaded
+      if (SignalStore.backup.areBackupsEnabled && SignalStore.backup.backupTier != null) {
+        backupTier = getBackupLevelValue(SignalStore.backup.backupTier!!)
+      } else if (SignalStore.backup.backupTierInternalOverride != null) {
+        backupTier = getBackupLevelValue(SignalStore.backup.backupTierInternalOverride!!)
+      }
+
+      notificationProfileManualOverride = getNotificationProfileManualOverride()
+
       getSubscriber(InAppPaymentSubscriberRecord.Type.DONATION)?.let {
-        safeSetSubscriber(it.subscriberId.bytes.toByteString(), it.currency.currencyCode)
+        safeSetSubscriber(it.subscriberId.bytes.toByteString(), it.currency?.currencyCode ?: "")
       }
 
       getSubscriber(InAppPaymentSubscriberRecord.Type.BACKUP)?.let {
-        safeSetBackupsSubscriber(it.subscriberId.bytes.toByteString(), it.currency.currencyCode)
+        safeSetBackupsSubscriber(it.subscriberId.bytes.toByteString(), it.iapSubscriptionId)
       }
 
       safeSetPayments(SignalStore.payments.mobileCoinPaymentsEnabled(), Optional.ofNullable(SignalStore.payments.paymentsEntropy).map { obj: Entropy -> obj.bytes }.orElse(null))
     }
 
     return accountRecord.toSignalAccountRecord(StorageId.forAccount(storageId)).toSignalStorageRecord()
+  }
+
+  // TODO: Currently we don't have access to the private values of the BackupLevel. Update when it becomes available.
+  private fun getBackupLevelValue(tier: MessageBackupTier): Long {
+    return when (tier) {
+      MessageBackupTier.FREE -> 200
+      MessageBackupTier.PAID -> 201
+    }
+  }
+
+  private fun getNotificationProfileManualOverride(): AccountRecord.NotificationProfileManualOverride {
+    val profile = SignalDatabase.notificationProfiles.getProfile(SignalStore.notificationProfile.manuallyEnabledProfile)
+    return if (profile != null && profile.deletedTimestampMs == 0L) {
+      Log.i(TAG, "Setting a manually enabled profile ${profile.id}")
+      // From [StorageService.proto], end timestamp should be unset if no timespan was chosen in the UI
+      val endTimestamp = if (SignalStore.notificationProfile.manuallyEnabledUntil == Long.MAX_VALUE) 0 else SignalStore.notificationProfile.manuallyEnabledUntil
+      AccountRecord.NotificationProfileManualOverride(
+        enabled = AccountRecord.NotificationProfileManualOverride.ManuallyEnabled(
+          id = UuidUtil.toByteArray(profile.notificationProfileId.uuid).toByteString(),
+          endAtTimestampMs = endTimestamp
+        )
+      )
+    } else if (SignalStore.notificationProfile.manuallyDisabledAt != 0L) {
+      Log.i(TAG, "Setting a manually disabled profile ${SignalStore.notificationProfile.manuallyDisabledAt}")
+      AccountRecord.NotificationProfileManualOverride(
+        disabledAtTimestampMs = SignalStore.notificationProfile.manuallyDisabledAt
+      )
+    } else {
+      AccountRecord.NotificationProfileManualOverride()
+    }
   }
 
   @JvmStatic
@@ -219,9 +263,14 @@ object StorageSyncHelper {
       SignalStore.story.viewedReceiptsEnabled = update.new.proto.storyViewReceiptsEnabled == OptionalBool.ENABLED
     }
 
-    val remoteSubscriber = StorageSyncModels.remoteToLocalSubscriber(update.new.proto.subscriberId, update.new.proto.subscriberCurrencyCode, InAppPaymentSubscriberRecord.Type.DONATION)
+    val remoteSubscriber = StorageSyncModels.remoteToLocalDonorSubscriber(update.new.proto.subscriberId, update.new.proto.subscriberCurrencyCode)
     if (remoteSubscriber != null) {
       setSubscriber(remoteSubscriber)
+    }
+
+    val remoteBackupsSubscriber = StorageSyncModels.remoteToLocalBackupSubscriber(update.new.proto.backupSubscriberData)
+    if (remoteBackupsSubscriber != null) {
+      setSubscriber(remoteBackupsSubscriber)
     }
 
     if (update.new.proto.subscriptionManuallyCancelled && !update.old.proto.subscriptionManuallyCancelled) {
@@ -246,6 +295,36 @@ object StorageSyncHelper {
 
       SignalStore.misc.usernameQrCodeColorScheme = StorageSyncModels.remoteToLocalUsernameColor(update.new.proto.usernameLink!!.color)
     }
+
+    if (update.new.proto.notificationProfileManualOverride != null) {
+      if (update.new.proto.notificationProfileManualOverride!!.enabled != null) {
+        Log.i(TAG, "Found a remote enabled notification override")
+        val remoteProfile = update.new.proto.notificationProfileManualOverride!!.enabled!!
+        val remoteId = UuidUtil.parseOrNull(remoteProfile.id)
+        val remoteEndTime = if (remoteProfile.endAtTimestampMs == 0L) Long.MAX_VALUE else remoteProfile.endAtTimestampMs
+
+        if (remoteId == null) {
+          Log.w(TAG, "Remote notification profile id is not valid")
+        } else {
+          val query = SqlUtil.buildQuery("${NotificationProfileTables.NotificationProfileTable.NOTIFICATION_PROFILE_ID} = ?", NotificationProfileId(remoteId))
+          val localProfile = SignalDatabase.notificationProfiles.getProfile(query)
+
+          if (localProfile == null) {
+            Log.w(TAG, "Unable to find local notification profile with given remote id $remoteId")
+          } else {
+            Log.i(TAG, "Setting manually enabled profile to ${localProfile.id} ending at $remoteEndTime.")
+            SignalStore.notificationProfile.manuallyEnabledProfile = localProfile.id
+            SignalStore.notificationProfile.manuallyEnabledUntil = remoteEndTime
+            SignalStore.notificationProfile.manuallyDisabledAt = 0L
+          }
+        }
+      } else if (update.new.proto.notificationProfileManualOverride!!.disabledAtTimestampMs != null) {
+        Log.i(TAG, "Found a remote disabled notification override for ${update.new.proto.notificationProfileManualOverride!!.disabledAtTimestampMs!!}")
+        SignalStore.notificationProfile.manuallyEnabledProfile = 0
+        SignalStore.notificationProfile.manuallyEnabledUntil = 0
+        SignalStore.notificationProfile.manuallyDisabledAt = update.new.proto.notificationProfileManualOverride!!.disabledAtTimestampMs!!
+      }
+    }
   }
 
   @JvmStatic
@@ -254,16 +333,16 @@ object StorageSyncHelper {
       Log.d(TAG, "Registration still ongoing. Ignore sync request.")
       return
     }
-    AppDependencies.jobManager.add(StorageSyncJob())
+    AppDependencies.jobManager.add(StorageSyncJob.forLocalChange())
   }
 
   @JvmStatic
   fun scheduleRoutineSync() {
     val timeSinceLastSync = System.currentTimeMillis() - SignalStore.storageService.lastSyncTime
 
-    if (timeSinceLastSync > REFRESH_INTERVAL) {
+    if (timeSinceLastSync > REFRESH_INTERVAL && SignalStore.registration.isRegistrationComplete) {
       Log.d(TAG, "Scheduling a sync. Last sync was $timeSinceLastSync ms ago.")
-      scheduleSyncForDataChange()
+      AppDependencies.jobManager.add(StorageSyncJob.forRemoteChange())
     } else {
       Log.d(TAG, "No need for sync. Last sync was $timeSinceLastSync ms ago.")
     }

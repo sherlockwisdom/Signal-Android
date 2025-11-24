@@ -4,7 +4,6 @@ import android.content.Context
 import android.net.Uri
 import android.text.Spannable
 import android.text.SpannableString
-import com.bumptech.glide.Glide
 import io.reactivex.rxjava3.core.Maybe
 import io.reactivex.rxjava3.schedulers.Schedulers
 import org.signal.core.util.Base64
@@ -14,7 +13,7 @@ import org.signal.core.util.concurrent.SignalExecutors
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.components.location.SignalPlace
 import org.thoughtcrime.securesms.components.mention.MentionAnnotation
-import org.thoughtcrime.securesms.conversation.ConversationIntents
+import org.thoughtcrime.securesms.conversation.ConversationArgs
 import org.thoughtcrime.securesms.conversation.ConversationMessage
 import org.thoughtcrime.securesms.conversation.ConversationMessage.ConversationMessageFactory
 import org.thoughtcrime.securesms.conversation.MessageStyler
@@ -54,7 +53,7 @@ class DraftRepository(
   private val threadTable: ThreadTable = SignalDatabase.threads,
   private val draftTable: DraftTable = SignalDatabase.drafts,
   private val saveDraftsExecutor: Executor = SerialMonoLifoExecutor(SignalExecutors.BOUNDED),
-  private val conversationArguments: ConversationIntents.Args? = null
+  private val conversationArguments: ConversationArgs? = null
 ) {
 
   companion object {
@@ -97,9 +96,9 @@ class DraftRepository(
     }
 
     if (shareMedia != null && shareContentType != null && borderless) {
-      val details = KeyboardUtil.getImageDetails(Glide.with(context), shareMedia)
+      val details = KeyboardUtil.getImageDetails(shareMedia)
 
-      if (details == null || !details.hasTransparency) {
+      if (details == null || !details.isSticker) {
         return ShareOrDraftData.SetMedia(shareMedia, shareMediaType!!, null) to null
       }
 
@@ -116,7 +115,7 @@ class DraftRepository(
     }
 
     if (shareMediaList.isNotEmpty()) {
-      return ShareOrDraftData.StartSendMedia(shareMediaList, shareText) to null
+      return ShareOrDraftData.StartSendMedia(shareMediaList.filterNotNull(), shareText) to null
     }
 
     if (shareMedia != null && shareMediaType != null) {

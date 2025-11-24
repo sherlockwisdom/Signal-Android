@@ -1,11 +1,12 @@
 package org.thoughtcrime.securesms.util;
 
+import android.Manifest;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.hardware.Camera.CameraInfo;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.Settings;
 
 import androidx.annotation.ArrayRes;
@@ -13,12 +14,14 @@ import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 import androidx.core.app.NotificationCompat;
 import androidx.core.app.NotificationManagerCompat;
+import androidx.core.content.ContextCompat;
 import androidx.preference.PreferenceManager;
 
 import org.greenrobot.eventbus.EventBus;
 import org.signal.core.util.PendingIntentFlags;
 import org.signal.core.util.logging.Log;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
+import org.thoughtcrime.securesms.BuildConfig;
 import org.thoughtcrime.securesms.R;
 import org.thoughtcrime.securesms.backup.proto.SharedPreference;
 import org.thoughtcrime.securesms.crypto.ProfileKeyUtil;
@@ -88,7 +91,7 @@ public class TextSecurePreferences {
   public  static final String DIRECT_CAPTURE_CAMERA_ID         = "pref_direct_capture_camera_id";
   public  static final String ALWAYS_RELAY_CALLS_PREF          = "pref_turn_only";
   public  static final String READ_RECEIPTS_PREF               = "pref_read_receipts";
-  public  static final String INCOGNITO_KEYBORAD_PREF          = "pref_incognito_keyboard";
+  public  static final String INCOGNITO_KEYBOARD_PREF          = "pref_incognito_keyboard";
   public  static final String UNAUTHORIZED_RECEIVED            = "pref_unauthorized_received";
   private static final String SUCCESSFUL_DIRECTORY_PREF        = "pref_successful_directory";
 
@@ -155,7 +158,7 @@ public class TextSecurePreferences {
   private static final String HAS_SEEN_VIDEO_RECORDING_TOOLTIP = "camerax.fragment.has.dismissed.video.recording.tooltip";
 
   private static final String[] booleanPreferencesToBackup = {SCREEN_SECURITY_PREF,
-                                                              INCOGNITO_KEYBORAD_PREF,
+                                                              INCOGNITO_KEYBOARD_PREF,
                                                               ALWAYS_RELAY_CALLS_PREF,
                                                               READ_RECEIPTS_PREF,
                                                               TYPING_INDICATORS,
@@ -390,13 +393,11 @@ public class TextSecurePreferences {
 
     if (previous != value) {
       Recipient.self().live().refresh();
+
       if (value) {
         notifyUnregisteredReceived(context);
+        clearLocalCredentials(context);
       }
-    }
-
-    if (value) {
-      clearLocalCredentials(context);
     }
   }
 
@@ -405,7 +406,7 @@ public class TextSecurePreferences {
   }
 
   public static boolean isIncognitoKeyboardEnabled(Context context) {
-    return getBooleanPreference(context, INCOGNITO_KEYBORAD_PREF, false);
+    return getBooleanPreference(context, INCOGNITO_KEYBOARD_PREF, false);
   }
 
   public static boolean isReadReceiptsEnabled(Context context) {
@@ -422,15 +423,6 @@ public class TextSecurePreferences {
 
   public static void setTypingIndicatorsEnabled(Context context, boolean enabled) {
     setBooleanPreference(context, TYPING_INDICATORS, enabled);
-  }
-
-  /**
-   * Only kept so that we can avoid showing the megaphone for the new link previews setting
-   * ({@link SettingsValues#isLinkPreviewsEnabled()}) when users upgrade. This can be removed after
-   * we stop showing the link previews megaphone.
-   */
-  public static boolean wereLinkPreviewsEnabled(Context context) {
-    return getBooleanPreference(context, LINK_PREVIEWS, true);
   }
 
   public static int getNotificationPriority(Context context) {
@@ -573,7 +565,7 @@ public class TextSecurePreferences {
   }
 
   public static int getLastVersionCode(Context context) {
-    return getIntegerPreference(context, LAST_VERSION_CODE_PREF, Util.getCanonicalVersionCode());
+    return getIntegerPreference(context, LAST_VERSION_CODE_PREF, BuildConfig.VERSION_CODE);
   }
 
   public static void setLastVersionCode(Context context, int versionCode) {
@@ -666,11 +658,7 @@ public class TextSecurePreferences {
 
   @Deprecated
   public static boolean isCallNotificationVibrateEnabled(Context context) {
-    boolean defaultValue = true;
-
-    if (Build.VERSION.SDK_INT >= 23) {
-      defaultValue = (Settings.System.getInt(context.getContentResolver(), Settings.System.VIBRATE_WHEN_RINGING, 1) == 1);
-    }
+    boolean defaultValue = (Settings.System.getInt(context.getContentResolver(), Settings.System.VIBRATE_WHEN_RINGING, 1) == 1);
 
     return getBooleanPreference(context, CALL_VIBRATE_PREF, defaultValue);
   }
@@ -895,7 +883,6 @@ public class TextSecurePreferences {
   }
 
   private static void clearLocalCredentials(Context context) {
-
     ProfileKey newProfileKey = ProfileKeyUtil.createNew();
     Recipient  self          = Recipient.self();
     SignalDatabase.recipients().setProfileKey(self.getId(), newProfileKey);
@@ -903,7 +890,7 @@ public class TextSecurePreferences {
     AppDependencies.getGroupsV2Authorization().clear();
   }
 
-  private static SharedPreferences getSharedPreferences(Context context) {
+  public static SharedPreferences getSharedPreferences(Context context) {
     if (preferences == null) {
       preferences = PreferenceManager.getDefaultSharedPreferences(context);
     }
@@ -911,6 +898,11 @@ public class TextSecurePreferences {
   }
 
   private static void notifyUnregisteredReceived(Context context) {
+    if (ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED) {
+      Log.w(TAG, "notifyUnregisteredReceived: Notification permission is not granted.");
+      return;
+    }
+
     PendingIntent reRegistrationIntent = PendingIntent.getActivity(context,
                                                                    0,
                                                                    RegistrationActivity.newIntentForReRegistration(context),

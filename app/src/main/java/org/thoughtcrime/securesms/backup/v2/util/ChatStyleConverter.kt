@@ -130,7 +130,7 @@ fun ChatStyle.toLocal(importState: ImportState): ChatColors? {
   if (this.customColorId != null) {
     return importState.remoteToLocalColorId[this.customColorId]?.let { localId ->
       val colorId = ChatColors.Id.forLongValue(localId)
-      ChatColorsPalette.Bubbles.default.withId(colorId)
+      return SignalDatabase.chatColors.getById(colorId)
     }
   }
 
@@ -232,7 +232,7 @@ private fun Int.toRemoteWallpaperPreset(): ChatStyle.WallpaperPreset? {
   }
 }
 
-private fun Wallpaper.LinearGradient.toRemoteWallpaperPreset(): ChatStyle.WallpaperPreset {
+private fun Wallpaper.LinearGradient.toRemoteWallpaperPreset(): ChatStyle.WallpaperPreset? {
   val colorArray = colors.toIntArray()
   return when {
     colorArray contentEquals GradientChatWallpaper.SUNSET.colors -> ChatStyle.WallpaperPreset.GRADIENT_SUNSET
@@ -244,14 +244,17 @@ private fun Wallpaper.LinearGradient.toRemoteWallpaperPreset(): ChatStyle.Wallpa
     colorArray contentEquals GradientChatWallpaper.BLISS.colors -> ChatStyle.WallpaperPreset.GRADIENT_BLISS
     colorArray contentEquals GradientChatWallpaper.SKY.colors -> ChatStyle.WallpaperPreset.GRADIENT_SKY
     colorArray contentEquals GradientChatWallpaper.PEACH.colors -> ChatStyle.WallpaperPreset.GRADIENT_PEACH
-    else -> ChatStyle.WallpaperPreset.UNKNOWN_WALLPAPER_PRESET
+    else -> {
+      Log.w(TAG, "No matching remote wallpaper preset for $this")
+      null
+    }
   }
 }
 
 private fun Wallpaper.File.toFilePointer(db: SignalDatabase): FilePointer? {
   val attachmentId: AttachmentId = UriUtil.parseOrNull(this.uri)?.let { PartUriParser(it).partId } ?: return null
   val attachment = db.attachmentTable.getAttachment(attachmentId)
-  return attachment?.toRemoteFilePointer(mediaArchiveEnabled = true)
+  return attachment?.toRemoteFilePointer()
 }
 
 private fun ChatStyle.Builder.hasBubbleColorSet(): Boolean {

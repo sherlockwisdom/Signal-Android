@@ -6,8 +6,8 @@ import android.widget.ImageView
 import android.widget.TextView
 import androidx.activity.OnBackPressedCallback
 import androidx.appcompat.app.AlertDialog
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.setFragmentResultListener
-import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.button.MaterialButton
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -15,7 +15,6 @@ import io.reactivex.rxjava3.android.schedulers.AndroidSchedulers
 import io.reactivex.rxjava3.subjects.PublishSubject
 import org.signal.core.util.concurrent.LifecycleDisposable
 import org.signal.core.util.getParcelableCompat
-import org.signal.core.util.logging.Log
 import org.signal.core.util.money.FiatMoney
 import org.signal.donations.InAppPaymentType
 import org.thoughtcrime.securesms.MainActivity
@@ -41,6 +40,7 @@ import org.thoughtcrime.securesms.keyboard.emoji.search.EmojiSearchFragment
 import org.thoughtcrime.securesms.payments.FiatMoneyUtil
 import org.thoughtcrime.securesms.payments.currency.CurrencyUtil
 import org.thoughtcrime.securesms.util.Debouncer
+import org.thoughtcrime.securesms.util.activityViewModel
 import org.thoughtcrime.securesms.util.adapter.mapping.MappingAdapter
 import org.thoughtcrime.securesms.util.navigation.safeNavigate
 import java.math.BigDecimal
@@ -58,17 +58,11 @@ class GiftFlowConfirmationFragment :
   EmojiSearchFragment.Callback,
   InAppPaymentCheckoutDelegate.Callback {
 
-  companion object {
-    private val TAG = Log.tag(GiftFlowConfirmationFragment::class.java)
+  private val viewModel: GiftFlowViewModel by activityViewModel {
+    GiftFlowViewModel()
   }
 
-  private val viewModel: GiftFlowViewModel by viewModels(
-    ownerProducer = { requireActivity() }
-  )
-
-  private val keyboardPagerViewModel: KeyboardPagerViewModel by viewModels(
-    ownerProducer = { requireActivity() }
-  )
+  private val keyboardPagerViewModel: KeyboardPagerViewModel by activityViewModels()
 
   private lateinit var inputAwareLayout: InputAwareLayout
   private lateinit var emojiKeyboard: MediaKeyboard
@@ -118,7 +112,7 @@ class GiftFlowConfirmationFragment :
       lifecycleDisposable += viewModel.insertInAppPayment().subscribe { inAppPayment ->
         findNavController().safeNavigate(
           GiftFlowConfirmationFragmentDirections.actionGiftFlowConfirmationFragmentToGatewaySelectorBottomSheet(
-            inAppPayment
+            inAppPayment.id
           )
         )
       }
@@ -266,8 +260,7 @@ class GiftFlowConfirmationFragment :
     findNavController().safeNavigate(
       GiftFlowConfirmationFragmentDirections.actionGiftFlowConfirmationFragmentToStripePaymentInProgressFragment(
         InAppPaymentProcessorAction.PROCESS_NEW_IN_APP_PAYMENT,
-        inAppPayment,
-        inAppPayment.type
+        inAppPayment.id
       )
     )
   }
@@ -276,15 +269,14 @@ class GiftFlowConfirmationFragment :
     findNavController().safeNavigate(
       GiftFlowConfirmationFragmentDirections.actionGiftFlowConfirmationFragmentToPaypalPaymentInProgressFragment(
         InAppPaymentProcessorAction.PROCESS_NEW_IN_APP_PAYMENT,
-        inAppPayment,
-        inAppPayment.type
+        inAppPayment.id
       )
     )
   }
 
   override fun navigateToCreditCardForm(inAppPayment: InAppPaymentTable.InAppPayment) {
     findNavController().safeNavigate(
-      GiftFlowConfirmationFragmentDirections.actionGiftFlowConfirmationFragmentToCreditCardFragment(inAppPayment)
+      GiftFlowConfirmationFragmentDirections.actionGiftFlowConfirmationFragmentToCreditCardFragment(inAppPayment.id)
     )
   }
 

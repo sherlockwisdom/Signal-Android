@@ -10,7 +10,6 @@ import androidx.annotation.AnyThread;
 import androidx.annotation.IntRange;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
-import androidx.annotation.RequiresApi;
 import androidx.annotation.VisibleForTesting;
 import androidx.annotation.WorkerThread;
 
@@ -96,6 +95,10 @@ public class BlobProvider {
     return new BlobBuilder(data, fileSize);
   }
 
+  public static boolean isSingleUseMemoryBlob(Uri uri) throws IOException {
+    return StorageType.decode(uri.getPathSegments().get(STORAGE_TYPE_PATH_SEGMENT)) == StorageType.SINGLE_USE_MEMORY;
+  }
+
   public synchronized boolean hasStream(@NonNull Context context, @NonNull Uri uri) {
     waitUntilInitialized();
     try {
@@ -151,7 +154,6 @@ public class BlobProvider {
                                                                                    position));
   }
 
-  @RequiresApi(23)
   public synchronized @NonNull MediaDataSource getMediaDataSource(@NonNull Context context, @NonNull Uri uri) throws IOException {
     waitUntilInitialized();
     return getBlobRepresentation(context,
@@ -345,7 +347,7 @@ public class BlobProvider {
 
   private static @Nullable String getId(@NonNull Uri uri) {
     if (isAuthority(uri)) {
-      return uri.getPathSegments().get(ID_PATH_SEGMENT);
+      return Uri.encode(uri.getPathSegments().get(ID_PATH_SEGMENT));
     }
     return null;
   }
@@ -395,7 +397,7 @@ public class BlobProvider {
     AttachmentSecret attachmentSecret = AttachmentSecretProvider.getInstance(context).getOrCreateAttachmentSecret();
     String           directory        = getDirectory(blobSpec.getStorageType());
     File             outputFile       = new File(getOrCreateDirectory(context, directory), buildFileName(blobSpec.id));
-    OutputStream     outputStream     = ModernEncryptingPartOutputStream.createFor(attachmentSecret, outputFile, true).second;
+    OutputStream     outputStream     = ModernEncryptingPartOutputStream.createFor(attachmentSecret, outputFile, true).getSecond();
 
     final Uri uri = buildUri(blobSpec);
 
@@ -418,7 +420,7 @@ public class BlobProvider {
   }
 
   private static @NonNull String buildFileName(@NonNull String id) {
-    return id + ".blob";
+    return Uri.encode(id) + ".blob";
   }
 
   private static @NonNull String getDirectory(@NonNull StorageType storageType) {
@@ -548,6 +550,19 @@ public class BlobProvider {
         throws IOException
     {
       return writeBlobSpecToDiskAsync(context, buildBlobSpec(StorageType.ATTACHMENT_DRAFT));
+    }
+
+    /**
+     * Builds the URI for a draft attachment without waiting for the data to be written.
+     * This is useful for getting a URI reference while data is still being written asynchronously.
+     * The URI can be used to check file size and save periodic snapshots.
+     * <p>
+     * It is the caller's responsibility to eventually call {@link BlobProvider#delete(Context, Uri)}
+     * when the blob is no longer in use.
+     */
+    @WorkerThread
+    public Uri buildUriForDraftAttachment() {
+      return buildUri(buildBlobSpec(StorageType.ATTACHMENT_DRAFT));
     }
   }
 

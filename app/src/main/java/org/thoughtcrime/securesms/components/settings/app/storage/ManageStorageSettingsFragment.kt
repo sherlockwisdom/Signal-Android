@@ -32,10 +32,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.integerArrayResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
@@ -51,27 +53,27 @@ import androidx.navigation.compose.dialog
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.fragment.findNavController
 import androidx.navigation.navArgument
-import org.signal.core.ui.Animations
-import org.signal.core.ui.Dialogs
-import org.signal.core.ui.Dividers
-import org.signal.core.ui.Previews
-import org.signal.core.ui.Rows
-import org.signal.core.ui.Rows.TextAndLabel
-import org.signal.core.ui.Scaffolds
-import org.signal.core.ui.SignalPreview
-import org.signal.core.ui.Texts
-import org.signal.core.ui.theme.SignalTheme
+import org.signal.core.ui.compose.Animations
+import org.signal.core.ui.compose.DayNightPreviews
+import org.signal.core.ui.compose.Dialogs
+import org.signal.core.ui.compose.Dividers
+import org.signal.core.ui.compose.Previews
+import org.signal.core.ui.compose.Rows
+import org.signal.core.ui.compose.Rows.TextAndLabel
+import org.signal.core.ui.compose.Scaffolds
+import org.signal.core.ui.compose.Texts
+import org.signal.core.util.bytes
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.billing.upgrade.UpgradeToEnableOptimizedStorageSheet
 import org.thoughtcrime.securesms.billing.upgrade.UpgradeToPaidTierBottomSheet
 import org.thoughtcrime.securesms.compose.ComposeFragment
+import org.thoughtcrime.securesms.compose.SignalTheme
 import org.thoughtcrime.securesms.database.MediaTable
 import org.thoughtcrime.securesms.keyvalue.KeepMessagesDuration
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.mediaoverview.MediaOverviewActivity
 import org.thoughtcrime.securesms.preferences.widgets.StorageGraphView
 import org.thoughtcrime.securesms.util.BottomSheetUtil
-import org.thoughtcrime.securesms.util.Util
 import org.thoughtcrime.securesms.util.viewModel
 import java.text.NumberFormat
 
@@ -157,7 +159,7 @@ class ManageStorageSettingsFragment : ComposeFragment() {
         dialog("confirm-delete-chat-history") {
           Dialogs.SimpleAlertDialog(
             title = stringResource(id = R.string.preferences_storage__delete_message_history),
-            body = if (SignalStore.account.hasLinkedDevices) {
+            body = if (SignalStore.account.isMultiDevice) {
               stringResource(id = R.string.preferences_storage__this_will_delete_all_message_history_and_media_from_your_device_linked_device)
             } else {
               stringResource(id = R.string.preferences_storage__this_will_delete_all_message_history_and_media_from_your_device)
@@ -173,7 +175,7 @@ class ManageStorageSettingsFragment : ComposeFragment() {
         dialog("double-confirm-delete-chat-history", dialogProperties = DialogProperties(dismissOnBackPress = true, dismissOnClickOutside = true)) {
           Dialogs.SimpleAlertDialog(
             title = stringResource(id = R.string.preferences_storage__are_you_sure_you_want_to_delete_all_message_history),
-            body = if (SignalStore.account.hasLinkedDevices) {
+            body = if (SignalStore.account.isMultiDevice) {
               stringResource(id = R.string.preferences_storage__all_message_history_will_be_permanently_removed_this_action_cannot_be_undone_linked_device)
             } else {
               stringResource(id = R.string.preferences_storage__all_message_history_will_be_permanently_removed_this_action_cannot_be_undone)
@@ -273,7 +275,7 @@ private fun ManageStorageSettingsScreen(
   Scaffolds.Settings(
     title = stringResource(id = R.string.preferences__storage),
     onNavigationClick = onNavigationClick,
-    navigationIconPainter = painterResource(id = R.drawable.ic_arrow_left_24)
+    navigationIcon = ImageVector.vectorResource(id = R.drawable.symbol_arrow_start_24)
   ) { contentPadding ->
     Column(
       modifier = Modifier
@@ -360,7 +362,7 @@ private fun StorageOverview(
       )
 
       it.findViewById<StorageGraphView>(R.id.storageGraphView).setStorageBreakdown(breakdownEntries)
-      it.findViewById<TextView>(R.id.total_size).text = Util.getPrettyFileSize(breakdownEntries.totalSize)
+      it.findViewById<TextView>(R.id.total_size).text = breakdownEntries.totalSize.bytes.toUnitString()
     }
 
     it.findViewById<View>(R.id.free_up_space).setOnClickListener {
@@ -378,7 +380,7 @@ private fun SetKeepMessagesScreen(
   Scaffolds.Settings(
     title = stringResource(id = R.string.preferences__keep_messages),
     onNavigationClick = onNavigationClick,
-    navigationIconPainter = painterResource(id = R.drawable.ic_arrow_left_24)
+    navigationIcon = ImageVector.vectorResource(id = R.drawable.symbol_arrow_start_24)
   ) { contentPadding ->
     Column(
       modifier = Modifier
@@ -418,7 +420,7 @@ private fun SetChatLengthLimitScreen(
   Scaffolds.Settings(
     title = stringResource(id = R.string.preferences__conversation_length_limit),
     onNavigationClick = onNavigationClick,
-    navigationIconPainter = painterResource(id = R.drawable.ic_arrow_left_24)
+    navigationIcon = ImageVector.vectorResource(id = R.drawable.symbol_arrow_start_24)
   ) { contentPadding ->
     Column(
       modifier = Modifier
@@ -548,7 +550,7 @@ private fun SetCustomLengthLimitDialog(
   )
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 private fun ManageStorageSettingsScreenPreview() {
   Previews.Preview {
@@ -563,7 +565,7 @@ private fun ManageStorageSettingsScreenPreview() {
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 private fun SetKeepMessagesScreenPreview() {
   Previews.Preview {
@@ -571,7 +573,7 @@ private fun SetKeepMessagesScreenPreview() {
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 private fun SetChatLengthLimitScreenPreview() {
   Previews.Preview {
@@ -581,7 +583,7 @@ private fun SetChatLengthLimitScreenPreview() {
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 private fun SetCustomLengthLimitDialogPreview() {
   Previews.Preview {

@@ -16,6 +16,7 @@ import org.signal.libsignal.zkgroup.profiles.ProfileKey;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
+import org.whispersystems.signalservice.api.util.UuidUtil;
 import org.whispersystems.signalservice.internal.push.ContactDetails;
 import org.whispersystems.signalservice.internal.util.Util;
 
@@ -42,21 +43,17 @@ public class DeviceContactsInputStream extends ChunkedInputStream {
 
     ContactDetails details = ContactDetails.ADAPTER.decode(detailsSerialized);
 
-    if (!SignalServiceAddress.isValidAddress(details.aci, details.number)) {
+    if (ACI.parseOrNull(details.aci, details.aciBinary) == null) {
       throw new IOException("Missing contact address!");
     }
 
-    Optional<ACI>                 aci                = Optional.ofNullable(ACI.parseOrNull(details.aci));
+    Optional<ACI>                 aci                = Optional.ofNullable(ACI.parseOrNull(details.aci, details.aciBinary));
     Optional<String>              e164               = Optional.ofNullable(details.number);
     Optional<String>              name               = Optional.ofNullable(details.name);
     Optional<DeviceContactAvatar> avatar             = Optional.empty();
-    Optional<String>              color              = details.color != null ? Optional.of(details.color) : Optional.empty();
-    Optional<VerifiedMessage>     verified           = Optional.empty();
-    Optional<ProfileKey>          profileKey         = Optional.empty();
     Optional<Integer>             expireTimer        = Optional.empty();
     Optional<Integer>             expireTimerVersion = Optional.empty();
     Optional<Integer>             inboxPosition      = Optional.empty();
-    boolean                       archived           = false;
 
     if (details.avatar != null && details.avatar.length != null) {
       long        avatarLength      = details.avatar.length;
@@ -64,39 +61,6 @@ public class DeviceContactsInputStream extends ChunkedInputStream {
       String      avatarContentType = details.avatar.contentType != null ? details.avatar.contentType : "image/*";
 
       avatar = Optional.of(new DeviceContactAvatar(avatarStream, avatarLength, avatarContentType));
-    }
-
-    if (details.verified != null) {
-      try {
-        if (!SignalServiceAddress.isValidAddress(details.verified.destinationAci, null)) {
-          throw new InvalidMessageException("Missing Verified address!");
-        }
-
-        IdentityKey          identityKey = new IdentityKey(details.verified.identityKey.toByteArray(), 0);
-        SignalServiceAddress destination = new SignalServiceAddress(ServiceId.parseOrThrow(details.verified.destinationAci));
-
-        VerifiedMessage.VerifiedState state;
-
-        switch (details.verified.state) {
-          case VERIFIED:  state = VerifiedMessage.VerifiedState.VERIFIED;   break;
-          case UNVERIFIED:state = VerifiedMessage.VerifiedState.UNVERIFIED; break;
-          case DEFAULT:   state = VerifiedMessage.VerifiedState.DEFAULT;    break;
-          default:        throw new InvalidMessageException("Unknown state: " + details.verified.state);
-        }
-
-        verified = Optional.of(new VerifiedMessage(destination, identityKey, state, System.currentTimeMillis()));
-      } catch (InvalidKeyException | InvalidMessageException e) {
-        Log.w(TAG, e);
-        verified = Optional.empty();
-      }
-    }
-
-    if (details.profileKey != null) {
-      try {
-        profileKey = Optional.ofNullable(new ProfileKey(details.profileKey.toByteArray()));
-      } catch (InvalidInputException e) {
-        Log.w(TAG, "Invalid profile key ignored", e);
-      }
     }
 
     if (details.expireTimer != null && details.expireTimer > 0) {
@@ -111,9 +75,7 @@ public class DeviceContactsInputStream extends ChunkedInputStream {
       inboxPosition = Optional.of(details.inboxPosition);
     }
 
-    archived = details.archived;
-
-    return new DeviceContact(aci, e164, name, avatar, color, verified, profileKey, expireTimer, expireTimerVersion, inboxPosition, archived);
+    return new DeviceContact(aci, e164, name, avatar, expireTimer, expireTimerVersion, inboxPosition);
   }
 
 }

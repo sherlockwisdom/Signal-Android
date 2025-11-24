@@ -248,4 +248,20 @@ public abstract class DisplayRecord {
   public boolean isMessageRequestAccepted() {
     return MessageTypes.isMessageRequestAccepted(type);
   }
+
+  public boolean isBlocked() {
+    return MessageTypes.isBlocked(type);
+  }
+
+  public boolean isUnblocked() {
+    return MessageTypes.isUnblocked(type);
+  }
+
+  public boolean isUnsupported() {
+    return MessageTypes.isUnsupportedMessageType(type);
+  }
+
+  public boolean isPollTerminate() {
+    return MessageTypes.isPollTerminate(type);
+  }
 }

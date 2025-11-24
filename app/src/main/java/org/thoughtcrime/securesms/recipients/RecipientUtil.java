@@ -24,10 +24,10 @@ import org.thoughtcrime.securesms.jobs.MultiDeviceBlockedUpdateJob;
 import org.thoughtcrime.securesms.jobs.RefreshOwnProfileJob;
 import org.thoughtcrime.securesms.jobs.RotateProfileKeyJob;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
+import org.thoughtcrime.securesms.mms.MmsException;
 import org.thoughtcrime.securesms.mms.OutgoingMessage;
 import org.thoughtcrime.securesms.sms.MessageSender;
 import org.thoughtcrime.securesms.storage.StorageSyncHelper;
-import org.thoughtcrime.securesms.util.ExpirationTimerUtil;
 import org.whispersystems.signalservice.api.push.ServiceId;
 import org.whispersystems.signalservice.api.push.SignalServiceAddress;
 import org.whispersystems.signalservice.api.push.exceptions.NotFoundException;
@@ -36,6 +36,8 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Optional;
+import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 public class RecipientUtil {
 
@@ -81,21 +83,21 @@ public class RecipientUtil {
     }
   }
 
-  public static @NonNull List<SignalServiceAddress> toSignalServiceAddresses(@NonNull Context context, @NonNull List<RecipientId> recipients)
-      throws IOException
-  {
-    return toSignalServiceAddressesFromResolved(context, Recipient.resolvedList(recipients));
-  }
-
   public static @NonNull List<SignalServiceAddress> toSignalServiceAddressesFromResolved(@NonNull Context context, @NonNull List<Recipient> recipients)
       throws IOException
   {
     ensureUuidsAreAvailable(context, recipients);
 
-    return Stream.of(recipients)
-                 .map(Recipient::resolve)
-                 .map(r -> new SignalServiceAddress(r.requireServiceId(), r.getE164().orElse(null)))
-                 .toList();
+    List<Recipient> latestRecipients = recipients.stream().map(it -> it.live().resolve()).collect(Collectors.toList());
+
+    if (latestRecipients.stream().anyMatch(it -> !it.getHasServiceId())) {
+      throw new NotFoundException("1 or more recipients are not registered!");
+    }
+
+    return latestRecipients
+        .stream()
+        .map(r -> new SignalServiceAddress(r.requireServiceId(), r.getE164().orElse(null)))
+        .collect(Collectors.toList());
   }
 
   /**
@@ -112,7 +114,7 @@ public class RecipientUtil {
     if (recipientsWithoutUuids.size() > 0) {
       ContactDiscovery.refresh(context, recipientsWithoutUuids, false);
 
-      if (recipients.stream().map(Recipient::resolve).anyMatch(Recipient::isUnregistered)) {
+      if (recipients.stream().map(Recipient::resolve).anyMatch(it -> it.isUnregistered() || !it.getHasServiceId())) {
         throw new NotFoundException("1 or more recipients are not registered!");
       }
 
@@ -172,17 +174,30 @@ public class RecipientUtil {
     }
 
     SignalDatabase.recipients().setBlocked(recipient.getId(), true);
+    insertBlockedUpdate(recipient, SignalDatabase.threads().getOrCreateThreadIdFor(recipient));
 
-    if (recipient.isSystemContact() || recipient.isProfileSharing() || isProfileSharedViaGroup(recipient)) {
-      SignalDatabase.recipients().setProfileSharing(recipient.getId(), false);
-
-      AppDependencies.getJobManager().startChain(new RefreshOwnProfileJob())
-                     .then(new RotateProfileKeyJob())
-                     .enqueue();
-    }
+    RecipientUtil.updateProfileSharingAfterBlock(recipient, true);
 
     AppDependencies.getJobManager().add(new MultiDeviceBlockedUpdateJob());
     StorageSyncHelper.scheduleSyncForDataChange();
+  }
+
+  @WorkerThread
+  public static boolean updateProfileSharingAfterBlock(@NonNull Recipient recipient, boolean rotateProfileKeyOnBlock) {
+    if (recipient.isSystemContact() || recipient.isProfileSharing() || isProfileSharedViaGroup(recipient)) {
+      SignalDatabase.recipients().setProfileSharing(recipient.getId(), false);
+
+      if (rotateProfileKeyOnBlock) {
+        Log.i(TAG, "Rotating profile key");
+        AppDependencies.getJobManager().startChain(new RefreshOwnProfileJob())
+                       .then(new RotateProfileKeyJob())
+                       .enqueue();
+
+        return true;
+      }
+    }
+
+    return false;
   }
 
   @WorkerThread
@@ -194,8 +209,35 @@ public class RecipientUtil {
 
     SignalDatabase.recipients().setBlocked(recipient.getId(), false);
     SignalDatabase.recipients().setProfileSharing(recipient.getId(), true);
+    insertUnblockedUpdate(recipient, SignalDatabase.threads().getOrCreateThreadIdFor(recipient));
     AppDependencies.getJobManager().add(new MultiDeviceBlockedUpdateJob());
     StorageSyncHelper.scheduleSyncForDataChange();
+  }
+
+  private static void insertBlockedUpdate(@NonNull Recipient recipient, long threadId) {
+    try {
+      SignalDatabase.messages().insertMessageOutbox(
+        OutgoingMessage.blockedMessage(recipient, System.currentTimeMillis(), TimeUnit.SECONDS.toMillis(recipient.getExpiresInSeconds())),
+        threadId,
+        false,
+        null
+      );
+    } catch (MmsException e) {
+      Log.w(TAG, "Unable to insert blocked message", e);
+    }
+  }
+
+  private static void insertUnblockedUpdate(@NonNull Recipient recipient, long threadId) {
+    try {
+      SignalDatabase.messages().insertMessageOutbox(
+        OutgoingMessage.unblockedMessage(recipient, System.currentTimeMillis(), TimeUnit.SECONDS.toMillis(recipient.getExpiresInSeconds())),
+        threadId,
+        false,
+        null
+      );
+    } catch (MmsException e) {
+      Log.w(TAG, "Unable to insert unblocked message", e);
+    }
   }
 
   @WorkerThread

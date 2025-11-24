@@ -7,7 +7,6 @@ import androidx.activity.OnBackPressedCallback
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import app.cash.exhaustive.Exhaustive
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import io.reactivex.rxjava3.core.Flowable
 import org.signal.core.util.concurrent.LifecycleDisposable
@@ -21,7 +20,7 @@ import org.thoughtcrime.securesms.mediasend.v2.MediaSelectionNavigator
 import org.thoughtcrime.securesms.mediasend.v2.MediaSelectionViewModel
 import org.thoughtcrime.securesms.mms.MediaConstraints
 import org.thoughtcrime.securesms.permissions.Permissions
-import org.thoughtcrime.securesms.registrationv3.olddevice.TransferAccountActivity
+import org.thoughtcrime.securesms.registration.olddevice.TransferAccountActivity
 import org.thoughtcrime.securesms.stories.Stories
 import org.thoughtcrime.securesms.util.CommunicationActions
 import org.thoughtcrime.securesms.util.navigation.safeNavigate
@@ -62,7 +61,6 @@ class MediaCaptureFragment : Fragment(R.layout.fragment_container), CameraFragme
       .commitNowAllowingStateLoss()
 
     lifecycleDisposable += viewModel.events.subscribe { event ->
-      @Exhaustive
       when (event) {
         MediaCaptureEvent.MediaCaptureRenderFailed -> {
           Log.w(TAG, "Failed to render captured media.")
@@ -94,7 +92,7 @@ class MediaCaptureFragment : Fragment(R.layout.fragment_container), CameraFragme
         is MediaCaptureEvent.DeviceLinkScannedFromQrCode -> {
           MaterialAlertDialogBuilder(requireContext())
             .setTitle(R.string.MediaCaptureFragment_device_link_dialog_title)
-            .setMessage(R.string.MediaCaptureFragment_device_link_dialog_body)
+            .setMessage(R.string.MediaCaptureFragment_it_looks_like_youre_trying)
             .setPositiveButton(R.string.MediaCaptureFragment_device_link_dialog_continue) { d, _ ->
               startActivity(AppSettingsActivity.linkedDevices(requireContext()))
               requireActivity().finish()
@@ -121,7 +119,7 @@ class MediaCaptureFragment : Fragment(R.layout.fragment_container), CameraFragme
       }
     }
 
-    if (isFirst()) {
+    if (isFirst() || sharedViewModel.isSelectedMediaEmpty()) {
       requireActivity().onBackPressedDispatcher.addCallback(
         viewLifecycleOwner,
         object : OnBackPressedCallback(true) {

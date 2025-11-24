@@ -5,15 +5,18 @@
 
 package org.whispersystems.signalservice.internal.crypto
 
+import assertk.assertThat
+import assertk.assertions.isEqualTo
+import assertk.assertions.isInstanceOf
 import okio.ByteString
-import org.hamcrest.MatcherAssert.assertThat
-import org.hamcrest.Matchers.instanceOf
-import org.hamcrest.Matchers.`is`
+import okio.ByteString.Companion.toByteString
 import org.junit.Test
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.IdentityKeyPair
-import org.signal.libsignal.protocol.ecc.Curve
+import org.signal.libsignal.protocol.ecc.ECPrivateKey
 import org.signal.libsignal.zkgroup.profiles.ProfileKey
+import org.whispersystems.signalservice.api.util.UuidUtil
+import org.whispersystems.signalservice.api.util.toByteArray
 import org.whispersystems.signalservice.internal.push.ProvisionEnvelope
 import org.whispersystems.signalservice.internal.push.ProvisionMessage
 import org.whispersystems.signalservice.internal.push.ProvisioningVersion
@@ -21,14 +24,14 @@ import java.util.UUID
 import kotlin.random.Random
 
 class SecondaryProvisioningCipherTest {
-
   @Test
   fun decrypt() {
-    val provisioningCipher = SecondaryProvisioningCipher.generate(generateIdentityKeyPair())
+    val provisioningCipher = SecondaryProvisioningCipher.generate(IdentityKeyPair.generate())
 
-    val primaryIdentityKeyPair = generateIdentityKeyPair()
+    val primaryIdentityKeyPair = IdentityKeyPair.generate()
     val primaryProfileKey = generateProfileKey()
     val primaryProvisioningCipher = PrimaryProvisioningCipher(provisioningCipher.secondaryDevicePublicKey.publicKey)
+    val aci = UUID.randomUUID()
 
     val message = ProvisionMessage(
       aciIdentityKeyPublic = ByteString.of(*primaryIdentityKeyPair.publicKey.serialize()),
@@ -36,37 +39,31 @@ class SecondaryProvisioningCipherTest {
       provisioningCode = "code",
       provisioningVersion = ProvisioningVersion.CURRENT.value,
       number = "+14045555555",
-      aci = UUID.randomUUID().toString(),
+      aci = aci.toString(),
       profileKey = ByteString.of(*primaryProfileKey.serialize()),
-      readReceipts = true
+      readReceipts = true,
+      aciBinary = aci.toByteArray().toByteString()
     )
 
     val provisionMessage = ProvisionEnvelope.ADAPTER.decode(primaryProvisioningCipher.encrypt(message))
 
     val result = provisioningCipher.decrypt(provisionMessage)
-    assertThat(result, instanceOf(SecondaryProvisioningCipher.ProvisionDecryptResult.Success::class.java))
+    assertThat(result).isInstanceOf<SecondaryProvisioningCipher.ProvisioningDecryptResult.Success<ProvisionMessage>>()
 
-    val success = result as SecondaryProvisioningCipher.ProvisionDecryptResult.Success
+    val success = result as SecondaryProvisioningCipher.ProvisioningDecryptResult.Success<ProvisionMessage>
 
-    assertThat(success.uuid.toString(), `is`(message.aci))
-    assertThat(success.e164, `is`(message.number))
-    assertThat(success.identityKeyPair.serialize(), `is`(primaryIdentityKeyPair.serialize()))
-    assertThat(success.profileKey.serialize(), `is`(primaryProfileKey.serialize()))
-    assertThat(success.areReadReceiptsEnabled, `is`(message.readReceipts))
-    assertThat(success.primaryUserAgent, `is`(message.userAgent))
-    assertThat(success.provisioningCode, `is`(message.provisioningCode))
-    assertThat(success.provisioningVersion, `is`(message.provisioningVersion))
+    assertThat(message.aci).isEqualTo(UuidUtil.parseOrThrow(success.message.aci).toString())
+    assertThat(message.number).isEqualTo(success.message.number)
+    assertThat(primaryIdentityKeyPair.serialize()).isEqualTo(IdentityKeyPair(IdentityKey(success.message.aciIdentityKeyPublic!!.toByteArray()), ECPrivateKey(success.message.aciIdentityKeyPrivate!!.toByteArray())).serialize())
+    assertThat(primaryProfileKey.serialize()).isEqualTo(ProfileKey(success.message.profileKey!!.toByteArray()).serialize())
+    assertThat(message.readReceipts).isEqualTo(success.message.readReceipts == true)
+    assertThat(message.userAgent).isEqualTo(success.message.userAgent)
+    assertThat(message.provisioningCode).isEqualTo(success.message.provisioningCode!!)
+    assertThat(message.provisioningVersion).isEqualTo(success.message.provisioningVersion!!)
+    assertThat(message.aciBinary).isEqualTo(UuidUtil.parseOrThrow(success.message.aciBinary).toByteArray().toByteString())
   }
 
   companion object {
-    fun generateIdentityKeyPair(): IdentityKeyPair {
-      val djbKeyPair = Curve.generateKeyPair()
-      val djbIdentityKey = IdentityKey(djbKeyPair.publicKey)
-      val djbPrivateKey = djbKeyPair.privateKey
-
-      return IdentityKeyPair(djbIdentityKey, djbPrivateKey)
-    }
-
     fun generateProfileKey(): ProfileKey {
       return ProfileKey(Random.nextBytes(32))
     }

@@ -20,7 +20,7 @@ import org.thoughtcrime.securesms.util.JsonUtils;
 import org.thoughtcrime.securesms.util.MediaUtil;
 
 import java.io.IOException;
-import java.util.Collections;
+import java.util.ArrayList;
 import java.util.List;
 
 public class Contact implements Parcelable {
@@ -43,7 +43,7 @@ public class Contact implements Parcelable {
   @JsonProperty
   private final Avatar              avatar;
 
-  public Contact(@JsonProperty("name")            @NonNull  Name                name,
+  public Contact(@JsonProperty("name")            @Nullable Name                name,
                  @JsonProperty("organization")    @Nullable String              organization,
                  @JsonProperty("phoneNumbers")    @NonNull  List<Phone>         phoneNumbers,
                  @JsonProperty("emails")          @NonNull  List<Email>         emails,
@@ -52,10 +52,14 @@ public class Contact implements Parcelable {
   {
     this.name            = name;
     this.organization    = organization;
-    this.phoneNumbers    = Collections.unmodifiableList(phoneNumbers);
-    this.emails          = Collections.unmodifiableList(emails);
-    this.postalAddresses = Collections.unmodifiableList(postalAddresses);
+    this.phoneNumbers    = new ArrayList<>(phoneNumbers.size());
+    this.emails          = new ArrayList<>(emails.size());
+    this.postalAddresses = new ArrayList<>(postalAddresses.size());
     this.avatar          = avatar;
+
+    this.phoneNumbers.addAll(phoneNumbers);
+    this.emails.addAll(emails);
+    this.postalAddresses.addAll(postalAddresses);
   }
 
   public Contact(@NonNull Contact contact, @Nullable Avatar avatar) {
@@ -77,7 +81,7 @@ public class Contact implements Parcelable {
   }
 
   public @NonNull Name getName() {
-    return name;
+    return name == null ? Name.EMPTY_NAME : name;
   }
 
   public @Nullable String getOrganization() {
@@ -228,6 +232,8 @@ public class Contact implements Parcelable {
       dest.writeString(nickname);
     }
 
+    public static Name EMPTY_NAME = new Name("","","","","","");
+
     public static final Creator<Name> CREATOR = new Creator<Name>() {
       @Override
       public Name createFromParcel(Parcel in) {
@@ -356,7 +362,7 @@ public class Contact implements Parcelable {
       return type;
     }
 
-    public @NonNull String getLabel() {
+    public @Nullable String getLabel() {
       return label;
     }
 
@@ -644,7 +650,7 @@ public class Contact implements Parcelable {
 
     private static Attachment attachmentFromUri(@Nullable Uri uri) {
       if (uri == null) return null;
-      return new UriAttachment(uri, MediaUtil.IMAGE_JPEG, AttachmentTable.TRANSFER_PROGRESS_DONE, 0, null, false, false, false, false, null, null, null, null, null);
+      return new UriAttachment(uri, MediaUtil.IMAGE_JPEG, AttachmentTable.TRANSFER_PROGRESS_DONE, 0, null, false, false, false, false, null, null, null, null, null, null);
     }
 
     @Override

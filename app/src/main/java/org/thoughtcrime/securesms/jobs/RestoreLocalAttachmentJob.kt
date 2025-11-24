@@ -12,6 +12,7 @@ import org.signal.core.util.logging.Log
 import org.signal.libsignal.protocol.InvalidMacException
 import org.signal.libsignal.protocol.InvalidMessageException
 import org.thoughtcrime.securesms.attachments.AttachmentId
+import org.thoughtcrime.securesms.backup.v2.ArchiveRestoreProgress
 import org.thoughtcrime.securesms.backup.v2.local.ArchiveFileSystem
 import org.thoughtcrime.securesms.database.AttachmentTable
 import org.thoughtcrime.securesms.database.AttachmentTable.RestorableAttachment
@@ -19,10 +20,10 @@ import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.jobmanager.Job
 import org.thoughtcrime.securesms.jobs.protos.RestoreLocalAttachmentJobData
-import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.mms.MmsException
 import org.whispersystems.signalservice.api.backup.MediaName
 import org.whispersystems.signalservice.api.crypto.AttachmentCipherInputStream
+import org.whispersystems.signalservice.api.crypto.AttachmentCipherInputStream.IntegrityCheck
 import org.whispersystems.signalservice.api.crypto.AttachmentCipherInputStream.StreamSupplier
 import java.io.IOException
 
@@ -52,8 +53,8 @@ class RestoreLocalAttachmentJob private constructor(
 
         possibleRestorableAttachments
           .forEachIndexed { index, attachment ->
-            val fileInfo = if (attachment.remoteKey != null && attachment.remoteDigest != null) {
-              val mediaName = MediaName.fromDigest(attachment.remoteDigest).name
+            val fileInfo = if (attachment.plaintextHash != null && attachment.remoteKey != null) {
+              val mediaName = MediaName.fromPlaintextHashAndRemoteKey(attachment.plaintextHash, attachment.remoteKey).name
               mediaNameToFileInfo[mediaName]
             } else {
               null
@@ -70,10 +71,11 @@ class RestoreLocalAttachmentJob private constructor(
         SignalDatabase.attachments.setRestoreTransferState(notRestorableAttachments, AttachmentTable.TRANSFER_PROGRESS_FAILED)
 
         // Intentionally enqueues one at a time for safer attachment transfer state management
+        Log.d(TAG, "Adding ${restoreAttachmentJobs.size} restore local attachment jobs")
         restoreAttachmentJobs.forEach { jobManager.add(it) }
       } while (restoreAttachmentJobs.isNotEmpty())
 
-      SignalStore.backup.totalRestorableAttachmentSize = SignalDatabase.attachments.getRemainingRestorableAttachmentSize()
+      ArchiveRestoreProgress.onRestoringMedia()
 
       val checkDoneJobs = (0 until CONCURRENT_QUEUES)
         .map {
@@ -100,7 +102,7 @@ class RestoreLocalAttachmentJob private constructor(
     size = info.size
   )
 
-  override fun serialize(): ByteArray? {
+  override fun serialize(): ByteArray {
     return RestoreLocalAttachmentJobData(
       attachmentId = attachmentId.id,
       messageId = messageId,
@@ -111,6 +113,10 @@ class RestoreLocalAttachmentJob private constructor(
 
   override fun getFactoryKey(): String {
     return KEY
+  }
+
+  override fun onAdded() {
+    SignalDatabase.attachments.setRestoreTransferState(attachmentId, AttachmentTable.TRANSFER_RESTORE_IN_PROGRESS)
   }
 
   override fun run(): Result {
@@ -144,8 +150,26 @@ class RestoreLocalAttachmentJob private constructor(
     try {
       val iv = ByteArray(16)
       streamSupplier.openStream().use { StreamUtil.readFully(it, iv) }
-      AttachmentCipherInputStream.createForAttachment(streamSupplier, size, attachment.size, combinedKey, attachment.remoteDigest, null, 0, false).use { input ->
-        SignalDatabase.attachments.finalizeAttachmentAfterDownload(attachment.mmsId, attachment.attachmentId, input, iv)
+      AttachmentCipherInputStream.createForAttachment(
+        streamSupplier = streamSupplier,
+        streamLength = size,
+        plaintextLength = attachment.size,
+        combinedKeyMaterial = combinedKey,
+        integrityCheck = IntegrityCheck.forEncryptedDigestAndPlaintextHash(
+          encryptedDigest = attachment.remoteDigest,
+          plaintextHash = attachment.dataHash
+        ),
+        incrementalDigest = null,
+        incrementalMacChunkSize = 0
+      ).use { input ->
+        SignalDatabase
+          .attachments
+          .finalizeAttachmentAfterDownload(
+            mmsId = attachment.mmsId,
+            attachmentId = attachment.attachmentId,
+            inputStream = input,
+            archiveRestore = true
+          )
       }
     } catch (e: InvalidMessageException) {
       Log.w(TAG, "Experienced an InvalidMessageException while trying to read attachment.", e)

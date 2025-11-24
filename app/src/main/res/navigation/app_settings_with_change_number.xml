@@ -114,8 +114,8 @@
             app:popEnterAnim="@anim/fragment_close_enter"
             app:popExitAnim="@anim/fragment_close_exit" />
         <action
-            android:id="@+id/action_appSettingsFragment_to_inviteActivity"
-            app:destination="@id/inviteActivity"
+            android:id="@+id/action_appSettingsFragment_to_inviteFragment"
+            app:destination="@id/inviteFragment"
             app:enterAnim="@anim/fragment_open_enter"
             app:exitAnim="@anim/fragment_open_exit"
             app:popEnterAnim="@anim/fragment_close_enter"
@@ -208,12 +208,20 @@
 
     <fragment
         android:id="@+id/advancedPinSettingsFragment"
-        android:name="org.thoughtcrime.securesms.components.settings.app.wrapped.WrappedAdvancedPinPreferenceFragment"
-        android:label="advanced_pin_settings_fragment" />
+        android:name="org.thoughtcrime.securesms.preferences.AdvancedPinSettingsFragment"
+        android:label="advanced_pin_settings_fragment">
+        <action
+            android:id="@+id/action_advancedPinSettingsFragment_to_backupKeyDisplayFragment"
+            app:destination="@id/backupKeyDisplayFragment"
+            app:enterAnim="@anim/fragment_open_enter"
+            app:exitAnim="@anim/fragment_open_exit"
+            app:popEnterAnim="@anim/fragment_close_enter"
+            app:popExitAnim="@anim/fragment_close_exit" />
+    </fragment>
 
     <fragment
         android:id="@+id/deleteAccountFragment"
-        android:name="org.thoughtcrime.securesms.components.settings.app.wrapped.WrappedDeleteAccountFragment"
+        android:name="org.thoughtcrime.securesms.delete.DeleteAccountFragment"
         android:label="delete_account_fragment"
         tools:layout="@layout/delete_account_fragment" />
 
@@ -269,7 +277,7 @@
         android:name="org.thoughtcrime.securesms.linkdevice.LinkDeviceLearnMoreBottomSheetFragment" />
     <dialog
         android:id="@+id/linkDeviceEducationSheet"
-        android:name="org.thoughtcrime.securesms.linkdevice.LinkDeviceEducationSheet" />
+        android:name="org.thoughtcrime.securesms.linkdevice.LinkDeviceAuthEducationSheet" />
 
     <fragment
         android:id="@+id/editDeviceNameFragment"
@@ -387,7 +395,7 @@
 
     <fragment
         android:id="@+id/backupsPreferenceFragment"
-        android:name="org.thoughtcrime.securesms.components.settings.app.wrapped.WrappedBackupsPreferenceFragment"
+        android:name="org.thoughtcrime.securesms.preferences.BackupsPreferenceFragment"
         android:label="backups_preference_fragment"
         tools:layout="@layout/fragment_backups" />
 
@@ -427,8 +435,9 @@
             app:argType="long" />
 
         <argument
-            android:name="thread_id"
-            app:argType="long" />
+            android:name="thread_ids"
+            app:argType="long[]"
+            app:nullable="true" />
 
         <action
             android:id="@+id/action_createFoldersFragment_to_chooseChatsFragment"
@@ -489,7 +498,7 @@
             app:popExitAnim="@anim/fragment_close_exit" />
         <action
             android:id="@+id/action_dataAndStorageSettingsFragment_to_editProxyFragment"
-            app:destination="@id/editProxyFragment"
+            app:destination="@id/edit_proxy"
             app:enterAnim="@anim/fragment_open_enter"
             app:exitAnim="@anim/fragment_open_exit"
             app:popEnterAnim="@anim/fragment_close_enter"
@@ -501,10 +510,7 @@
         android:name="org.thoughtcrime.securesms.components.settings.app.storage.ManageStorageSettingsFragment"
         android:label="storage_preference_fragment" />
 
-    <fragment
-        android:id="@+id/editProxyFragment"
-        android:name="org.thoughtcrime.securesms.components.settings.app.wrapped.WrappedEditProxyFragment"
-        android:label="edit_proxy_fragment" />
+    <include app:graph="@navigation/edit_proxy" />
 
     <!-- endregion -->
 
@@ -538,7 +544,7 @@
 
     <fragment
         android:id="@+id/helpFragment"
-        android:name="org.thoughtcrime.securesms.components.settings.app.wrapped.WrappedHelpFragment"
+        android:name="org.thoughtcrime.securesms.help.HelpFragment"
         android:label="help_fragment">
 
         <argument
@@ -559,14 +565,20 @@
         android:label="submit_debug_log_activity" />
     <!-- endregion -->
 
-    <activity
-        android:id="@+id/inviteActivity"
-        android:name="org.thoughtcrime.securesms.InviteActivity"
-        android:label="invite_activity"
-        tools:layout="@layout/invite_activity" />
+    <fragment
+        android:id="@+id/inviteFragment"
+        android:name="org.thoughtcrime.securesms.InviteFragment"
+        android:label="invite_fragment" />
 
     <!-- region Direct-To-Page actions -->
 
+    <action
+        android:id="@+id/action_direct_to_storagePreferenceFragment"
+        app:destination="@id/storagePreferenceFragment"
+        app:enterAnim="@anim/fragment_open_enter"
+        app:exitAnim="@anim/fragment_open_exit"
+        app:popEnterAnim="@anim/fragment_close_enter"
+        app:popExitAnim="@anim/fragment_close_exit" />
 
     <action
         android:id="@+id/action_direct_to_backupsPreferenceFragment"
@@ -588,7 +600,7 @@
 
     <action
         android:id="@+id/action_direct_to_editProxyFragment"
-        app:destination="@id/editProxyFragment"
+        app:destination="@id/edit_proxy"
         app:enterAnim="@anim/fragment_open_enter"
         app:exitAnim="@anim/fragment_open_exit"
         app:popEnterAnim="@anim/fragment_close_enter"
@@ -739,6 +751,16 @@
         app:popUpTo="@id/app_settings"
         app:popUpToInclusive="true" />
 
+    <action
+        android:id="@+id/action_direct_to_inviteFragment"
+        app:destination="@id/inviteFragment"
+        app:enterAnim="@anim/fragment_open_enter"
+        app:exitAnim="@anim/fragment_open_exit"
+        app:popEnterAnim="@anim/fragment_close_enter"
+        app:popExitAnim="@anim/fragment_close_exit"
+        app:popUpTo="@id/app_settings"
+        app:popUpToInclusive="true" />
+
     <!-- endregion -->
 
     <!-- Internal Settings -->
@@ -777,6 +799,9 @@
         <action
             android:id="@+id/action_internalSettingsFragment_to_internalSqlitePlaygroundFragment"
             app:destination="@id/internalSqlitePlaygroundFragment" />
+        <action
+            android:id="@+id/action_internalSettingsFragment_to_dataSeedingPlaygroundFragment"
+            app:destination="@id/dataSeedingPlaygroundFragment" />
     </fragment>
 
     <fragment
@@ -838,6 +863,11 @@
         android:id="@+id/internalSqlitePlaygroundFragment"
         android:name="org.thoughtcrime.securesms.components.settings.app.internal.sqlite.InternalSqlitePlaygroundFragment"
         android:label="internal_sqlite_playground_fragment" />
+
+    <fragment
+        android:id="@+id/dataSeedingPlaygroundFragment"
+        android:name="org.thoughtcrime.securesms.components.settings.app.internal.dataseeding.DataSeedingPlaygroundFragment"
+        android:label="data_seeding_playground_fragment" />
 
     <!-- endregion -->
 
@@ -959,8 +989,7 @@
 
     <fragment
         android:id="@+id/addAllowedMembersFragment"
-        android:name="org.thoughtcrime.securesms.components.settings.app.notifications.profiles.AddAllowedMembersFragment"
-        tools:layout="@layout/fragment_add_allowed_members">
+        android:name="org.thoughtcrime.securesms.components.settings.app.notifications.profiles.AddAllowedMembersFragment">
 
         <argument
             android:name="profileId"
@@ -1135,7 +1164,13 @@
 
     <fragment
         android:id="@+id/backupKeyDisplayFragment"
-        android:name="org.thoughtcrime.securesms.components.settings.app.backups.remote.BackupKeyDisplayFragment" />
+        android:name="org.thoughtcrime.securesms.components.settings.app.backups.remote.BackupKeyDisplayFragment">
+
+        <argument
+            android:name="start_with_key_rotation"
+            app:argType="boolean"
+            android:defaultValue="false" />
+    </fragment>
 
     <include app:graph="@navigation/username_link_settings" />
     <include app:graph="@navigation/story_privacy_settings" />

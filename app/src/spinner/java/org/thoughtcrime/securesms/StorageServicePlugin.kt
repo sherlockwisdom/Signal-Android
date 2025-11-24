@@ -11,7 +11,7 @@ class StorageServicePlugin : Plugin {
   override val name: String = "Storage"
   override val path: String = PATH
 
-  override fun get(): PluginResult {
+  override fun get(parameters: Map<String, List<String>>): PluginResult {
     val columns = listOf("Type", "Id", "Data")
     val rows = mutableListOf<List<String>>()
 
@@ -49,6 +49,12 @@ class StorageServicePlugin : Plugin {
       } else if (record.proto.callLink != null) {
         row += "Call Link"
         row += record.proto.callLink.toString()
+      } else if (record.proto.chatFolder != null) {
+        row += "Chat Folder"
+        row += record.proto.chatFolder.toString()
+      } else if (record.proto.notificationProfile != null) {
+        row += "Notification Profile"
+        row += record.proto.notificationProfile.toString()
       } else {
         row += "Unknown"
         row += ""

@@ -13,8 +13,10 @@ import org.thoughtcrime.securesms.database.model.databaseprotos.GV2UpdateDescrip
 import org.thoughtcrime.securesms.database.model.databaseprotos.GiftBadge
 import org.thoughtcrime.securesms.database.model.databaseprotos.MessageExtras
 import org.thoughtcrime.securesms.linkpreview.LinkPreview
+import org.thoughtcrime.securesms.polls.Poll
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.sms.GroupV2UpdateMessageUtil
+import kotlin.time.Duration.Companion.seconds
 
 /**
  * Represents all the data needed for an outgoing message.
@@ -55,7 +57,11 @@ data class OutgoingMessage(
   val messageToEdit: Long = 0,
   val isReportSpam: Boolean = false,
   val isMessageRequestAccept: Boolean = false,
-  val messageExtras: MessageExtras? = null
+  val isBlocked: Boolean = false,
+  val isUnblocked: Boolean = false,
+  val poll: Poll? = null,
+  val messageExtras: MessageExtras? = null,
+  val isSelfGroupAdd: Boolean = false
 ) {
 
   val isV2Group: Boolean = messageGroupContext != null && GroupV2UpdateMessageUtil.isGroupV2(messageGroupContext)
@@ -235,7 +241,7 @@ data class OutgoingMessage(
      * Helper for creating a group update message when a state change occurs and needs to be sent to others.
      */
     @JvmStatic
-    fun groupUpdateMessage(threadRecipient: Recipient, update: GV2UpdateDescription, sentTimeMillis: Long): OutgoingMessage {
+    fun groupUpdateMessage(threadRecipient: Recipient, update: GV2UpdateDescription, sentTimeMillis: Long, isSelfGroupAdd: Boolean): OutgoingMessage {
       val messageExtras = MessageExtras(gv2UpdateDescription = update)
       val groupContext = MessageGroupContext(update.gv2ChangeDescription!!)
 
@@ -246,7 +252,8 @@ data class OutgoingMessage(
         isGroup = true,
         isGroupUpdate = true,
         isSecure = true,
-        messageExtras = messageExtras
+        messageExtras = messageExtras,
+        isSelfGroupAdd = isSelfGroupAdd
       )
     }
 
@@ -431,6 +438,81 @@ data class OutgoingMessage(
         expiresIn = expiresIn,
         isMessageRequestAccept = true,
         isUrgent = false,
+        isSecure = true
+      )
+    }
+
+    /**
+     * Message for when you block someone
+     */
+    @JvmStatic
+    fun blockedMessage(threadRecipient: Recipient, sentTimeMillis: Long, expiresIn: Long): OutgoingMessage {
+      return OutgoingMessage(
+        threadRecipient = threadRecipient,
+        sentTimeMillis = sentTimeMillis,
+        expiresIn = expiresIn,
+        isGroup = threadRecipient.isPushV2Group,
+        isBlocked = true,
+        isUrgent = false,
+        isSecure = true
+      )
+    }
+
+    /**
+     * Message for when you unblock someone
+     */
+    @JvmStatic
+    fun unblockedMessage(threadRecipient: Recipient, sentTimeMillis: Long, expiresIn: Long): OutgoingMessage {
+      return OutgoingMessage(
+        threadRecipient = threadRecipient,
+        sentTimeMillis = sentTimeMillis,
+        expiresIn = expiresIn,
+        isGroup = threadRecipient.isPushV2Group,
+        isUnblocked = true,
+        isUrgent = false,
+        isSecure = true
+      )
+    }
+
+    @JvmStatic
+    fun pollMessage(threadRecipient: Recipient, sentTimeMillis: Long, expiresIn: Long, poll: Poll, question: String = ""): OutgoingMessage {
+      return OutgoingMessage(
+        threadRecipient = threadRecipient,
+        sentTimeMillis = sentTimeMillis,
+        expiresIn = expiresIn,
+        poll = poll,
+        body = question,
+        isUrgent = true,
+        isSecure = true
+      )
+    }
+
+    @JvmStatic
+    fun pollTerminateMessage(threadRecipient: Recipient, sentTimeMillis: Long, expiresIn: Long, messageExtras: MessageExtras): OutgoingMessage {
+      return OutgoingMessage(
+        threadRecipient = threadRecipient,
+        sentTimeMillis = sentTimeMillis,
+        expiresIn = expiresIn,
+        messageExtras = messageExtras,
+        isUrgent = true,
+        isSecure = true
+      )
+    }
+
+    @JvmStatic
+    fun quickReply(
+      threadRecipient: Recipient,
+      slideDeck: SlideDeck?,
+      body: String,
+      parentStoryId: ParentStoryId?
+    ): OutgoingMessage {
+      return OutgoingMessage(
+        threadRecipient = threadRecipient,
+        sentTimeMillis = System.currentTimeMillis(),
+        expiresIn = threadRecipient.expiresInSeconds.seconds.inWholeMilliseconds,
+        attachments = slideDeck?.asAttachments() ?: emptyList(),
+        body = body,
+        parentStoryId = parentStoryId,
         isSecure = true
       )
     }

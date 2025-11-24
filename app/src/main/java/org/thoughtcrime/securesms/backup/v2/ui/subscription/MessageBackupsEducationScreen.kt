@@ -22,16 +22,20 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.dimensionResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.signal.core.ui.Buttons
-import org.signal.core.ui.Previews
-import org.signal.core.ui.Scaffolds
+import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.DayNightPreviews
+import org.signal.core.ui.compose.Previews
+import org.signal.core.ui.compose.Scaffolds
 import org.thoughtcrime.securesms.R
+import org.thoughtcrime.securesms.components.compose.BetaHeader
+import org.thoughtcrime.securesms.components.compose.TextWithBetaLabel
 import org.signal.core.ui.R as CoreUiR
 
 /**
@@ -46,7 +50,8 @@ fun MessageBackupsEducationScreen(
 ) {
   Scaffolds.Settings(
     onNavigationClick = onNavigationClick,
-    navigationIconPainter = painterResource(id = R.drawable.symbol_x_24),
+    navigationContentDescription = stringResource(android.R.string.cancel),
+    navigationIcon = ImageVector.vectorResource(id = R.drawable.symbol_x_24),
     title = ""
   ) {
     Column(
@@ -62,6 +67,10 @@ fun MessageBackupsEducationScreen(
           .weight(1f)
       ) {
         item {
+          BetaHeader()
+        }
+
+        item {
           Image(
             painter = painterResource(id = R.drawable.image_signal_backups),
             contentDescription = null,
@@ -72,9 +81,9 @@ fun MessageBackupsEducationScreen(
         }
 
         item {
-          Text(
+          TextWithBetaLabel(
             text = stringResource(id = R.string.RemoteBackupsSettingsFragment__signal_backups),
-            style = MaterialTheme.typography.headlineMedium,
+            textStyle = MaterialTheme.typography.headlineMedium,
             modifier = Modifier.padding(top = 15.dp)
           )
         }
@@ -112,7 +121,7 @@ fun MessageBackupsEducationScreen(
         }
       }
 
-      Buttons.LargePrimary(
+      Buttons.LargeTonal(
         onClick = onEnableBackups,
         modifier = Modifier.fillMaxWidth()
       ) {
@@ -135,7 +144,7 @@ fun MessageBackupsEducationScreen(
   }
 }
 
-@Preview
+@DayNightPreviews
 @Composable
 private fun MessageBackupsEducationSheetPreview() {
   Previews.Preview {
@@ -147,7 +156,7 @@ private fun MessageBackupsEducationSheetPreview() {
   }
 }
 
-@Preview
+@DayNightPreviews
 @Composable
 private fun NotableFeatureRowPreview() {
   Previews.Preview {

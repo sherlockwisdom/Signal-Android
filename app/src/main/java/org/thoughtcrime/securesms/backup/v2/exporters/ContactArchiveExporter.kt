@@ -17,6 +17,10 @@ import org.signal.core.util.requireString
 import org.thoughtcrime.securesms.backup.v2.ArchiveRecipient
 import org.thoughtcrime.securesms.backup.v2.proto.Contact
 import org.thoughtcrime.securesms.backup.v2.proto.Self
+import org.thoughtcrime.securesms.backup.v2.util.clampToValidBackupRange
+import org.thoughtcrime.securesms.backup.v2.util.isValidUsername
+import org.thoughtcrime.securesms.backup.v2.util.toRemote
+import org.thoughtcrime.securesms.conversation.colors.AvatarColor
 import org.thoughtcrime.securesms.database.IdentityTable
 import org.thoughtcrime.securesms.database.RecipientTable
 import org.thoughtcrime.securesms.database.RecipientTableCursorUtil
@@ -48,7 +52,9 @@ class ContactArchiveExporter(private val cursor: Cursor, private val selfId: Lon
     if (id == selfId) {
       return ArchiveRecipient(
         id = id,
-        self = Self()
+        self = Self(
+          avatarColor = cursor.requireString(RecipientTable.AVATAR_COLOR)?.let { AvatarColor.deserialize(it) }?.toRemote()
+        )
       )
     }
 
@@ -64,7 +70,7 @@ class ContactArchiveExporter(private val cursor: Cursor, private val selfId: Lon
     val contactBuilder = Contact.Builder()
       .aci(aci?.rawUuid?.toByteArray()?.toByteString())
       .pni(pni?.rawUuid?.toByteArray()?.toByteString())
-      .username(cursor.requireString(RecipientTable.USERNAME))
+      .username(cursor.requireString(RecipientTable.USERNAME)?.takeIf { it.isValidUsername() })
       .e164(cursor.requireString(RecipientTable.E164)?.e164ToLong())
       .blocked(cursor.requireBoolean(RecipientTable.BLOCKED))
       .visibility(Recipient.HiddenState.deserialize(cursor.requireInt(RecipientTable.HIDDEN)).toRemote())
@@ -75,12 +81,18 @@ class ContactArchiveExporter(private val cursor: Cursor, private val selfId: Lon
       .hideStory(RecipientTableCursorUtil.getExtras(cursor)?.hideStory() ?: false)
       .identityKey(cursor.requireString(IdentityTable.IDENTITY_KEY)?.let { Base64.decode(it).toByteString() })
       .identityState(cursor.optionalInt(IdentityTable.VERIFIED).map { IdentityTable.VerifiedStatus.forState(it) }.orElse(IdentityTable.VerifiedStatus.DEFAULT).toRemote())
+      .note(cursor.requireString(RecipientTable.NOTE) ?: "")
+      .nickname(cursor.readNickname())
+      .systemGivenName(cursor.requireString(RecipientTable.SYSTEM_GIVEN_NAME) ?: "")
+      .systemFamilyName(cursor.requireString(RecipientTable.SYSTEM_FAMILY_NAME) ?: "")
+      .systemNickname(cursor.requireString(RecipientTable.SYSTEM_NICKNAME) ?: "")
+      .avatarColor(cursor.requireString(RecipientTable.AVATAR_COLOR)?.let { AvatarColor.deserialize(it) }?.toRemote())
 
     val registeredState = RecipientTable.RegisteredState.fromId(cursor.requireInt(RecipientTable.REGISTERED))
     if (registeredState == RecipientTable.RegisteredState.REGISTERED) {
       contactBuilder.registered = Contact.Registered()
     } else {
-      contactBuilder.notRegistered = Contact.NotRegistered(unregisteredTimestamp = cursor.requireLong(RecipientTable.UNREGISTERED_TIMESTAMP))
+      contactBuilder.notRegistered = Contact.NotRegistered(unregisteredTimestamp = cursor.requireLong(RecipientTable.UNREGISTERED_TIMESTAMP).clampToValidBackupRange())
     }
 
     return ArchiveRecipient(
@@ -92,6 +104,20 @@ class ContactArchiveExporter(private val cursor: Cursor, private val selfId: Lon
   override fun close() {
     cursor.close()
   }
+}
+
+private fun Cursor.readNickname(): Contact.Name? {
+  val given = this.requireString(RecipientTable.NICKNAME_GIVEN_NAME)
+  val family = this.requireString(RecipientTable.NICKNAME_FAMILY_NAME)
+
+  if (given.isNullOrEmpty()) {
+    return null
+  }
+
+  return Contact.Name(
+    given = given,
+    family = family ?: ""
+  )
 }
 
 private fun Recipient.HiddenState.toRemote(): Contact.Visibility {
@@ -117,5 +143,5 @@ private fun String.e164ToLong(): Long? {
     this
   }
 
-  return fixed.toLongOrNull()
+  return fixed.toLongOrNull()?.takeUnless { it == 0L }
 }

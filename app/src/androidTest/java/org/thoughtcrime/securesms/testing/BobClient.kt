@@ -7,8 +7,10 @@ import org.signal.libsignal.protocol.IdentityKeyPair
 import org.signal.libsignal.protocol.SessionBuilder
 import org.signal.libsignal.protocol.SignalProtocolAddress
 import org.signal.libsignal.protocol.ecc.ECKeyPair
+import org.signal.libsignal.protocol.ecc.ECPublicKey
 import org.signal.libsignal.protocol.groups.state.SenderKeyRecord
 import org.signal.libsignal.protocol.state.IdentityKeyStore
+import org.signal.libsignal.protocol.state.IdentityKeyStore.IdentityChange
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord
 import org.signal.libsignal.protocol.state.PreKeyBundle
 import org.signal.libsignal.protocol.state.PreKeyRecord
@@ -18,6 +20,7 @@ import org.signal.libsignal.protocol.util.KeyHelper
 import org.signal.libsignal.zkgroup.profiles.ProfileKey
 import org.thoughtcrime.securesms.crypto.ProfileKeyUtil
 import org.thoughtcrime.securesms.crypto.SealedSenderAccessUtil
+import org.thoughtcrime.securesms.database.KyberPreKeyTable
 import org.thoughtcrime.securesms.database.OneTimePreKeyTable
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.SignedPreKeyTable
@@ -101,6 +104,15 @@ class BobClient(val serviceId: ServiceId, val e164: String, val identityKeyPair:
 
     val selfSignedPreKeyRecord = SignalDatabase.signedPreKeys.get(getAliceServiceId(), selfSignedPreKeyId)!!
 
+    val selfSignedKyberPreKeyId = SignalDatabase.rawDatabase
+      .select(KyberPreKeyTable.KEY_ID)
+      .from(KyberPreKeyTable.TABLE_NAME)
+      .where("${KyberPreKeyTable.ACCOUNT_ID} = ?", getAliceServiceId().toString())
+      .run()
+      .readToSingleInt(-1)
+
+    val selfSignedKyberPreKeyRecord = SignalDatabase.kyberPreKeys.get(getAliceServiceId(), selfSignedKyberPreKeyId)!!.record
+
     return PreKeyBundle(
       SignalStore.account.registrationId,
       1,
@@ -109,7 +121,10 @@ class BobClient(val serviceId: ServiceId, val e164: String, val identityKeyPair:
       selfSignedPreKeyId,
       selfSignedPreKeyRecord.keyPair.publicKey,
       selfSignedPreKeyRecord.signature,
-      getAlicePublicKey()
+      getAlicePublicKey(),
+      selfSignedKyberPreKeyId,
+      selfSignedKyberPreKeyRecord.keyPair.publicKey,
+      selfSignedKyberPreKeyRecord.signature
     )
   }
 
@@ -137,7 +152,7 @@ class BobClient(val serviceId: ServiceId, val e164: String, val identityKeyPair:
     override fun getLocalRegistrationId(): Int = registrationId
     override fun isTrustedIdentity(address: SignalProtocolAddress?, identityKey: IdentityKey?, direction: IdentityKeyStore.Direction?): Boolean = true
     override fun loadSession(address: SignalProtocolAddress?): SessionRecord = aliceSessionRecord ?: SessionRecord()
-    override fun saveIdentity(address: SignalProtocolAddress?, identityKey: IdentityKey?): Boolean = false
+    override fun saveIdentity(address: SignalProtocolAddress?, identityKey: IdentityKey?): IdentityKeyStore.IdentityChange = IdentityChange.NEW_OR_UNCHANGED
     override fun storeSession(address: SignalProtocolAddress?, record: SessionRecord?) {
       aliceSessionRecord = record
     }
@@ -160,7 +175,7 @@ class BobClient(val serviceId: ServiceId, val e164: String, val identityKeyPair:
     override fun loadKyberPreKeys(): MutableList<KyberPreKeyRecord> = throw UnsupportedOperationException()
     override fun storeKyberPreKey(kyberPreKeyId: Int, record: KyberPreKeyRecord?) = throw UnsupportedOperationException()
     override fun containsKyberPreKey(kyberPreKeyId: Int): Boolean = throw UnsupportedOperationException()
-    override fun markKyberPreKeyUsed(kyberPreKeyId: Int) = throw UnsupportedOperationException()
+    override fun markKyberPreKeyUsed(kyberPreKeyId: Int, signedPreKeyId: Int, baseKey: ECPublicKey) = throw UnsupportedOperationException()
     override fun deleteAllStaleOneTimeEcPreKeys(threshold: Long, minCount: Int) = throw UnsupportedOperationException()
     override fun markAllOneTimeEcPreKeysStaleIfNecessary(staleTime: Long) = throw UnsupportedOperationException()
     override fun storeSenderKey(sender: SignalProtocolAddress?, distributionId: UUID?, record: SenderKeyRecord?) = throw UnsupportedOperationException()

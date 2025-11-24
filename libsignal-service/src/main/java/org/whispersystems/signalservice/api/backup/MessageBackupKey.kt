@@ -5,6 +5,7 @@
 
 package org.whispersystems.signalservice.api.backup
 
+import org.signal.libsignal.messagebackup.BackupForwardSecrecyToken
 import org.signal.libsignal.protocol.ecc.ECPrivateKey
 import org.whispersystems.signalservice.api.push.ServiceId.ACI
 import org.signal.libsignal.messagebackup.BackupKey as LibSignalBackupKey
@@ -12,7 +13,7 @@ import org.signal.libsignal.messagebackup.MessageBackupKey as LibSignalMessageBa
 
 /**
  * Safe typing around a backup key, which is a 32-byte array.
- * This key is derived from the master key.
+ * This key is derived from the AEP.
  */
 class MessageBackupKey(override val value: ByteArray) : BackupKey {
   init {
@@ -28,11 +29,13 @@ class MessageBackupKey(override val value: ByteArray) : BackupKey {
 
   /**
    * The cryptographic material used to encrypt a backup.
+   *
+   * @param forwardSecrecyToken Should be present for any backup located on the archive CDN. Absent for other uses (i.e. link+sync).
    */
-  fun deriveBackupSecrets(aci: ACI): BackupKeyMaterial {
+  fun deriveBackupSecrets(aci: ACI, forwardSecrecyToken: BackupForwardSecrecyToken?): BackupKeyMaterial {
     val backupId = deriveBackupId(aci)
     val libsignalBackupKey = LibSignalBackupKey(value)
-    val libsignalMessageMessageBackupKey = LibSignalMessageBackupKey(libsignalBackupKey, backupId.value)
+    val libsignalMessageMessageBackupKey = LibSignalMessageBackupKey(libsignalBackupKey, backupId.value, forwardSecrecyToken)
 
     return BackupKeyMaterial(
       id = backupId,

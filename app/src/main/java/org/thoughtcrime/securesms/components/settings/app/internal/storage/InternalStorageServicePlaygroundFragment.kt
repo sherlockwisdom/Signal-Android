@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,7 +29,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -39,15 +39,16 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
-import org.signal.core.ui.Buttons
-import org.signal.core.ui.Dividers
-import org.signal.core.ui.Previews
-import org.signal.core.ui.Rows
-import org.signal.core.ui.Rows.TextAndLabel
-import org.signal.core.ui.SignalPreview
+import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.DayNightPreviews
+import org.signal.core.ui.compose.Dividers
+import org.signal.core.ui.compose.Previews
+import org.signal.core.ui.compose.Rows
+import org.signal.core.ui.compose.Rows.TextAndLabel
 import org.signal.core.util.Hex
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.components.settings.app.internal.storage.InternalStorageServicePlaygroundViewModel.OneOffEvent
+import org.thoughtcrime.securesms.components.settings.app.internal.storage.InternalStorageServicePlaygroundViewModel.StorageInsights
 import org.thoughtcrime.securesms.compose.ComposeFragment
 import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.jobs.StorageForcePushJob
@@ -70,20 +71,16 @@ class InternalStorageServicePlaygroundFragment : ComposeFragment() {
   override fun FragmentContent() {
     val manifest by viewModel.manifest
     val storageRecords by viewModel.storageRecords
+    val storageInsights by viewModel.storageInsights
     val oneOffEvent by viewModel.oneOffEvents
-    var forceSsreToggled by remember { mutableStateOf(SignalStore.internal.forceSsre2Capability) }
 
     Screen(
-      onBackPressed = { findNavController().popBackStack() },
       manifest = manifest,
       storageRecords = storageRecords,
+      storageInsights = storageInsights,
       oneOffEvent = oneOffEvent,
-      forceSsreCapability = forceSsreToggled,
-      onForceSsreToggled = { checked ->
-        SignalStore.internal.forceSsre2Capability = checked
-        forceSsreToggled = checked
-      },
-      onViewTabSelected = { viewModel.onViewTabSelected() }
+      onViewTabSelected = { viewModel.onViewTabSelected() },
+      onBackPressed = { findNavController().popBackStack() }
     )
   }
 }
@@ -93,9 +90,8 @@ class InternalStorageServicePlaygroundFragment : ComposeFragment() {
 fun Screen(
   manifest: SignalStorageManifest,
   storageRecords: List<SignalStorageRecord>,
-  forceSsreCapability: Boolean,
+  storageInsights: StorageInsights,
   oneOffEvent: OneOffEvent,
-  onForceSsreToggled: (Boolean) -> Unit = {},
   onViewTabSelected: () -> Unit = {},
   onBackPressed: () -> Unit = {}
 ) {
@@ -110,7 +106,7 @@ fun Screen(
           navigationIcon = {
             IconButton(onClick = onBackPressed) {
               Icon(
-                painter = painterResource(R.drawable.symbol_arrow_left_24),
+                painter = painterResource(R.drawable.symbol_arrow_start_24),
                 tint = MaterialTheme.colorScheme.onSurface,
                 contentDescription = null
               )
@@ -136,13 +132,11 @@ fun Screen(
   ) { contentPadding ->
     Surface(modifier = Modifier.padding(contentPadding)) {
       when (tabIndex) {
-        0 -> ToolScreen(
-          forceSsreCapability = forceSsreCapability,
-          onForceSsreToggled = onForceSsreToggled
-        )
+        0 -> ToolScreen()
         1 -> ViewScreen(
           manifest = manifest,
           storageRecords = storageRecords,
+          storageInsights = storageInsights,
           oneOffEvent = oneOffEvent
         )
       }
@@ -151,16 +145,13 @@ fun Screen(
 }
 
 @Composable
-fun ToolScreen(
-  forceSsreCapability: Boolean,
-  onForceSsreToggled: (Boolean) -> Unit = {}
-) {
+fun ToolScreen() {
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
     modifier = Modifier.fillMaxWidth()
   ) {
     ActionRow("Enqueue StorageSyncJob", "Just a normal syncing operation.") {
-      AppDependencies.jobManager.add(StorageSyncJob())
+      AppDependencies.jobManager.add(StorageSyncJob.forLocalChange())
     }
 
     ActionRow("Enqueue StorageForcePushJob", "Forces your local state over the remote.") {
@@ -178,12 +169,6 @@ fun ToolScreen(
     ActionRow("Clear initial master key", "Sets it to null.") {
       SignalStore.svr.masterKeyForInitialDataRestore = null
     }
-
-    Rows.ToggleRow(
-      text = "Force SSRE2 Capability",
-      checked = forceSsreCapability,
-      onCheckChanged = onForceSsreToggled
-    )
   }
 }
 
@@ -191,6 +176,7 @@ fun ToolScreen(
 fun ViewScreen(
   manifest: SignalStorageManifest,
   storageRecords: List<SignalStorageRecord>,
+  storageInsights: StorageInsights,
   oneOffEvent: OneOffEvent
 ) {
   val context = LocalContext.current
@@ -217,6 +203,10 @@ fun ViewScreen(
       ManifestRow(manifest)
       Dividers.Default()
     }
+    item(key = "insights") {
+      InsightsRow(storageInsights)
+      Dividers.Default()
+    }
     storageRecords.forEach { record ->
       item(key = Hex.toStringCondensed(record.id.raw)) {
         StorageRecordRow(record)
@@ -237,9 +227,47 @@ private fun ManifestRow(manifest: SignalStorageManifest) {
 }
 
 @Composable
+private fun InsightsRow(insights: StorageInsights) {
+  Column {
+    ManifestItemRow("Total Manifest Size", insights.totalManifestSize.toUnitString())
+    ManifestItemRow("Total Record Size", insights.totalRecordSize.toUnitString())
+
+    Spacer(Modifier.height(16.dp))
+
+    ManifestItemRow("Total Account Record Size", insights.totalAccountRecordSize.toUnitString())
+    ManifestItemRow("Total Contact Record Size", insights.totalContactSize.toUnitString())
+    ManifestItemRow("Total GroupV1 Record Size", insights.totalGroupV1Size.toUnitString())
+    ManifestItemRow("Total GroupV2 Record Size", insights.totalGroupV2Size.toUnitString())
+    ManifestItemRow("Total Call Link Record Size", insights.totalCallLinkSize.toUnitString())
+    ManifestItemRow("Total Distribution List Record Size", insights.totalDistributionListSize.toUnitString())
+    ManifestItemRow("Total Chat Folder Record Size", insights.totalChatFolderSize.toUnitString())
+    ManifestItemRow("Total Notification Profile Record Size", insights.totalNotificationProfileSize.toUnitString())
+    ManifestItemRow("Total Unknown Record Size", insights.totalUnknownSize.toUnitString())
+
+    Spacer(Modifier.height(16.dp))
+
+    if (listOf(
+        insights.totalContactSize,
+        insights.totalGroupV1Size,
+        insights.totalGroupV2Size,
+        insights.totalAccountRecordSize,
+        insights.totalCallLinkSize,
+        insights.totalDistributionListSize,
+        insights.totalChatFolderSize,
+        insights.totalNotificationProfileSize
+      ).sumOf { it.bytes } != insights.totalRecordSize.bytes
+    ) {
+      Text("Mismatch! Sum of record sizes does not match our total record size!")
+    } else {
+      Text("Everything adds up \uD83D\uDC4D")
+    }
+  }
+}
+
+@Composable
 private fun ManifestItemRow(title: String, value: String) {
   Row(modifier = Modifier.fillMaxWidth()) {
-    Text(title + ":", fontWeight = FontWeight.Bold)
+    Text("$title:", fontWeight = FontWeight.Bold)
     Spacer(Modifier.width(6.dp))
     Text(value)
   }
@@ -285,6 +313,18 @@ private fun StorageRecordRow(record: SignalStorageRecord) {
           ManifestItemRow("ID", Hex.toStringCondensed(record.id.raw))
         }
       }
+      record.proto.chatFolder != null -> {
+        Column {
+          Text("Chat Folder", fontWeight = FontWeight.Bold)
+          ManifestItemRow("ID", Hex.toStringCondensed(record.id.raw))
+        }
+      }
+      record.proto.notificationProfile != null -> {
+        Column {
+          Text("Notification Profile", fontWeight = FontWeight.Bold)
+          ManifestItemRow("ID", Hex.toStringCondensed(record.id.raw))
+        }
+      }
       else -> {
         Column {
           Text("Unknown!")
@@ -315,20 +355,20 @@ private fun RunButton(onClick: () -> Unit) {
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 fun ScreenPreview() {
   Previews.Preview {
     Screen(
-      forceSsreCapability = true,
       manifest = SignalStorageManifest.EMPTY,
       storageRecords = emptyList(),
+      storageInsights = StorageInsights(),
       oneOffEvent = OneOffEvent.None
     )
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 fun ViewScreenPreview() {
   val storageRecords = listOf(
@@ -355,6 +395,7 @@ fun ViewScreenPreview() {
         storageIds = storageRecords.map { it.id }
       ),
       storageRecords = storageRecords,
+      storageInsights = StorageInsights(),
       oneOffEvent = OneOffEvent.None
     )
   }

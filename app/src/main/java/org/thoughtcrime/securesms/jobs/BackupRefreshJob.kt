@@ -11,7 +11,6 @@ import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.jobmanager.Job
 import org.thoughtcrime.securesms.jobmanager.impl.NetworkConstraint
 import org.thoughtcrime.securesms.keyvalue.SignalStore
-import org.thoughtcrime.securesms.util.RemoteConfig
 import org.whispersystems.signalservice.api.NetworkResult
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
@@ -27,7 +26,7 @@ class BackupRefreshJob private constructor(
     private val TAG = Log.tag(BackupRefreshJob::class)
     const val KEY = "BackupRefreshJob"
 
-    private val TIME_BETWEEN_CHECKINS = 3.days
+    private val TIME_BETWEEN_CHECKINS = 1.days
 
     @JvmStatic
     fun enqueueIfNecessary() {
@@ -44,22 +43,19 @@ class BackupRefreshJob private constructor(
             parameters = Parameters.Builder()
               .addConstraint(NetworkConstraint.KEY)
               .setMaxAttempts(Parameters.UNLIMITED)
-              .setLifespan(3.days.inWholeMilliseconds)
+              .setLifespan(1.days.inWholeMilliseconds)
               .setMaxInstancesForFactory(1)
               .build()
           )
         )
+      } else {
+        Log.i(TAG, "Do not need to refresh backups. Last refresh: ${lastCheckIn.inWholeMilliseconds}")
       }
     }
 
     private fun canExecuteJob(): Boolean {
       if (!SignalStore.account.isRegistered) {
         Log.i(TAG, "Account not registered. Exiting.")
-        return false
-      }
-
-      if (!RemoteConfig.messageBackups) {
-        Log.i(TAG, "Backups are not enabled in remote config. Exiting.")
         return false
       }
 

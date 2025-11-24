@@ -5,106 +5,43 @@
 
 package org.thoughtcrime.securesms.components.settings.app.backups.remote
 
-import org.signal.core.util.money.FiatMoney
-import org.thoughtcrime.securesms.backup.v2.BackupFrequency
-import org.thoughtcrime.securesms.backup.v2.ui.subscription.MessageBackupsType
-import kotlin.time.Duration
-import kotlin.time.Duration.Companion.seconds
+import org.signal.core.util.ByteSize
+import org.thoughtcrime.securesms.backup.v2.MessageBackupTier
+import org.thoughtcrime.securesms.components.settings.app.backups.BackupState
+import org.thoughtcrime.securesms.keyvalue.BackupValues
 
+/**
+ * @param includeDebuglog The state for whether or not we should include a debuglog in the backup. If `null`, hide the setting.
+ */
 data class RemoteBackupsSettingsState(
+  val tier: MessageBackupTier? = null,
   val backupsEnabled: Boolean,
+  val canViewBackupKey: Boolean = false,
   val canBackUpUsingCellular: Boolean = false,
   val canRestoreUsingCellular: Boolean = false,
-  val backupState: BackupState = BackupState.Loading,
-  val backupSize: Long = 0,
-  val backupsFrequency: BackupFrequency = BackupFrequency.DAILY,
+  val hasRedemptionError: Boolean = false,
+  val isOutOfStorageSpace: Boolean = false,
+  val isPaidTierPricingAvailable: Boolean = false,
+  val totalAllowedStorageSpace: String = "",
+  val backupState: BackupState,
+  val backupMediaSize: Long = -1L,
   val lastBackupTimestamp: Long = 0,
   val dialog: Dialog = Dialog.NONE,
-  val snackbar: Snackbar = Snackbar.NONE
+  val snackbar: Snackbar = Snackbar.NONE,
+  val includeDebuglog: Boolean? = null,
+  val canBackupMessagesJobRun: Boolean = false,
+  val backupMediaDetails: BackupMediaDetails? = null,
+  val backupCreationError: BackupValues.BackupCreationError? = null,
+  val lastMessageCutoffTime: Long = 0,
+  val freeTierMediaRetentionDays: Int = -1,
+  val isGooglePlayServicesAvailable: Boolean = false
 ) {
 
-  /**
-   * Describes the state of the user's selected backup tier.
-   */
-  sealed interface BackupState {
-
-    /**
-     * User has no active backup tier, no tier history
-     */
-    data object None : BackupState
-
-    /**
-     * The exact backup state is being loaded from the network.
-     */
-    data object Loading : BackupState
-
-    /**
-     * User has a paid backup subscription pending redemption
-     */
-    data class Pending(
-      val price: FiatMoney
-    ) : BackupState
-
-    /**
-     * A backup state with a type and renewal time
-     */
-    sealed interface WithTypeAndRenewalTime : BackupState {
-      val messageBackupsType: MessageBackupsType
-      val renewalTime: Duration
-
-      fun isActive(): Boolean = false
-    }
-
-    /**
-     * User has an active paid backup. Pricing comes from the subscription object.
-     */
-    data class ActivePaid(
-      override val messageBackupsType: MessageBackupsType.Paid,
-      val price: FiatMoney,
-      override val renewalTime: Duration
-    ) : WithTypeAndRenewalTime {
-      override fun isActive(): Boolean = true
-    }
-
-    /**
-     * User has an active free backup.
-     */
-    data class ActiveFree(
-      override val messageBackupsType: MessageBackupsType.Free,
-      override val renewalTime: Duration = 0.seconds
-    ) : WithTypeAndRenewalTime {
-      override fun isActive(): Boolean = true
-    }
-
-    /**
-     * User has an inactive backup
-     */
-    data class Inactive(
-      override val messageBackupsType: MessageBackupsType,
-      override val renewalTime: Duration = 0.seconds
-    ) : WithTypeAndRenewalTime
-
-    /**
-     * User has a canceled paid tier backup
-     */
-    data class Canceled(
-      override val messageBackupsType: MessageBackupsType,
-      override val renewalTime: Duration
-    ) : WithTypeAndRenewalTime
-
-    /**
-     * Subscription mismatch detected.
-     */
-    data class SubscriptionMismatchMissingGooglePlay(
-      override val messageBackupsType: MessageBackupsType,
-      override val renewalTime: Duration
-    ) : WithTypeAndRenewalTime
-
-    /**
-     * An error occurred retrieving the network state
-     */
-    data object Error : BackupState
-  }
+  data class BackupMediaDetails(
+    val awaitingRestore: ByteSize,
+    val offloaded: ByteSize,
+    val protoFileSize: ByteSize
+  )
 
   enum class Dialog {
     NONE,
@@ -114,7 +51,11 @@ data class RemoteBackupsSettingsState(
     DOWNLOADING_YOUR_BACKUP,
     TURN_OFF_FAILED,
     SUBSCRIPTION_NOT_FOUND,
-    SKIP_MEDIA_RESTORE_PROTECTION
+    SKIP_MEDIA_RESTORE_PROTECTION,
+    CANCEL_MEDIA_RESTORE_PROTECTION,
+    RESTORE_OVER_CELLULAR_PROTECTION,
+    FREE_TIER_MEDIA_EXPLAINER,
+    KEY_ROTATION_LIMIT_REACHED
   }
 
   enum class Snackbar {
@@ -123,6 +64,7 @@ data class RemoteBackupsSettingsState(
     BACKUP_TYPE_CHANGED_AND_SUBSCRIPTION_CANCELLED,
     SUBSCRIPTION_CANCELLED,
     DOWNLOAD_COMPLETE,
-    BACKUP_WILL_BE_CREATED_OVERNIGHT
+    BACKUP_WILL_BE_CREATED_OVERNIGHT,
+    AEP_KEY_ROTATED
   }
 }

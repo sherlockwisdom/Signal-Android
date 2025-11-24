@@ -44,6 +44,7 @@ import org.thoughtcrime.securesms.database.model.InAppPaymentSubscriberRecord
 import org.thoughtcrime.securesms.database.model.databaseprotos.InAppPaymentData
 import org.thoughtcrime.securesms.database.model.databaseprotos.PendingOneTimeDonation
 import org.thoughtcrime.securesms.dependencies.AppDependencies
+import org.thoughtcrime.securesms.jobmanager.Job
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.storage.StorageSyncHelper
@@ -73,6 +74,73 @@ object InAppPaymentsRepository {
   private val backupExpirationDeletion = 60.days
 
   private val temporaryErrorProcessor = PublishProcessor.create<Pair<InAppPaymentTable.InAppPaymentId, Throwable>>()
+
+  /**
+   * Updates the latest payment object for the given subscription with cancelation information as necessary.
+   *
+   * This operation will only be performed if we find a latest payment for the given subscriber id in the END state without cancelation data
+   */
+  fun updateBackupInAppPaymentWithCancelation(activeSubscription: ActiveSubscription) {
+    if (activeSubscription.isCanceled || activeSubscription.willCancelAtPeriodEnd()) {
+      val subscriber = getSubscriber(InAppPaymentSubscriberRecord.Type.BACKUP) ?: return
+      val latestPayment = SignalDatabase.inAppPayments.getLatestBySubscriberId(subscriber.subscriberId) ?: return
+      if (latestPayment.state == InAppPaymentTable.State.END && latestPayment.data.cancellation == null) {
+        synchronized(subscriber.type.lock) {
+          val payment = SignalDatabase.inAppPayments.getLatestBySubscriberId(subscriber.subscriberId) ?: return
+          val chargeFailure: ActiveSubscription.ChargeFailure? = activeSubscription.chargeFailure
+
+          Log.i(TAG, "Recording cancelation in the database. (has charge failure? ${chargeFailure != null})")
+          SignalDatabase.inAppPayments.update(
+            payment.copy(
+              data = payment.data.newBuilder()
+                .cancellation(
+                  InAppPaymentData.Cancellation(
+                    reason = if (chargeFailure != null) InAppPaymentData.Cancellation.Reason.PAST_DUE else InAppPaymentData.Cancellation.Reason.CANCELED,
+                    chargeFailure = chargeFailure?.let {
+                      InAppPaymentData.ChargeFailure(
+                        code = it.code,
+                        message = it.message,
+                        outcomeType = it.outcomeType,
+                        outcomeNetworkReason = it.outcomeNetworkReason ?: "",
+                        outcomeNetworkStatus = it.outcomeNetworkStatus
+                      )
+                    }
+                  )
+                )
+                .build()
+            )
+          )
+        }
+      }
+    }
+  }
+
+  /**
+   * Updates the latest payment object clearing cancelation information as necessary.
+   *
+   * This operation will only be performed if we find a latest payment for the given subscriber id in the END state with cancelation data
+   */
+  fun clearCancelation(activeSubscription: ActiveSubscription) {
+    if (!activeSubscription.isCanceled && !activeSubscription.willCancelAtPeriodEnd()) {
+      val subscriber = getSubscriber(InAppPaymentSubscriberRecord.Type.BACKUP) ?: return
+
+      val latestPayment = SignalDatabase.inAppPayments.getLatestBySubscriberId(subscriber.subscriberId) ?: return
+      if (latestPayment.data.cancellation != null && latestPayment.state == InAppPaymentTable.State.END) {
+        synchronized(subscriber.type.lock) {
+          val payment = SignalDatabase.inAppPayments.getLatestBySubscriberId(subscriber.subscriberId) ?: return
+
+          Log.i(TAG, "Clearing cancelation in the database.")
+          SignalDatabase.inAppPayments.update(
+            payment.copy(
+              data = payment.data.newBuilder()
+                .cancellation(null)
+                .build()
+            )
+          )
+        }
+      }
+    }
+  }
 
   /**
    * Wraps an in-app-payment update in a completable.
@@ -112,12 +180,15 @@ object InAppPaymentsRepository {
    * Common logic for handling errors coming from the Rx chains that handle payments. These errors
    * are analyzed and then either written to the database or dispatched to the temporary error processor.
    */
+  @WorkerThread
   fun handlePipelineError(
     inAppPaymentId: InAppPaymentTable.InAppPaymentId,
-    donationErrorSource: DonationErrorSource,
-    paymentSourceType: PaymentSourceType,
     error: Throwable
   ) {
+    val inAppPayment = SignalDatabase.inAppPayments.getById(inAppPaymentId)!!
+    val donationErrorSource = inAppPayment.type.toErrorSource()
+    val paymentSourceType = inAppPayment.data.paymentMethodType.toPaymentSourceType()
+
     if (error is InAppPaymentError) {
       setErrorIfNotPresent(inAppPaymentId, error.inAppPaymentDataError)
       return
@@ -132,7 +203,7 @@ object InAppPaymentsRepository {
     val inAppPaymentError = InAppPaymentError.fromDonationError(donationError)?.inAppPaymentDataError
     if (inAppPaymentError != null) {
       Log.w(TAG, "Detected a terminal error.")
-      setErrorIfNotPresent(inAppPaymentId, inAppPaymentError).subscribe()
+      setErrorIfNotPresent(inAppPaymentId, inAppPaymentError)
     } else {
       Log.w(TAG, "Detected a temporary error.")
       temporaryErrorProcessor.onNext(inAppPaymentId to donationError)
@@ -150,20 +221,19 @@ object InAppPaymentsRepository {
   /**
    * Writes the given error to the database, if and only if there is not already an error set.
    */
-  private fun setErrorIfNotPresent(inAppPaymentId: InAppPaymentTable.InAppPaymentId, error: InAppPaymentData.Error?): Completable {
-    return Completable.fromAction {
-      val inAppPayment = SignalDatabase.inAppPayments.getById(inAppPaymentId)!!
-      if (inAppPayment.data.error == null) {
-        Log.d(TAG, "Setting error on InAppPayment[$inAppPaymentId]")
-        SignalDatabase.inAppPayments.update(
-          inAppPayment.copy(
-            notified = false,
-            state = InAppPaymentTable.State.END,
-            data = inAppPayment.data.copy(error = error)
-          )
+  @WorkerThread
+  private fun setErrorIfNotPresent(inAppPaymentId: InAppPaymentTable.InAppPaymentId, error: InAppPaymentData.Error?) {
+    val inAppPayment = SignalDatabase.inAppPayments.getById(inAppPaymentId)!!
+    if (inAppPayment.data.error == null) {
+      Log.d(TAG, "Setting error on InAppPayment[$inAppPaymentId]")
+      SignalDatabase.inAppPayments.update(
+        inAppPayment.copy(
+          notified = false,
+          state = InAppPaymentTable.State.END,
+          data = inAppPayment.data.copy(error = error)
         )
-      }
-    }.subscribeOn(Schedulers.io())
+      )
+    }
   }
 
   /**
@@ -221,10 +291,14 @@ object InAppPaymentsRepository {
    * Returns a duration to utilize for jobs tied to different payment methods. For long running bank transfers, we need to
    * allow extra time for completion.
    */
-  fun resolveContextJobLifespan(inAppPayment: InAppPaymentTable.InAppPayment): Duration {
-    return when (inAppPayment.data.paymentMethodType) {
-      InAppPaymentData.PaymentMethodType.SEPA_DEBIT, InAppPaymentData.PaymentMethodType.IDEAL -> 30.days
-      else -> 1.days
+  fun resolveContextJobLifespanMillis(inAppPayment: InAppPaymentTable.InAppPayment): Long {
+    return if (inAppPayment.type == InAppPaymentType.RECURRING_BACKUP) {
+      Job.Parameters.IMMORTAL
+    } else {
+      when (inAppPayment.data.paymentMethodType) {
+        InAppPaymentData.PaymentMethodType.SEPA_DEBIT, InAppPaymentData.PaymentMethodType.IDEAL -> 30.days.inWholeMilliseconds
+        else -> 1.days.inWholeMilliseconds
+      }
     }
   }
 
@@ -450,14 +524,10 @@ object InAppPaymentsRepository {
   @Suppress("DEPRECATION")
   @SuppressLint("DiscouragedApi")
   @WorkerThread
-  fun getSubscriber(currency: Currency, type: InAppPaymentSubscriberRecord.Type): InAppPaymentSubscriberRecord? {
-    val subscriber = SignalDatabase.inAppPaymentSubscribers.getByCurrencyCode(currency.currencyCode, type)
+  fun getRecurringDonationSubscriber(currency: Currency): InAppPaymentSubscriberRecord? {
+    val subscriber = SignalDatabase.inAppPaymentSubscribers.getByCurrencyCode(currency.currencyCode)
 
-    return if (subscriber == null && type == InAppPaymentSubscriberRecord.Type.DONATION) {
-      SignalStore.inAppPayments.getSubscriber(currency)
-    } else {
-      subscriber
-    }
+    return subscriber ?: SignalStore.inAppPayments.getSubscriber(currency)
   }
 
   /**
@@ -466,10 +536,14 @@ object InAppPaymentsRepository {
   @JvmStatic
   @WorkerThread
   fun getSubscriber(type: InAppPaymentSubscriberRecord.Type): InAppPaymentSubscriberRecord? {
-    val currency = SignalStore.inAppPayments.getSubscriptionCurrency(type)
+    if (type == InAppPaymentSubscriberRecord.Type.BACKUP) {
+      return SignalDatabase.inAppPaymentSubscribers.getBackupsSubscriber()
+    }
+
+    val currency = SignalStore.inAppPayments.getRecurringDonationCurrency()
     Log.d(TAG, "Attempting to retrieve subscriber of type $type for ${currency.currencyCode}")
 
-    return getSubscriber(currency, type)
+    return getRecurringDonationSubscriber(currency)
   }
 
   /**
@@ -516,19 +590,23 @@ object InAppPaymentsRepository {
 
       val value = when (inAppPayment.state) {
         InAppPaymentTable.State.CREATED -> error("This should have been filtered out.")
-        InAppPaymentTable.State.WAITING_FOR_AUTHORIZATION -> {
+        InAppPaymentTable.State.WAITING_FOR_AUTHORIZATION, InAppPaymentTable.State.REQUIRES_ACTION -> {
           DonationRedemptionJobStatus.PendingExternalVerification(
             pendingOneTimeDonation = inAppPayment.toPendingOneTimeDonation(),
             nonVerifiedMonthlyDonation = inAppPayment.toNonVerifiedMonthlyDonation()
           )
         }
-        InAppPaymentTable.State.PENDING -> {
-          if (inAppPayment.data.redemption?.stage == InAppPaymentData.RedemptionState.Stage.REDEMPTION_STARTED) {
+
+        InAppPaymentTable.State.PENDING, InAppPaymentTable.State.TRANSACTING, InAppPaymentTable.State.REQUIRED_ACTION_COMPLETED -> {
+          if (inAppPayment.data.redemption?.keepAlive == true) {
+            DonationRedemptionJobStatus.PendingKeepAlive
+          } else if (inAppPayment.data.redemption?.stage == InAppPaymentData.RedemptionState.Stage.REDEMPTION_STARTED) {
             DonationRedemptionJobStatus.PendingReceiptRedemption
           } else {
             DonationRedemptionJobStatus.PendingReceiptRequest
           }
         }
+
         InAppPaymentTable.State.END -> {
           if (type.recurring && inAppPayment.data.error != null) {
             DonationRedemptionJobStatus.FailedSubscription
@@ -588,7 +666,7 @@ object InAppPaymentsRepository {
       timestamp = insertedAt.inWholeMilliseconds,
       price = data.amount!!.toFiatMoney(),
       level = data.level.toInt(),
-      checkedVerification = data.waitForAuth!!.checkedVerification
+      checkedVerification = data.waitForAuth?.checkedVerification ?: false
     )
   }
 

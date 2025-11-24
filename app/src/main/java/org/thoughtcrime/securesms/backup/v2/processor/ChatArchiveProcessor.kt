@@ -7,15 +7,14 @@ package org.thoughtcrime.securesms.backup.v2.processor
 
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.backup.v2.ExportState
+import org.thoughtcrime.securesms.backup.v2.ImportSkips
 import org.thoughtcrime.securesms.backup.v2.ImportState
-import org.thoughtcrime.securesms.backup.v2.MessageBackupTier
 import org.thoughtcrime.securesms.backup.v2.database.getThreadsForBackup
 import org.thoughtcrime.securesms.backup.v2.importer.ChatArchiveImporter
 import org.thoughtcrime.securesms.backup.v2.proto.Chat
 import org.thoughtcrime.securesms.backup.v2.proto.Frame
 import org.thoughtcrime.securesms.backup.v2.stream.BackupFrameEmitter
 import org.thoughtcrime.securesms.database.SignalDatabase
-import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.recipients.RecipientId
 
 /**
@@ -25,13 +24,11 @@ object ChatArchiveProcessor {
   val TAG = Log.tag(ChatArchiveProcessor::class.java)
 
   fun export(db: SignalDatabase, exportState: ExportState, emitter: BackupFrameEmitter) {
-    val includeImageWallpapers = SignalStore.backup.backupTier == MessageBackupTier.PAID
-    Log.i(TAG, "Including wallpapers: $includeImageWallpapers")
-
-    db.threadTable.getThreadsForBackup(db, includeImageWallpapers).use { reader ->
+    db.threadTable.getThreadsForBackup(db, exportState, includeImageWallpapers = true).use { reader ->
       for (chat in reader) {
         if (exportState.recipientIds.contains(chat.recipientId)) {
           exportState.threadIds.add(chat.id)
+          exportState.threadIdToRecipientId[chat.id] = chat.recipientId
           emitter.emit(Frame(chat = chat))
         } else {
           Log.w(TAG, "dropping thread for deleted recipient ${chat.recipientId}")
@@ -43,11 +40,16 @@ object ChatArchiveProcessor {
   fun import(chat: Chat, importState: ImportState) {
     val recipientId: RecipientId? = importState.remoteToLocalRecipientId[chat.recipientId]
     if (recipientId == null) {
-      Log.w(TAG, "Missing recipient for chat ${chat.id}")
+      Log.w(TAG, ImportSkips.missingChatRecipient(chat.id))
       return
     }
 
     val threadId = ChatArchiveImporter.import(chat, recipientId, importState)
+    if (threadId == null) {
+      Log.w(TAG, ImportSkips.failedToCreateChat())
+      return
+    }
+
     importState.chatIdToLocalRecipientId[chat.id] = recipientId
     importState.chatIdToLocalThreadId[chat.id] = threadId
     importState.chatIdToBackupRecipientId[chat.id] = chat.recipientId

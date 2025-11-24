@@ -105,7 +105,7 @@ class MediaSelectionRepository(context: Context) {
 
       for (media in updatedMedia) {
         val uri: Uri = media.uri
-        val transformProperties: Boolean? = media.transformProperties.map { it.videoTrim }.orElse(null)
+        val transformProperties: Boolean? = media.transformProperties?.videoTrim
         Log.w(TAG, "$uri : trimmed=$transformProperties")
       }
 
@@ -118,22 +118,7 @@ class MediaSelectionRepository(context: Context) {
         StoryType.NONE
       }
 
-      if (MessageSender.isLocalSelfSend(context, singleRecipient, SendType.SIGNAL)) {
-        Log.i(TAG, "Local self-send. Skipping pre-upload.")
-        emitter.onSuccess(
-          MediaSendActivityResult(
-            recipientId = singleRecipient!!.id,
-            nonUploadedMedia = updatedMedia,
-            body = trimmedBody,
-            messageSendType = sendType,
-            isViewOnce = isViewOnce,
-            mentions = trimmedMentions,
-            bodyRanges = trimmedBodyRanges,
-            storyType = StoryType.NONE,
-            scheduledTime = scheduledTime
-          )
-        )
-      } else if (scheduledTime != -1L && storyType == StoryType.NONE) {
+      if (scheduledTime != -1L && storyType == StoryType.NONE) {
         Log.i(TAG, "Scheduled message. Skipping pre-upload.")
         if (contacts.isEmpty()) {
           emitter.onSuccess(
@@ -250,7 +235,7 @@ class MediaSelectionRepository(context: Context) {
 
   fun deleteBlobs(media: List<Media>) {
     media
-      .map(Media::getUri)
+      .map(Media::uri)
       .filter(BlobProvider::isAuthority)
       .forEach { BlobProvider.getInstance().delete(context, it) }
   }
@@ -259,10 +244,6 @@ class MediaSelectionRepository(context: Context) {
     deleteBlobs(selectedMedia)
     uploadRepository.cancelAllUploads()
     uploadRepository.deleteAbandonedAttachments()
-  }
-
-  fun isLocalSelfSend(recipient: Recipient?): Boolean {
-    return MessageSender.isLocalSelfSend(context, recipient, SendType.SIGNAL)
   }
 
   @WorkerThread
@@ -316,11 +297,11 @@ class MediaSelectionRepository(context: Context) {
 
     for (mediaItem in nonUploadedMedia) {
       if (MediaUtil.isVideoType(mediaItem.contentType)) {
-        slideDeck.addSlide(VideoSlide(context, mediaItem.uri, mediaItem.size, mediaItem.isVideoGif, mediaItem.width, mediaItem.height, mediaItem.caption.orElse(null), mediaItem.transformProperties.orElse(null)))
+        slideDeck.addSlide(VideoSlide(context, mediaItem.uri, mediaItem.size, mediaItem.isVideoGif, mediaItem.width, mediaItem.height, mediaItem.caption, mediaItem.transformProperties))
       } else if (MediaUtil.isGif(mediaItem.contentType)) {
-        slideDeck.addSlide(GifSlide(context, mediaItem.uri, mediaItem.size, mediaItem.width, mediaItem.height, mediaItem.isBorderless, mediaItem.caption.orElse(null)))
+        slideDeck.addSlide(GifSlide(context, mediaItem.uri, mediaItem.size, mediaItem.width, mediaItem.height, mediaItem.isBorderless, mediaItem.caption))
       } else if (MediaUtil.isImageType(mediaItem.contentType)) {
-        slideDeck.addSlide(ImageSlide(context, mediaItem.uri, mediaItem.contentType, mediaItem.size, mediaItem.width, mediaItem.height, mediaItem.isBorderless, mediaItem.caption.orElse(null), null, mediaItem.transformProperties.orElse(null)))
+        slideDeck.addSlide(ImageSlide(context, mediaItem.uri, mediaItem.contentType, mediaItem.size, mediaItem.width, mediaItem.height, mediaItem.isBorderless, mediaItem.caption, null, mediaItem.transformProperties))
       } else {
         Log.w(TAG, "Asked to send an unexpected mimeType: '" + mediaItem.contentType + "'. Skipping.")
       }
@@ -462,7 +443,7 @@ class MediaSelectionRepository(context: Context) {
   }
 
   private fun Media.asKey(): MediaKey {
-    return MediaKey(this, this.transformProperties)
+    return MediaKey(this, Optional.ofNullable(this.transformProperties))
   }
 
   data class MediaKey(val media: Media, val mediaTransform: Optional<TransformProperties>)

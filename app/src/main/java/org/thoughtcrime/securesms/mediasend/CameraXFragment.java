@@ -58,7 +58,7 @@ import org.thoughtcrime.securesms.mediasend.camerax.CameraXModePolicy;
 import org.thoughtcrime.securesms.mediasend.camerax.CameraXUtil;
 import org.thoughtcrime.securesms.mediasend.v2.MediaAnimations;
 import org.thoughtcrime.securesms.mediasend.v2.MediaCountIndicatorButton;
-import org.thoughtcrime.securesms.mms.DecryptableStreamUriLoader.DecryptableUri;
+import org.thoughtcrime.securesms.mms.DecryptableUri;
 import org.thoughtcrime.securesms.mms.MediaConstraints;
 import org.thoughtcrime.securesms.permissions.Permissions;
 import org.thoughtcrime.securesms.util.BottomSheetUtil;
@@ -376,6 +376,8 @@ public class CameraXFragment extends LoggingFragment implements CameraFragment {
       constraintSet.clone((ConstraintLayout) requireView());
       constraintSet.connect(R.id.camerax_camera_parent, ConstraintSet.TOP, ConstraintSet.PARENT_ID, ConstraintSet.TOP);
       constraintSet.applyTo((ConstraintLayout) requireView());
+      ViewUtil.setTopMargin(cameraCard, ViewUtil.getStatusBarHeight(requireView()));
+      ViewUtil.setBottomMargin(cameraCard, ViewUtil.getNavigationBarHeight(requireView()));
     } else {
       ViewUtil.setBottomMargin(cameraCard, cameraDisplay.getCameraViewportMarginBottom());
     }

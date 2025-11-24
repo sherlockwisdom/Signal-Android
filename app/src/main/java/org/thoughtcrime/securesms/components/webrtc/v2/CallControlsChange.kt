@@ -24,8 +24,8 @@ import androidx.compose.ui.res.colorResource
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import org.signal.core.ui.DarkPreview
-import org.signal.core.ui.Previews
+import org.signal.core.ui.compose.NightPreview
+import org.signal.core.ui.compose.Previews
 import org.thoughtcrime.securesms.R
 
 /**
@@ -80,7 +80,7 @@ fun CallStateUpdatePopup(
   }
 }
 
-@DarkPreview
+@NightPreview
 @Composable
 private fun CallStateUpdatePopupPreview() {
   Previews.Preview {

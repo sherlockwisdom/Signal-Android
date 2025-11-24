@@ -7,6 +7,7 @@ import org.signal.core.util.isNotEmpty
 import org.signal.core.util.logging.Log
 import org.signal.core.util.nullIfBlank
 import org.signal.core.util.nullIfEmpty
+import org.thoughtcrime.securesms.crypto.ProfileKeyUtil
 import org.thoughtcrime.securesms.database.RecipientTable
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.model.RecipientRecord
@@ -41,12 +42,14 @@ class ContactRecordProcessor(
   companion object {
     private val TAG = Log.tag(ContactRecordProcessor::class.java)
 
-    private val E164_PATTERN: Pattern = Pattern.compile("^\\+[1-9]\\d{0,18}$")
+    private val E164_PATTERN: Pattern = Pattern.compile("^\\+[1-9]\\d{6,18}$")
 
     private fun isValidE164(value: String): Boolean {
       return E164_PATTERN.matcher(value).matches()
     }
   }
+
+  private var rotateProfileKeyOnBlock = true
 
   constructor() : this(
     selfAci = SignalStore.account.aci,
@@ -174,7 +177,7 @@ class ContactRecordProcessor(
 
     if (localAci != null && mergedIdentityKey != null && remote.proto.identityKey.isNotEmpty() && !mergedIdentityKey.contentEquals(remote.proto.identityKey.toByteArray())) {
       Log.w(TAG, "The local and remote identity keys do not match for " + localAci + ". Enqueueing a profile fetch.")
-      enqueue(trustedPush(localAci, localPni, local.proto.e164).id)
+      enqueue(trustedPush(localAci, localPni, local.proto.e164).id, true)
     }
 
     val mergedPni: PNI?
@@ -213,7 +216,7 @@ class ContactRecordProcessor(
       pni = mergedPni?.toStringWithoutPrefix() ?: ""
       givenName = mergedProfileGivenName
       familyName = mergedProfileFamilyName
-      profileKey = remote.proto.profileKey.nullIfEmpty() ?: local.proto.profileKey
+      profileKey = remote.proto.profileKey.nullIfEmpty()?.takeIf { ProfileKeyUtil.profileKeyOrNull(it.toByteArray()) != null } ?: local.proto.profileKey
       username = remote.proto.username.nullIfBlank() ?: local.proto.username
       identityState = mergedIdentityState
       identityKey = mergedIdentityKey?.toByteString() ?: ByteString.EMPTY
@@ -230,7 +233,10 @@ class ContactRecordProcessor(
       systemNickname = remote.proto.systemNickname
       nickname = remote.proto.nickname
       pniSignatureVerified = remote.proto.pniSignatureVerified || local.proto.pniSignatureVerified
-      note = remote.proto.note.nullIfBlank() ?: local.proto.note
+      note = remote.proto.note.nullIfBlank() ?: ""
+      avatarColor = if (SignalStore.account.isPrimaryDevice) local.proto.avatarColor else remote.proto.avatarColor
+      aciBinary = local.proto.aciBinary.nullIfEmpty() ?: remote.proto.aciBinary
+      pniBinary = mergedPni?.toByteStringWithoutPrefix() ?: byteArrayOf().toByteString()
     }.build().toSignalContactRecord(StorageId.forContact(keyGenerator.generate()))
 
     val matchesRemote = doParamsMatch(remote, merged)
@@ -246,18 +252,24 @@ class ContactRecordProcessor(
   }
 
   override fun insertLocal(record: SignalContactRecord) {
-    recipientTable.applyStorageSyncContactInsert(record)
+    val profileKeyRotated = recipientTable.applyStorageSyncContactInsert(record, rotateProfileKeyOnBlock)
+    if (profileKeyRotated) {
+      rotateProfileKeyOnBlock = false
+    }
   }
 
   override fun updateLocal(update: StorageRecordUpdate<SignalContactRecord>) {
-    recipientTable.applyStorageSyncContactUpdate(update)
+    val profileKeyRotated = recipientTable.applyStorageSyncContactUpdate(update, rotateProfileKeyOnBlock)
+    if (profileKeyRotated) {
+      rotateProfileKeyOnBlock = false
+    }
   }
 
   override fun compare(lhs: SignalContactRecord, rhs: SignalContactRecord): Int {
     return if (
-      (lhs.proto.signalAci != null && lhs.proto.aci == rhs.proto.aci) ||
+      (lhs.proto.signalAci != null && lhs.proto.aci == rhs.proto.aci && lhs.proto.aciBinary == rhs.proto.aciBinary) ||
       (lhs.proto.e164.isNotBlank() && lhs.proto.e164 == rhs.proto.e164) ||
-      (lhs.proto.signalPni != null && lhs.proto.pni == rhs.proto.pni)
+      (lhs.proto.signalPni != null && lhs.proto.pni == rhs.proto.pni && lhs.proto.pniBinary == rhs.proto.pniBinary)
     ) {
       0
     } else {

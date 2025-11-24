@@ -72,7 +72,6 @@ object FakeMessageRecords {
       mmsId = mmsId,
       hasData = hasData,
       hasThumbnail = hasThumbnail,
-      hasArchiveThumbnail = hasArchiveThumbnail,
       contentType = contentType,
       transferProgress = transferProgress,
       size = size,
@@ -80,7 +79,6 @@ object FakeMessageRecords {
       cdn = Cdn.fromCdnNumber(cdnNumber),
       location = location,
       key = key,
-      iv = iv,
       digest = digest,
       incrementalDigest = incrementalDigest,
       incrementalMacChunkSize = incrementalMacChunkSize,
@@ -100,11 +98,10 @@ object FakeMessageRecords {
       uploadTimestamp = uploadTimestamp,
       dataHash = dataHash,
       archiveCdn = archiveCdn,
-      archiveMediaName = archiveMediaId,
-      archiveMediaId = archiveMediaName,
       thumbnailRestoreState = thumbnailRestoreState,
       archiveTransferState = archiveTransferState,
-      uuid = null
+      uuid = null,
+      quoteTargetContentType = null
     )
   }
 
@@ -200,6 +197,7 @@ object FakeMessageRecords {
       giftBadge,
       payment,
       call,
+      null,
       -1,
       null,
       null,

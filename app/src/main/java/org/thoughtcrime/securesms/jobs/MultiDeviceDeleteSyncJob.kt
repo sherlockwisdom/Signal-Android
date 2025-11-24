@@ -7,10 +7,12 @@ package org.thoughtcrime.securesms.jobs
 
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
+import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import org.signal.core.util.Base64
 import org.signal.core.util.logging.Log
 import org.signal.core.util.orNull
+import org.thoughtcrime.securesms.BuildConfig
 import org.thoughtcrime.securesms.attachments.DatabaseAttachment
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.ThreadTable
@@ -19,7 +21,6 @@ import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.jobmanager.Job
 import org.thoughtcrime.securesms.jobmanager.impl.NetworkConstraint
 import org.thoughtcrime.securesms.jobs.protos.DeleteSyncJobData
-import org.thoughtcrime.securesms.jobs.protos.DeleteSyncJobData.AddressableMessage
 import org.thoughtcrime.securesms.jobs.protos.DeleteSyncJobData.AttachmentDelete
 import org.thoughtcrime.securesms.jobs.protos.DeleteSyncJobData.ThreadDelete
 import org.thoughtcrime.securesms.keyvalue.SignalStore
@@ -28,7 +29,9 @@ import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.RecipientId
 import org.whispersystems.signalservice.api.crypto.UntrustedIdentityException
 import org.whispersystems.signalservice.api.util.UuidUtil
+import org.whispersystems.signalservice.internal.push.AddressableMessage
 import org.whispersystems.signalservice.internal.push.Content
+import org.whispersystems.signalservice.internal.push.ConversationIdentifier
 import org.whispersystems.signalservice.internal.push.SyncMessage
 import org.whispersystems.signalservice.internal.push.SyncMessage.DeleteForMe
 import java.io.IOException
@@ -57,7 +60,7 @@ class MultiDeviceDeleteSyncJob private constructor(
     @WorkerThread
     @JvmStatic
     fun enqueueMessageDeletes(messageRecords: Set<MessageRecord>) {
-      if (!SignalStore.account.hasLinkedDevices) {
+      if (!SignalStore.account.isMultiDevice) {
         return
       }
 
@@ -74,7 +77,7 @@ class MultiDeviceDeleteSyncJob private constructor(
     @WorkerThread
     @JvmStatic
     fun enqueueAttachmentDelete(message: MessageRecord?, attachment: DatabaseAttachment) {
-      if (!SignalStore.account.hasLinkedDevices) {
+      if (!SignalStore.account.isMultiDevice) {
         return
       }
 
@@ -88,7 +91,7 @@ class MultiDeviceDeleteSyncJob private constructor(
 
     @WorkerThread
     fun enqueueThreadDeletes(threads: List<ThreadTable.ThreadDeleteSyncInfo>, isFullDelete: Boolean) {
-      if (!SignalStore.account.hasLinkedDevices) {
+      if (!SignalStore.account.isMultiDevice) {
         return
       }
 
@@ -108,7 +111,7 @@ class MultiDeviceDeleteSyncJob private constructor(
     }
 
     @WorkerThread
-    private fun createMessageDeletes(messageRecords: Collection<MessageRecord>): List<AddressableMessage> {
+    private fun createMessageDeletes(messageRecords: Collection<MessageRecord>): List<DeleteSyncJobData.AddressableMessage> {
       return messageRecords.mapNotNull { message ->
         val threadRecipient = SignalDatabase.threads.getRecipientForThreadId(message.threadId)
         if (threadRecipient == null) {
@@ -120,7 +123,7 @@ class MultiDeviceDeleteSyncJob private constructor(
         } else if (threadRecipient.isDistributionList || !message.canDeleteSync()) {
           null
         } else {
-          AddressableMessage(
+          DeleteSyncJobData.AddressableMessage(
             threadRecipientId = threadRecipient.id.toLong(),
             sentTimestamp = message.dateSent,
             authorRecipientId = message.fromRecipient.id.toLong()
@@ -145,7 +148,7 @@ class MultiDeviceDeleteSyncJob private constructor(
       } else if (threadRecipient.isDistributionList || !message.canDeleteSync()) {
         null
       } else {
-        AddressableMessage(
+        DeleteSyncJobData.AddressableMessage(
           threadRecipientId = threadRecipient.id.toLong(),
           sentTimestamp = message.dateSent,
           authorRecipientId = message.fromRecipient.id.toLong()
@@ -188,13 +191,13 @@ class MultiDeviceDeleteSyncJob private constructor(
             threadRecipientId = threadRecipient.id.toLong(),
             isFullDelete = isFullDelete,
             messages = messages.map {
-              AddressableMessage(
+              DeleteSyncJobData.AddressableMessage(
                 sentTimestamp = it.dateSent,
                 authorRecipientId = it.fromRecipient.id.toLong()
               )
             },
             nonExpiringMessages = nonExpiringMessages.map {
-              AddressableMessage(
+              DeleteSyncJobData.AddressableMessage(
                 sentTimestamp = it.dateSent,
                 authorRecipientId = it.fromRecipient.id.toLong()
               )
@@ -207,7 +210,7 @@ class MultiDeviceDeleteSyncJob private constructor(
 
   @VisibleForTesting
   constructor(
-    messages: List<AddressableMessage> = emptyList(),
+    messages: List<DeleteSyncJobData.AddressableMessage> = emptyList(),
     threads: List<ThreadDelete> = emptyList(),
     localOnlyThreads: List<ThreadDelete> = emptyList(),
     attachments: List<AttachmentDelete> = emptyList()
@@ -230,7 +233,7 @@ class MultiDeviceDeleteSyncJob private constructor(
       return Result.failure()
     }
 
-    if (!SignalStore.account.hasLinkedDevices) {
+    if (!SignalStore.account.isMultiDevice) {
       Log.w(TAG, "Not multi-device")
       return Result.failure()
     }
@@ -316,7 +319,7 @@ class MultiDeviceDeleteSyncJob private constructor(
               DeleteForMe.AttachmentDelete(
                 conversation = conversation,
                 targetMessage = targetMessage,
-                uuid = it.uuid,
+                clientUuid = it.uuid,
                 fallbackDigest = it.digest,
                 fallbackPlaintextHash = it.plaintextHash
               )
@@ -370,19 +373,32 @@ class MultiDeviceDeleteSyncJob private constructor(
     return Content(syncMessage = syncMessage.build())
   }
 
-  private fun Recipient.toDeleteSyncConversationId(): DeleteForMe.ConversationIdentifier? {
+  private fun Recipient.toDeleteSyncConversationId(): ConversationIdentifier? {
     return when {
-      isGroup -> DeleteForMe.ConversationIdentifier(threadGroupId = requireGroupId().decodedId.toByteString())
-      hasAci -> DeleteForMe.ConversationIdentifier(threadServiceId = requireAci().toString())
-      hasPni -> DeleteForMe.ConversationIdentifier(threadServiceId = requirePni().toString())
-      hasE164 -> DeleteForMe.ConversationIdentifier(threadE164 = requireE164())
+      isGroup -> ConversationIdentifier(threadGroupId = requireGroupId().decodedId.toByteString())
+      hasAci -> if (BuildConfig.USE_STRING_ID) {
+        ConversationIdentifier(threadServiceId = requireAci().toString())
+      } else {
+        ConversationIdentifier(threadServiceIdBinary = requireAci().toByteString())
+      }
+      hasPni -> if (BuildConfig.USE_STRING_ID) {
+        ConversationIdentifier(threadServiceId = requirePni().toString())
+      } else {
+        ConversationIdentifier(threadServiceIdBinary = requirePni().toByteString())
+      }
+      hasE164 -> ConversationIdentifier(threadE164 = requireE164())
       else -> null
     }
   }
 
-  private fun AddressableMessage.toDeleteSyncMessage(): DeleteForMe.AddressableMessage? {
+  private fun DeleteSyncJobData.AddressableMessage.toDeleteSyncMessage(): AddressableMessage? {
     val author: Recipient = Recipient.resolved(RecipientId.from(authorRecipientId))
-    val authorServiceId: String? = author.aci.orNull()?.toString() ?: author.pni.orNull()?.toString()
+    val authorServiceId = if (BuildConfig.USE_STRING_ID) {
+      author.aci.orNull()?.toString() ?: author.pni.orNull()?.toString()
+    } else {
+      author.aci.orNull()?.toByteString() ?: author.pni.orNull()?.toByteString()
+    }
+
     val authorE164: String? = if (authorServiceId == null) {
       author.e164.orNull()
     } else {
@@ -393,11 +409,19 @@ class MultiDeviceDeleteSyncJob private constructor(
       Log.w(TAG, "Unable to send sync message without serviceId or e164 recipient: ${author.id}")
       null
     } else {
-      DeleteForMe.AddressableMessage(
-        authorServiceId = authorServiceId,
-        authorE164 = authorE164,
-        sentTimestamp = sentTimestamp
-      )
+      if (BuildConfig.USE_STRING_ID) {
+        AddressableMessage(
+          authorServiceId = authorServiceId as String?,
+          authorE164 = authorE164,
+          sentTimestamp = sentTimestamp
+        )
+      } else {
+        AddressableMessage(
+          authorServiceIdBinary = authorServiceId as ByteString?,
+          authorE164 = authorE164,
+          sentTimestamp = sentTimestamp
+        )
+      }
     }
   }
 

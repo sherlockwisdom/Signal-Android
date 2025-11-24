@@ -17,11 +17,12 @@ import androidx.lifecycle.ViewModelProvider;
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
 import org.signal.core.util.ThreadUtil;
-import org.signal.libsignal.protocol.util.Pair;
+import org.signal.core.util.concurrent.SignalExecutors;
 import org.thoughtcrime.securesms.BlockUnblockDialog;
 import org.thoughtcrime.securesms.R;
 import org.thoughtcrime.securesms.components.settings.conversation.ConversationSettingsActivity;
 import org.thoughtcrime.securesms.database.GroupTable;
+import org.thoughtcrime.securesms.database.SignalDatabase;
 import org.thoughtcrime.securesms.database.model.IdentityRecord;
 import org.thoughtcrime.securesms.database.model.StoryViewState;
 import org.thoughtcrime.securesms.groups.GroupId;
@@ -29,6 +30,8 @@ import org.thoughtcrime.securesms.groups.LiveGroup;
 import org.thoughtcrime.securesms.groups.ui.GroupChangeFailureReason;
 import org.thoughtcrime.securesms.groups.ui.GroupErrors;
 import org.thoughtcrime.securesms.groups.ui.addtogroup.AddToGroupsActivity;
+import org.thoughtcrime.securesms.jobs.AvatarGroupsV2DownloadJob;
+import org.thoughtcrime.securesms.jobs.RetrieveProfileAvatarJob;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
 import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.recipients.RecipientId;
@@ -41,6 +44,8 @@ import org.thoughtcrime.securesms.util.livedata.LiveDataUtil;
 import org.thoughtcrime.securesms.verify.VerifyIdentityActivity;
 
 import java.util.Objects;
+
+import kotlin.Pair;
 
 import io.reactivex.rxjava3.disposables.CompositeDisposable;
 import io.reactivex.rxjava3.disposables.Disposable;
@@ -79,8 +84,8 @@ final class RecipientDialogViewModel extends ViewModel {
       LiveData<GroupTable.MemberLevel> recipientMemberLevel = Transformations.switchMap(recipient, source::getMemberLevel);
 
       adminActionStatus = LiveDataUtil.combineLatest(localStatus, recipientMemberLevel, (statuses, memberLevel) -> {
-        boolean localAdmin     = statuses.first();
-        boolean isLinkActive   = statuses.second();
+        boolean localAdmin     = statuses.getFirst();
+        boolean isLinkActive   = statuses.getSecond();
         boolean inGroup        = memberLevel.isInGroup();
         boolean recipientAdmin = memberLevel == GroupTable.MemberLevel.ADMINISTRATOR;
 
@@ -263,6 +268,28 @@ final class RecipientDialogViewModel extends ViewModel {
   @WorkerThread
   private void showErrorToast(@NonNull GroupChangeFailureReason e) {
     ThreadUtil.runOnMain(() -> Toast.makeText(context, GroupErrors.getUserDisplayMessage(e), Toast.LENGTH_LONG).show());
+  }
+
+  public void onTapToViewAvatar(@NonNull Recipient recipient) {
+    SignalExecutors.BOUNDED.execute(() -> SignalDatabase.recipients().manuallyUpdateShowAvatar(recipient.getId(), true));
+    if (recipient.isPushV2Group()) {
+      AvatarGroupsV2DownloadJob.enqueueUnblurredAvatar(recipient.requireGroupId().requireV2());
+    } else {
+      RetrieveProfileAvatarJob.enqueueUnblurredAvatar(recipient);
+    }
+  }
+
+  public void onResetBlurAvatar(@NonNull Recipient recipient) {
+    SignalExecutors.BOUNDED.execute(() -> SignalDatabase.recipients().manuallyUpdateShowAvatar(recipient.getId(), false));
+  }
+
+  public void refreshGroupId(@Nullable GroupId groupId) {
+    if (groupId != null) {
+      SignalExecutors.BOUNDED.execute(() -> {
+        RecipientId groupRecipientId = SignalDatabase.groups().getGroup(groupId).get().getRecipientId();
+        Recipient.live(groupRecipientId).refresh();
+      });
+    }
   }
 
   static class AdminActionStatus {

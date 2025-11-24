@@ -6,7 +6,6 @@ import androidx.lifecycle.map
 import io.reactivex.rxjava3.disposables.CompositeDisposable
 import io.reactivex.rxjava3.kotlin.plusAssign
 import io.reactivex.rxjava3.kotlin.subscribeBy
-import org.thoughtcrime.securesms.backup.v2.BackupRepository
 import org.thoughtcrime.securesms.components.settings.app.subscription.InAppDonations
 import org.thoughtcrime.securesms.components.settings.app.subscription.RecurringInAppPaymentRepository
 import org.thoughtcrime.securesms.conversationlist.model.UnreadPaymentsLiveData
@@ -21,11 +20,12 @@ class AppSettingsViewModel : ViewModel() {
 
   private val store = Store(
     AppSettingsState(
-      0,
-      SignalStore.inAppPayments.getExpiredGiftBadge() != null,
-      SignalStore.inAppPayments.isLikelyASustainer() || InAppDonations.hasAtLeastOnePaymentMethodAvailable(),
-      TextSecurePreferences.isUnauthorizedReceived(AppDependencies.application) || !SignalStore.account.isRegistered,
-      SignalStore.misc.isClientDeprecated
+      isPrimaryDevice = SignalStore.account.isPrimaryDevice,
+      unreadPaymentsCount = 0,
+      hasExpiredGiftBadge = SignalStore.inAppPayments.getExpiredGiftBadge() != null,
+      allowUserToGoToDonationManagementScreen = SignalStore.inAppPayments.isLikelyASustainer() || InAppDonations.hasAtLeastOnePaymentMethodAvailable(),
+      userUnregistered = TextSecurePreferences.isUnauthorizedReceived(AppDependencies.application) || !SignalStore.account.isRegistered,
+      clientDeprecated = SignalStore.misc.isClientDeprecated
     )
   )
 
@@ -41,7 +41,7 @@ class AppSettingsViewModel : ViewModel() {
     disposables += RecurringInAppPaymentRepository.getActiveSubscription(InAppPaymentSubscriberRecord.Type.DONATION).subscribeBy(
       onSuccess = { activeSubscription ->
         store.update { state ->
-          state.copy(allowUserToGoToDonationManagementScreen = activeSubscription.isActive || InAppDonations.hasAtLeastOnePaymentMethodAvailable())
+          state.copy(allowUserToGoToDonationManagementScreen = SignalStore.account.isRegistered && (activeSubscription.isActive || InAppDonations.hasAtLeastOnePaymentMethodAvailable()))
         }
       },
       onError = {}
@@ -71,14 +71,13 @@ class AppSettingsViewModel : ViewModel() {
   }
 
   private fun getBackupFailureState(): BackupFailureState {
-    return if (BackupRepository.shouldDisplayBackupFailedSettingsRow()) {
-      BackupFailureState.BACKUP_FAILED
-    } else if (BackupRepository.shouldDisplayCouldNotCompleteBackupSettingsRow()) {
-      BackupFailureState.COULD_NOT_COMPLETE_BACKUP
-    } else if (SignalStore.backup.subscriptionStateMismatchDetected) {
-      BackupFailureState.SUBSCRIPTION_STATE_MISMATCH
-    } else {
-      BackupFailureState.NONE
+    return when {
+      !SignalStore.account.isRegistered || !SignalStore.backup.areBackupsEnabled -> BackupFailureState.NONE
+      SignalStore.backup.isNotEnoughRemoteStorageSpace -> BackupFailureState.OUT_OF_STORAGE_SPACE
+      SignalStore.backup.hasBackupCreationError -> BackupFailureState.COULD_NOT_COMPLETE_BACKUP
+      SignalStore.backup.subscriptionStateMismatchDetected -> BackupFailureState.SUBSCRIPTION_STATE_MISMATCH
+      SignalStore.backup.hasBackupAlreadyRedeemedError -> BackupFailureState.ALREADY_REDEEMED
+      else -> BackupFailureState.NONE
     }
   }
 }

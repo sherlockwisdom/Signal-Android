@@ -5,7 +5,6 @@ import androidx.test.core.app.ApplicationProvider
 import io.mockk.every
 import io.mockk.mockk
 import io.mockk.mockkObject
-import io.mockk.mockkStatic
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -14,7 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
-import org.signal.core.util.StringUtil
+import org.signal.core.util.BidiUtil
 import org.signal.storageservice.protos.groups.AccessControl
 import org.signal.storageservice.protos.groups.AccessControl.AccessRequired
 import org.signal.storageservice.protos.groups.AccessControl.AccessRequired.ADMINISTRATOR
@@ -50,7 +49,7 @@ class GroupsV2UpdateMessageProducerTest {
 
   @Before
   fun setup() {
-    mockkStatic(RecipientId::class)
+    mockkObject(RecipientId.Companion)
     val aliceId = RecipientId.from(1)
     val bobId = RecipientId.from(2)
     every { RecipientId.from(alice) } returns aliceId
@@ -683,7 +682,7 @@ class GroupsV2UpdateMessageProducerTest {
       .title("New title")
       .build()
 
-    assertEquals(listOf("Alice changed the group name to \"" + StringUtil.isolateBidi("New title") + "\"."), describeChange(change))
+    assertEquals(listOf("Alice changed the group name to \"" + BidiUtil.isolateBidi("New title") + "\"."), describeChange(change))
   }
 
   @Test
@@ -692,7 +691,7 @@ class GroupsV2UpdateMessageProducerTest {
       .title("Title 2")
       .build()
 
-    assertEquals(listOf("You changed the group name to \"" + StringUtil.isolateBidi("Title 2") + "\"."), describeChange(change))
+    assertEquals(listOf("You changed the group name to \"" + BidiUtil.isolateBidi("Title 2") + "\"."), describeChange(change))
   }
 
   @Test
@@ -701,7 +700,7 @@ class GroupsV2UpdateMessageProducerTest {
       .title("Title 3")
       .build()
 
-    assertEquals(listOf("The group name has changed to \"" + StringUtil.isolateBidi("Title 3") + "\"."), describeChange(change))
+    assertEquals(listOf("The group name has changed to \"" + BidiUtil.isolateBidi("Title 3") + "\"."), describeChange(change))
   }
 
   // Avatar change
@@ -1166,7 +1165,7 @@ class GroupsV2UpdateMessageProducerTest {
       listOf(
         "Alice added you to the group.",
         "Alice added Bob.",
-        "Alice changed the group name to \"" + StringUtil.isolateBidi("Title") + "\".",
+        "Alice changed the group name to \"" + BidiUtil.isolateBidi("Title") + "\".",
         "Alice set the disappearing message timer to 5 minutes.",
         "Alice changed who can edit group membership to \"All members\"."
       ),
@@ -1219,7 +1218,7 @@ class GroupsV2UpdateMessageProducerTest {
     assertEquals(
       listOf(
         "Bob joined the group.",
-        "The group name has changed to \"" + StringUtil.isolateBidi("Title 2") + "\".",
+        "The group name has changed to \"" + BidiUtil.isolateBidi("Title 2") + "\".",
         "The group avatar has been changed.",
         "The disappearing message timer has been set to 10 minutes.",
         "Who can edit group membership has been changed to \"All members\"."
@@ -1241,7 +1240,7 @@ class GroupsV2UpdateMessageProducerTest {
       listOf(
         "Alice joined the group.",
         "Alice is now an admin.",
-        "The group name has changed to \"" + StringUtil.isolateBidi("Updated title") + "\".",
+        "The group name has changed to \"" + BidiUtil.isolateBidi("Updated title") + "\".",
         "Alice is no longer in the group."
       ),
       describeChange(change)

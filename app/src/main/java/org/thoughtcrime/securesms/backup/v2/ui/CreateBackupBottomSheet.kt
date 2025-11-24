@@ -14,8 +14,8 @@ import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.widthIn
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.dimensionResource
@@ -25,11 +25,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.core.os.bundleOf
 import androidx.fragment.app.setFragmentResult
-import org.signal.core.ui.BottomSheets
-import org.signal.core.ui.Buttons
-import org.signal.core.ui.Previews
-import org.signal.core.ui.SignalPreview
+import org.signal.core.ui.compose.BottomSheets
+import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.DayNightPreviews
+import org.signal.core.ui.compose.Previews
 import org.thoughtcrime.securesms.R
+import org.thoughtcrime.securesms.components.settings.app.backups.BackupStateObserver
 import org.thoughtcrime.securesms.compose.ComposeBottomSheetDialogFragment
 import org.thoughtcrime.securesms.jobs.BackupMessagesJob
 import org.signal.core.ui.R as CoreUiR
@@ -42,6 +43,8 @@ import org.signal.core.ui.R as CoreUiR
  */
 class CreateBackupBottomSheet : ComposeBottomSheetDialogFragment() {
 
+  override val peekHeightPercentage: Float = 1f
+
   companion object {
     const val REQUEST_KEY = "CreateBackupBottomSheet"
   }
@@ -50,14 +53,14 @@ class CreateBackupBottomSheet : ComposeBottomSheetDialogFragment() {
 
   @Composable
   override fun SheetContent() {
+    val isPaidTier: Boolean = remember { BackupStateObserver.getNonIOBackupState().isLikelyPaidTier() }
+
     CreateBackupBottomSheetContent(
+      isPaidTier = isPaidTier,
       onBackupNowClick = {
         BackupMessagesJob.enqueue()
         setFragmentResult(REQUEST_KEY, bundleOf(REQUEST_KEY to Result.BACKUP_STARTED))
         isResultSet = true
-        dismissAllowingStateLoss()
-      },
-      onBackupLaterClick = {
         dismissAllowingStateLoss()
       }
     )
@@ -79,8 +82,8 @@ class CreateBackupBottomSheet : ComposeBottomSheetDialogFragment() {
 
 @Composable
 private fun CreateBackupBottomSheetContent(
-  onBackupNowClick: () -> Unit,
-  onBackupLaterClick: () -> Unit
+  isPaidTier: Boolean,
+  onBackupNowClick: () -> Unit
 ) {
   Column(
     horizontalAlignment = Alignment.CenterHorizontally,
@@ -105,8 +108,14 @@ private fun CreateBackupBottomSheetContent(
       textAlign = TextAlign.Center
     )
 
+    val body = if (isPaidTier) {
+      stringResource(id = R.string.CreateBackupBottomSheet__depending_on_the_size)
+    } else {
+      stringResource(id = R.string.CreateBackupBottomSheet__free_tier)
+    }
+
     Text(
-      text = stringResource(id = R.string.CreateBackupBottomSheet__depending_on_the_size),
+      text = body,
       style = MaterialTheme.typography.bodyLarge,
       color = MaterialTheme.colorScheme.onSurfaceVariant,
       textAlign = TextAlign.Center,
@@ -119,28 +128,30 @@ private fun CreateBackupBottomSheetContent(
       modifier = Modifier.widthIn(min = 220.dp)
     ) {
       Text(
-        text = stringResource(id = R.string.CreateBackupBottomSheet__back_up_now)
-      )
-    }
-
-    TextButton(
-      onClick = onBackupLaterClick,
-      modifier = Modifier.widthIn(min = 220.dp).padding(top = 16.dp)
-    ) {
-      Text(
-        text = stringResource(id = R.string.CreateBackupBottomSheet__back_up_later)
+        text = stringResource(id = android.R.string.ok)
       )
     }
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
-private fun CreateBackupBottomSheetContentPreview() {
+private fun CreateBackupBottomSheetContentPaidPreview() {
   Previews.BottomSheetPreview {
     CreateBackupBottomSheetContent(
-      onBackupNowClick = {},
-      onBackupLaterClick = {}
+      isPaidTier = true,
+      onBackupNowClick = {}
+    )
+  }
+}
+
+@DayNightPreviews
+@Composable
+private fun CreateBackupBottomSheetContentFreePreview() {
+  Previews.BottomSheetPreview {
+    CreateBackupBottomSheetContent(
+      isPaidTier = false,
+      onBackupNowClick = {}
     )
   }
 }

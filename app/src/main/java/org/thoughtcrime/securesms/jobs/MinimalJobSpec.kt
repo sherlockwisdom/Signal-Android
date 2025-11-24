@@ -19,5 +19,10 @@ data class MinimalJobSpec(
   val globalPriority: Int,
   val queuePriority: Int,
   val isRunning: Boolean,
-  val isMemoryOnly: Boolean
-)
+  val isMemoryOnly: Boolean,
+  val initialDelay: Long
+) {
+  override fun toString(): String {
+    return "MinimalJobSpec(id=JOB::$id, factoryKey=$factoryKey, queueKey=$queueKey, createTime=$createTime, lastRunAttemptTime=$lastRunAttemptTime, nextBackoffInterval=$nextBackoffInterval, globalPriority=$globalPriority, queuePriority=$queuePriority, isRunning=$isRunning, isMemoryOnly=$isMemoryOnly, initialDelay=$initialDelay)"
+  }
+}

@@ -23,15 +23,14 @@ import androidx.fragment.app.FragmentManager;
 
 import com.google.android.material.dialog.MaterialAlertDialogBuilder;
 
-import org.signal.core.util.concurrent.RxExtensions;
+import org.signal.core.util.concurrent.JvmRxExtensions;
 import org.signal.core.util.concurrent.SignalExecutors;
 import org.signal.core.util.concurrent.SimpleTask;
 import org.signal.core.util.logging.Log;
+import org.signal.ringrtc.CallLinkEpoch;
 import org.signal.ringrtc.CallLinkRootKey;
 import org.thoughtcrime.securesms.R;
-import org.thoughtcrime.securesms.WebRtcCallActivity;
 import org.thoughtcrime.securesms.calls.links.CallLinks;
-import org.thoughtcrime.securesms.components.webrtc.v2.CallActivity;
 import org.thoughtcrime.securesms.components.webrtc.v2.CallIntent;
 import org.thoughtcrime.securesms.contacts.sync.ContactDiscovery;
 import org.thoughtcrime.securesms.conversation.ConversationIntents;
@@ -230,6 +229,9 @@ public class CommunicationActions {
   public static void openBrowserLink(@NonNull Context context, @NonNull String link) {
     try {
       Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse(link));
+      if (!(context instanceof Activity)) {
+        intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+      }
       context.startActivity(intent);
     } catch (ActivityNotFoundException e) {
       Toast.makeText(context, R.string.CommunicationActions_no_browser_found, Toast.LENGTH_SHORT).show();
@@ -312,7 +314,7 @@ public class CommunicationActions {
    * If the url is a signal.me link it will handle it.
    */
   public static void handlePotentialSignalMeUrl(@NonNull FragmentActivity activity, @NonNull String potentialUrl) {
-    String                 e164     = SignalMeUtil.parseE164FromLink(activity, potentialUrl);
+    String                 e164     = SignalMeUtil.parseE164FromLink(potentialUrl);
     UsernameLinkComponents username = UsernameRepository.parseLink(potentialUrl);
 
     if (e164 != null) {
@@ -327,8 +329,8 @@ public class CommunicationActions {
       return;
     }
 
-    CallLinkRootKey rootKey = CallLinks.parseUrl(potentialUrl);
-    if (rootKey == null) {
+    CallLinks.CallLinkParseResult linkParseResult = CallLinks.parseUrl(potentialUrl);
+    if (linkParseResult == null) {
       Log.w(TAG, "Failed to parse root key from call link");
       new MaterialAlertDialogBuilder(activity)
           .setTitle(R.string.CommunicationActions_invalid_link)
@@ -338,7 +340,7 @@ public class CommunicationActions {
       return;
     }
 
-    startVideoCall(new ActivityCallContext(activity), rootKey, onUserAlreadyInAnotherCall);
+    startVideoCall(new ActivityCallContext(activity), linkParseResult.getRootKey(), linkParseResult.getEpoch(), onUserAlreadyInAnotherCall);
   }
 
   /**
@@ -347,14 +349,14 @@ public class CommunicationActions {
    *
    * @param fragment The fragment, which will be used for context and permissions routing.
    */
-  public static void startVideoCall(@NonNull Fragment fragment, @NonNull CallLinkRootKey rootKey, @NonNull OnUserAlreadyInAnotherCall onUserAlreadyInAnotherCall) {
-    startVideoCall(new FragmentCallContext(fragment), rootKey, onUserAlreadyInAnotherCall);
+  public static void startVideoCall(@NonNull Fragment fragment, @NonNull CallLinkRootKey rootKey, @Nullable CallLinkEpoch epoch, @NonNull OnUserAlreadyInAnotherCall onUserAlreadyInAnotherCall) {
+    startVideoCall(new FragmentCallContext(fragment), rootKey, epoch, onUserAlreadyInAnotherCall);
   }
 
-  private static void startVideoCall(@NonNull CallContext callContext, @NonNull CallLinkRootKey rootKey, @NonNull OnUserAlreadyInAnotherCall onUserAlreadyInAnotherCall) {
+  private static void startVideoCall(@NonNull CallContext callContext, @NonNull CallLinkRootKey rootKey, @Nullable CallLinkEpoch epoch, @NonNull OnUserAlreadyInAnotherCall onUserAlreadyInAnotherCall) {
     SimpleTask.run(() -> {
       CallLinkRoomId         roomId   = CallLinkRoomId.fromBytes(rootKey.deriveRoomId());
-      CallLinkTable.CallLink callLink = SignalDatabase.callLinks().getOrCreateCallLinkByRootKey(rootKey);
+      CallLinkTable.CallLink callLink = SignalDatabase.callLinks().getOrCreateCallLinkByRootKey(rootKey, epoch);
 
       if (callLink.getState().hasBeenRevoked()) {
         return Optional.<Recipient>empty();
@@ -428,7 +430,10 @@ public class CommunicationActions {
     SimpleProgressDialog.DismissibleDialog dialog = SimpleProgressDialog.showDelayed(activity, 500, 500);
 
     SimpleTask.run(() -> {
-      Recipient recipient = Recipient.external(activity, e164);
+      Recipient recipient = Recipient.external(e164);
+      if (recipient == null) {
+        return null;
+      }
 
       if (!recipient.isRegistered() || !recipient.getHasServiceId()) {
         try {
@@ -443,11 +448,11 @@ public class CommunicationActions {
     }, recipient -> {
       dialog.dismiss();
 
-      if (recipient.isRegistered() && recipient.getHasServiceId()) {
+      if (recipient != null && recipient.isRegistered() && recipient.getHasServiceId()) {
         startConversation(activity, recipient, null);
       } else {
         new MaterialAlertDialogBuilder(activity)
-            .setMessage(activity.getString(R.string.NewConversationActivity__s_is_not_a_signal_user, e164))
+            .setMessage(activity.getString(R.string.RecipientLookup_error__s_is_not_a_signal_user, e164))
             .setPositiveButton(android.R.string.ok, null)
             .show();
       }
@@ -459,7 +464,7 @@ public class CommunicationActions {
 
     SimpleTask.run(() -> {
       try {
-        UsernameLinkConversionResult result = RxExtensions.safeBlockingGet(UsernameRepository.fetchUsernameAndAciFromLink(link));
+        UsernameLinkConversionResult result = JvmRxExtensions.safeBlockingGet(UsernameRepository.fetchUsernameAndAciFromLink(link));
 
         // TODO we could be better here and report different types of errors to the UI
         if (result instanceof UsernameLinkConversionResult.Success success) {

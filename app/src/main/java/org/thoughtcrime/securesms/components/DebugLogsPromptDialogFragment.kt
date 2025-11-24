@@ -42,12 +42,12 @@ class DebugLogsPromptDialogFragment : FixedRoundedCornerBottomSheetDialogFragmen
       }
 
       if (NetworkUtil.isConnected(activity) && activity.supportFragmentManager.findFragmentByTag(BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG) == null) {
-        DebugLogsPromptDialogFragment().apply {
+        val dialog = DebugLogsPromptDialogFragment().apply {
           arguments = bundleOf(
             KEY_PURPOSE to purpose.serialized
           )
-        }.show(activity.supportFragmentManager, BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG)
-
+        }
+        BottomSheetUtil.show(activity.supportFragmentManager, BottomSheetUtil.STANDARD_BOTTOM_SHEET_FRAGMENT_TAG, dialog)
         Log.i(TAG, "Showing debug log dialog prompt for $purpose")
         when (purpose) {
           Purpose.NOTIFICATIONS -> SignalStore.uiHints.lastNotificationLogsPrompt = System.currentTimeMillis()
@@ -158,11 +158,7 @@ class DebugLogsPromptDialogFragment : FixedRoundedCornerBottomSheetDialogFragmen
   }
 
   private fun batteryOptimizationsString(): String {
-    return if (Build.VERSION.SDK_INT < 23) {
-      "N/A (API < 23)"
-    } else {
-      PowerManagerCompat.isIgnoringBatteryOptimizations(requireContext()).toString()
-    }
+    return PowerManagerCompat.isIgnoringBatteryOptimizations(requireContext()).toString()
   }
 
   private fun backgroundRestrictedString(): String {

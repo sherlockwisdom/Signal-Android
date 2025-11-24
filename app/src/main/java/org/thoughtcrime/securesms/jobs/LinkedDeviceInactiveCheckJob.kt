@@ -67,8 +67,16 @@ class LinkedDeviceInactiveCheckJob private constructor(
       return Result.success()
     }
 
+    if (SignalStore.account.isLinkedDevice) {
+      Log.i(TAG, "Not primary, skipping")
+      return Result.success()
+    }
+
     val devices = try {
-      AppDependencies.signalServiceAccountManager.devices
+      AppDependencies
+        .linkDeviceApi
+        .getDevices()
+        .successOrThrow()
         .filter { it.id != SignalServiceAddress.DEFAULT_DEVICE_ID }
     } catch (e: IOException) {
       return Result.retry(defaultBackoff())
@@ -77,7 +85,7 @@ class LinkedDeviceInactiveCheckJob private constructor(
     if (devices.isEmpty()) {
       Log.i(TAG, "No linked devices found.")
 
-      SignalStore.account.hasLinkedDevices = false
+      SignalStore.account.isMultiDevice = false
       SignalStore.misc.leastActiveLinkedDevice = null
       SignalStore.misc.linkedDeviceLastActiveCheckTime = System.currentTimeMillis()
 
@@ -100,7 +108,7 @@ class LinkedDeviceInactiveCheckJob private constructor(
 
     if (leastActiveDevice == null) {
       Log.w(TAG, "Failed to decrypt linked device name.")
-      SignalStore.account.hasLinkedDevices = true
+      SignalStore.account.isMultiDevice = true
       SignalStore.misc.leastActiveLinkedDevice = null
       SignalStore.misc.linkedDeviceLastActiveCheckTime = System.currentTimeMillis()
       return Result.success()
@@ -109,7 +117,7 @@ class LinkedDeviceInactiveCheckJob private constructor(
     val timeSinceActive = System.currentTimeMillis() - leastActiveDevice.lastActiveTimestamp
     Log.i(TAG, "Least active linked device was last active ${timeSinceActive.milliseconds.toDouble(DurationUnit.DAYS).roundedString(2)} days ago ($timeSinceActive ms).")
 
-    SignalStore.account.hasLinkedDevices = true
+    SignalStore.account.isMultiDevice = true
     SignalStore.misc.leastActiveLinkedDevice = leastActiveDevice
     SignalStore.misc.linkedDeviceLastActiveCheckTime = System.currentTimeMillis()
 

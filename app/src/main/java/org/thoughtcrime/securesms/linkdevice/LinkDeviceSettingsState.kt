@@ -1,6 +1,7 @@
 package org.thoughtcrime.securesms.linkdevice
 
 import android.net.Uri
+import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.linkdevice.LinkDeviceRepository.LinkDeviceResult
 
 /**
@@ -16,18 +17,22 @@ data class LinkDeviceSettingsState(
   val qrCodeState: QrCodeState = QrCodeState.NONE,
   val linkUri: Uri? = null,
   val linkDeviceResult: LinkDeviceResult = LinkDeviceResult.None,
-  val seenIntroSheet: Boolean = false,
-  val seenEducationSheet: Boolean = false,
+  val seenQrEducationSheet: Boolean = SignalStore.uiHints.hasSeenLinkDeviceQrEducationSheet() || SignalStore.account.isMultiDevice,
   val bottomSheetVisible: Boolean = false,
-  val deviceToEdit: Device? = null
+  val deviceToEdit: Device? = null,
+  val shouldCancelArchiveUpload: Boolean = false,
+  val debugLogUrl: String? = null
 ) {
   sealed interface DialogState {
     data object None : DialogState
     data object Linking : DialogState
     data object Unlinking : DialogState
-    data object SyncingMessages : DialogState
+    data class SyncingMessages(val deviceId: Int) : DialogState
     data object SyncingTimedOut : DialogState
-    data class SyncingFailed(val deviceId: Int, val deviceCreatedAt: Long) : DialogState
+    data class SyncingFailed(val deviceId: Int, val deviceRegistrationId: Int, val syncFailType: SyncFailType) : DialogState
+    data class DeviceUnlinked(val deviceCreatedAt: Long) : DialogState
+    data object LoadingDebugLog : DialogState
+    data object ContactSupport : DialogState
   }
 
   sealed interface OneTimeEvent {
@@ -35,14 +40,22 @@ data class LinkDeviceSettingsState(
     data object ToastNetworkFailed : OneTimeEvent
     data class ToastUnlinked(val name: String) : OneTimeEvent
     data class ToastLinked(val name: String) : OneTimeEvent
+    data object SnackbarLinkCancelled : OneTimeEvent
     data object SnackbarNameChangeSuccess : OneTimeEvent
     data object SnackbarNameChangeFailure : OneTimeEvent
     data object ShowFinishedSheet : OneTimeEvent
     data object HideFinishedSheet : OneTimeEvent
     data object LaunchQrCodeScanner : OneTimeEvent
+    data object LaunchEmail : OneTimeEvent
   }
 
   enum class QrCodeState {
     NONE, VALID_WITH_SYNC, VALID_WITHOUT_SYNC, INVALID
+  }
+
+  enum class SyncFailType {
+    NOT_RETRYABLE,
+    RETRYABLE,
+    NOT_ENOUGH_SPACE
   }
 }

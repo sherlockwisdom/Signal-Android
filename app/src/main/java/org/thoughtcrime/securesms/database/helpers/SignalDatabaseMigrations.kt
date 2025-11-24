@@ -3,7 +3,6 @@ package org.thoughtcrime.securesms.database.helpers
 import android.app.Application
 import android.content.Context
 import android.database.sqlite.SQLiteException
-import net.zetetic.database.sqlcipher.SQLiteDatabase
 import org.signal.core.util.areForeignKeyConstraintsEnabled
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.database.SignalDatabase
@@ -117,6 +116,41 @@ import org.thoughtcrime.securesms.database.helpers.migration.V257_CreateBackupMe
 import org.thoughtcrime.securesms.database.helpers.migration.V258_FixGroupRevokedInviteeUpdate
 import org.thoughtcrime.securesms.database.helpers.migration.V259_AdjustNotificationProfileMidnightEndTimes
 import org.thoughtcrime.securesms.database.helpers.migration.V260_RemapQuoteAuthors
+import org.thoughtcrime.securesms.database.helpers.migration.V261_RemapCallRingers
+import org.thoughtcrime.securesms.database.helpers.migration.V263_InAppPaymentsSubscriberTableRebuild
+import org.thoughtcrime.securesms.database.helpers.migration.V264_FixGroupAddMemberUpdate
+import org.thoughtcrime.securesms.database.helpers.migration.V265_FixFtsTriggers
+import org.thoughtcrime.securesms.database.helpers.migration.V266_UniqueThreadPinOrder
+import org.thoughtcrime.securesms.database.helpers.migration.V267_FixGroupInvitationDeclinedUpdate
+import org.thoughtcrime.securesms.database.helpers.migration.V268_FixInAppPaymentsErrorStateConsistency
+import org.thoughtcrime.securesms.database.helpers.migration.V269_BackupMediaSnapshotChanges
+import org.thoughtcrime.securesms.database.helpers.migration.V270_FixChatFolderColumnsForStorageSync
+import org.thoughtcrime.securesms.database.helpers.migration.V271_AddNotificationProfileIdColumn
+import org.thoughtcrime.securesms.database.helpers.migration.V272_UpdateUnreadCountIndices
+import org.thoughtcrime.securesms.database.helpers.migration.V273_FixUnreadOriginalMessages
+import org.thoughtcrime.securesms.database.helpers.migration.V274_BackupMediaSnapshotLastSeenOnRemote
+import org.thoughtcrime.securesms.database.helpers.migration.V275_EnsureDefaultAllChatsFolder
+import org.thoughtcrime.securesms.database.helpers.migration.V276_AttachmentCdnDefaultValueMigration
+import org.thoughtcrime.securesms.database.helpers.migration.V277_AddNotificationProfileStorageSync
+import org.thoughtcrime.securesms.database.helpers.migration.V278_BackupSnapshotTableVersions
+import org.thoughtcrime.securesms.database.helpers.migration.V279_AddNotificationProfileForeignKey
+import org.thoughtcrime.securesms.database.helpers.migration.V280_RemoveAttachmentIv
+import org.thoughtcrime.securesms.database.helpers.migration.V281_RemoveArchiveTransferFile
+import org.thoughtcrime.securesms.database.helpers.migration.V282_AddSnippetMessageIdColumnToThreadTable
+import org.thoughtcrime.securesms.database.helpers.migration.V283_ViewOnceRemoteDataCleanup
+import org.thoughtcrime.securesms.database.helpers.migration.V284_SetPlaceholderGroupFlag
+import org.thoughtcrime.securesms.database.helpers.migration.V285_AddEpochToCallLinksTable
+import org.thoughtcrime.securesms.database.helpers.migration.V286_FixRemoteKeyEncoding
+import org.thoughtcrime.securesms.database.helpers.migration.V287_FixInvalidArchiveState
+import org.thoughtcrime.securesms.database.helpers.migration.V288_CopyStickerDataHashStartToEnd
+import org.thoughtcrime.securesms.database.helpers.migration.V289_AddQuoteTargetContentTypeColumn
+import org.thoughtcrime.securesms.database.helpers.migration.V290_AddArchiveThumbnailTransferStateColumn
+import org.thoughtcrime.securesms.database.helpers.migration.V291_NullOutRemoteKeyIfEmpty
+import org.thoughtcrime.securesms.database.helpers.migration.V292_AddPollTables
+import org.thoughtcrime.securesms.database.helpers.migration.V294_RemoveLastResortKeyTupleColumnConstraintMigration
+import org.thoughtcrime.securesms.database.helpers.migration.V295_AddLastRestoreKeyTypeTableIfMissingMigration
+import org.thoughtcrime.securesms.database.helpers.migration.V296_RemovePollVoteConstraint
+import org.thoughtcrime.securesms.database.SQLiteDatabase as SignalSqliteDatabase
 
 /**
  * Contains all of the database migrations for [SignalDatabase]. Broken into a separate file for cleanliness.
@@ -236,48 +270,88 @@ object SignalDatabaseMigrations {
     257 to V257_CreateBackupMediaSyncTable,
     258 to V258_FixGroupRevokedInviteeUpdate,
     259 to V259_AdjustNotificationProfileMidnightEndTimes,
-    260 to V260_RemapQuoteAuthors
+    260 to V260_RemapQuoteAuthors,
+    261 to V261_RemapCallRingers,
+    // V263 was originally V262, but a typo in the version mapping caused it not to be run.
+    263 to V263_InAppPaymentsSubscriberTableRebuild,
+    264 to V264_FixGroupAddMemberUpdate,
+    265 to V265_FixFtsTriggers,
+    266 to V266_UniqueThreadPinOrder,
+    267 to V267_FixGroupInvitationDeclinedUpdate,
+    268 to V268_FixInAppPaymentsErrorStateConsistency,
+    269 to V269_BackupMediaSnapshotChanges,
+    270 to V270_FixChatFolderColumnsForStorageSync,
+    271 to V271_AddNotificationProfileIdColumn,
+    272 to V272_UpdateUnreadCountIndices,
+    273 to V273_FixUnreadOriginalMessages,
+    274 to V274_BackupMediaSnapshotLastSeenOnRemote,
+    275 to V275_EnsureDefaultAllChatsFolder,
+    276 to V276_AttachmentCdnDefaultValueMigration,
+    277 to V277_AddNotificationProfileStorageSync,
+    278 to V278_BackupSnapshotTableVersions,
+    279 to V279_AddNotificationProfileForeignKey,
+    280 to V280_RemoveAttachmentIv,
+    281 to V281_RemoveArchiveTransferFile,
+    282 to V282_AddSnippetMessageIdColumnToThreadTable,
+    283 to V283_ViewOnceRemoteDataCleanup,
+    284 to V284_SetPlaceholderGroupFlag,
+    285 to V285_AddEpochToCallLinksTable,
+    286 to V286_FixRemoteKeyEncoding,
+    287 to V287_FixInvalidArchiveState,
+    288 to V288_CopyStickerDataHashStartToEnd,
+    289 to V289_AddQuoteTargetContentTypeColumn,
+    290 to V290_AddArchiveThumbnailTransferStateColumn,
+    291 to V291_NullOutRemoteKeyIfEmpty,
+    292 to V292_AddPollTables,
+    // 293 to V293_LastResortKeyTupleTableMigration, - removed due to crashing on some devices.
+    294 to V294_RemoveLastResortKeyTupleColumnConstraintMigration,
+    295 to V295_AddLastRestoreKeyTypeTableIfMissingMigration,
+    296 to V296_RemovePollVoteConstraint
   )
 
-  const val DATABASE_VERSION = 260
+  const val DATABASE_VERSION = 296
 
   @JvmStatic
-  fun migrate(context: Application, db: SQLiteDatabase, oldVersion: Int, newVersion: Int) {
+  fun migrate(context: Application, db: SignalSqliteDatabase, oldVersion: Int, newVersion: Int) {
     val initialForeignKeyState = db.areForeignKeyConstraintsEnabled()
 
-    for (migrationData in migrations) {
+    val eligibleMigrations = if (newVersion < 0) {
+      migrations.filter { (version, _) -> version > oldVersion }
+    } else {
+      migrations.filter { (version, _) -> version > oldVersion && version <= newVersion }
+    }
+
+    for (migrationData in eligibleMigrations) {
       val (version, migration) = migrationData
 
-      if (oldVersion < version) {
-        Log.i(TAG, "Running migration for version $version: ${migration.javaClass.simpleName}. Foreign keys: ${migration.enableForeignKeys}")
-        val startTime = System.currentTimeMillis()
+      Log.i(TAG, "Running migration for version $version: ${migration.javaClass.simpleName}. Foreign keys: ${migration.enableForeignKeys}")
+      val startTime = System.currentTimeMillis()
 
-        var ftsException: SQLiteException? = null
+      var ftsException: SQLiteException? = null
 
-        db.setForeignKeyConstraintsEnabled(migration.enableForeignKeys)
-        db.beginTransaction()
-        try {
-          migration.migrate(context, db, oldVersion, newVersion)
-          db.version = version
-          db.setTransactionSuccessful()
-        } catch (e: SQLiteException) {
-          if (e.message?.contains("invalid fts5 file format") == true || e.message?.contains("vtable constructor failed") == true) {
-            ftsException = e
-          } else {
-            throw e
-          }
-        } finally {
-          db.endTransaction()
+      db.setForeignKeyConstraintsEnabled(migration.enableForeignKeys)
+      db.beginTransaction()
+      try {
+        migration.migrate(context, db, oldVersion, newVersion)
+        db.version = version
+        db.setTransactionSuccessful()
+      } catch (e: SQLiteException) {
+        if (e.message?.contains("invalid fts5 file format") == true || e.message?.contains("vtable constructor failed") == true) {
+          ftsException = e
+        } else {
+          throw e
         }
-
-        if (ftsException != null) {
-          Log.w(TAG, "Encountered FTS format issue! Attempting to repair.", ftsException)
-          SignalDatabase.messageSearch.fullyResetTables(db)
-          throw ftsException
-        }
-
-        Log.i(TAG, "Successfully completed migration for version $version in ${System.currentTimeMillis() - startTime} ms")
+      } finally {
+        db.endTransaction()
       }
+
+      if (ftsException != null) {
+        Log.w(TAG, "Encountered FTS format issue! Attempting to repair.", ftsException)
+        SignalDatabase.messageSearch.fullyResetTables(db)
+        throw ftsException
+      }
+
+      Log.i(TAG, "Successfully completed migration for version $version in ${System.currentTimeMillis() - startTime} ms")
     }
 
     db.setForeignKeyConstraintsEnabled(initialForeignKeyState)

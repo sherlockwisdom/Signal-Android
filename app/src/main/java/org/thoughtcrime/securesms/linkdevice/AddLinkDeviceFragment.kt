@@ -12,8 +12,10 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.fragment.app.activityViewModels
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
@@ -22,18 +24,23 @@ import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import com.google.accompanist.permissions.PermissionState
 import com.google.accompanist.permissions.isGranted
 import com.google.accompanist.permissions.rememberPermissionState
-import org.signal.core.ui.Previews
-import org.signal.core.ui.Scaffolds
-import org.signal.core.ui.SignalPreview
+import org.signal.core.ui.compose.DayNightPreviews
+import org.signal.core.ui.compose.Previews
+import org.signal.core.ui.compose.Scaffolds
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.compose.ComposeFragment
 import org.thoughtcrime.securesms.permissions.Permissions
+import org.thoughtcrime.securesms.util.VibrateUtil
 import org.thoughtcrime.securesms.util.navigation.safeNavigate
 
 /**
  * Fragment that allows users to scan a QR code from their camera to link a device
  */
 class AddLinkDeviceFragment : ComposeFragment() {
+
+  companion object {
+    private const val VIBRATE_DURATION_MS = 50
+  }
 
   private val viewModel: LinkDeviceViewModel by activityViewModels()
 
@@ -44,9 +51,9 @@ class AddLinkDeviceFragment : ComposeFragment() {
     val navController: NavController by remember { mutableStateOf(findNavController()) }
     val cameraPermissionState: PermissionState = rememberPermissionState(permission = Manifest.permission.CAMERA)
 
-    if (!state.seenIntroSheet) {
+    if (!state.seenQrEducationSheet) {
       navController.safeNavigate(R.id.action_addLinkDeviceFragment_to_linkDeviceIntroBottomSheet)
-      viewModel.markIntroSheetSeen()
+      viewModel.markQrEducationSheetSeen()
     }
 
     if (state.qrCodeState != LinkDeviceSettingsState.QrCodeState.NONE && navController.currentDestination?.id == R.id.linkDeviceIntroBottomSheet) {
@@ -59,7 +66,12 @@ class AddLinkDeviceFragment : ComposeFragment() {
       hasPermissions = cameraPermissionState.status.isGranted,
       onRequestPermissions = { askPermissions() },
       onShowFrontCamera = { viewModel.showFrontCamera() },
-      onQrCodeScanned = { data -> viewModel.onQrCodeScanned(data) },
+      onQrCodeScanned = { data ->
+        if (VibrateUtil.isHapticFeedbackEnabled(requireContext())) {
+          VibrateUtil.vibrate(requireContext(), VIBRATE_DURATION_MS)
+        }
+        viewModel.onQrCodeScanned(data)
+      },
       onQrCodeApproved = {
         navController.popBackStack()
         viewModel.addDevice(shouldSync = false)
@@ -105,7 +117,7 @@ private fun MainScreen(
   Scaffolds.Settings(
     title = "",
     onNavigationClick = { navController?.popBackStack() },
-    navigationIconPainter = painterResource(id = R.drawable.ic_x),
+    navigationIcon = ImageVector.vectorResource(id = R.drawable.ic_x),
     navigationContentDescription = stringResource(id = R.string.Material3SearchToolbar__close),
     actions = {
       IconButton(onClick = { onShowFrontCamera() }) {
@@ -131,7 +143,7 @@ private fun MainScreen(
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 private fun LinkDeviceAddScreenPreview() {
   Previews.Preview {

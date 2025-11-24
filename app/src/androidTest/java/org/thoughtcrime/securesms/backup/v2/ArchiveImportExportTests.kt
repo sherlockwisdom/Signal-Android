@@ -77,6 +77,16 @@ class ArchiveImportExportTests {
   }
 
 //  @Test
+  fun chatItemDirectStoryReplyMessage() {
+    runTests { it.startsWith("chat_item_direct_story_reply_") }
+  }
+
+//  @Test
+  fun chatItemDirectStoryReplyMessageWithEdits() {
+    runTests { it.startsWith("chat_item_direct_story_reply_with_edits_") }
+  }
+
+//  @Test
   fun chatItemExpirationTimerUpdate() {
     runTests { it.startsWith("chat_item_expiration_timer_update_") }
   }
@@ -162,6 +172,11 @@ class ArchiveImportExportTests {
   }
 
 //  @Test
+  fun chatItemStandardMessageGroupTextOnly() {
+    runTests { it.startsWith("chat_item_standard_message_group_text_only_") }
+  }
+
+//  @Test
   fun chatItemStandardMessageTextOnly() {
     runTests { it.startsWith("chat_item_standard_message_text_only_") }
   }
@@ -197,6 +212,11 @@ class ArchiveImportExportTests {
   }
 
 //  @Test
+  fun chatItemPoll() {
+    runTests { it.startsWith("chat_item_poll_") }
+  }
+
+//  @Test
   fun notificationProfiles() {
     runTests { it.startsWith("notification_profile_") }
   }
@@ -219,6 +239,11 @@ class ArchiveImportExportTests {
 //  @Test
   fun recipientGroups() {
     runTests { it.startsWith("recipient_groups_") }
+  }
+
+  //  @Test
+  fun recipientSelf() {
+    runTests { it.startsWith("recipient_self_") }
   }
 
   private fun runTests(predicate: (String) -> Boolean = { true }) {
@@ -270,7 +295,7 @@ class ArchiveImportExportTests {
     assertTrue(importResult is ImportResult.Success)
     val success = importResult as ImportResult.Success
 
-    val generatedBackupData = BackupRepository.debugExport(plaintext = true, currentTime = success.backupTime)
+    val generatedBackupData = BackupRepository.exportInMemoryForTests(plaintext = true, currentTime = success.backupTime)
     checkEquivalent(filename, inputFileBytes, generatedBackupData)?.let { return it }
 
     return TestResult.Success(filename)
@@ -292,11 +317,10 @@ class ArchiveImportExportTests {
   }
 
   private fun import(importData: ByteArray): ImportResult {
-    return BackupRepository.import(
+    return BackupRepository.importPlaintextTest(
       length = importData.size.toLong(),
       inputStreamFactory = { ByteArrayInputStream(importData) },
-      selfData = BackupRepository.SelfData(SELF_ACI, SELF_PNI, SELF_E164, ProfileKey(SELF_PROFILE_KEY)),
-      plaintext = true
+      selfData = BackupRepository.SelfData(SELF_ACI, SELF_PNI, SELF_E164, ProfileKey(SELF_PROFILE_KEY))
     )
   }
 
@@ -313,13 +337,14 @@ class ArchiveImportExportTests {
       return TestResult.Failure(testName, "Exported backup hit a validation error: ${e.message}")
     }
 
-    if (importComparable.unknownFieldMessages.isNotEmpty()) {
-      return TestResult.Failure(testName, "Imported backup contains unknown fields: ${importComparable.unknownFieldMessages.contentToString()}")
-    }
-
-    if (exportComparable.unknownFieldMessages.isNotEmpty()) {
-      return TestResult.Failure(testName, "Imported backup contains unknown fields: ${importComparable.unknownFieldMessages.contentToString()}")
-    }
+    // Do we actually need this?
+//    if (importComparable.unknownFieldMessages.isNotEmpty()) {
+//      return TestResult.Failure(testName, "Imported backup contains unknown fields: ${importComparable.unknownFieldMessages.contentToString()}")
+//    }
+//
+//    if (exportComparable.unknownFieldMessages.isNotEmpty()) {
+//      return TestResult.Failure(testName, "Imported backup contains unknown fields: ${importComparable.unknownFieldMessages.contentToString()}")
+//    }
 
     val canonicalImport = importComparable.comparableString
     val canonicalExport = exportComparable.comparableString

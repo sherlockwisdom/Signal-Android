@@ -7,6 +7,7 @@ package org.thoughtcrime.securesms.backup.v2.importer
 
 import android.content.ContentValues
 import org.signal.core.util.Base64
+import org.signal.core.util.toInt
 import org.signal.libsignal.zkgroup.groups.GroupMasterKey
 import org.signal.libsignal.zkgroup.groups.GroupSecretParams
 import org.signal.storageservice.protos.groups.AccessControl
@@ -20,6 +21,7 @@ import org.signal.storageservice.protos.groups.local.DecryptedTimer
 import org.signal.storageservice.protos.groups.local.EnabledState
 import org.thoughtcrime.securesms.backup.v2.ArchiveGroup
 import org.thoughtcrime.securesms.backup.v2.proto.Group
+import org.thoughtcrime.securesms.backup.v2.util.toLocal
 import org.thoughtcrime.securesms.conversation.colors.AvatarColorHash
 import org.thoughtcrime.securesms.database.GroupTable
 import org.thoughtcrime.securesms.database.RecipientTable
@@ -28,6 +30,7 @@ import org.thoughtcrime.securesms.database.model.databaseprotos.RecipientExtras
 import org.thoughtcrime.securesms.dependencies.AppDependencies
 import org.thoughtcrime.securesms.groups.GroupId
 import org.thoughtcrime.securesms.groups.v2.processing.GroupsV2StateProcessor
+import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.recipients.RecipientId
 import org.thoughtcrime.securesms.storage.StorageSyncHelper
 import org.whispersystems.signalservice.api.groupsv2.GroupsV2Operations
@@ -51,9 +54,11 @@ object GroupArchiveImporter {
     val values = ContentValues().apply {
       put(RecipientTable.GROUP_ID, groupId.toString())
       put(RecipientTable.AVATAR_COLOR, AvatarColorHash.forGroupId(groupId).serialize())
-      put(RecipientTable.PROFILE_SHARING, group.whitelisted)
+      put(RecipientTable.PROFILE_SHARING, group.whitelisted.toInt())
+      put(RecipientTable.BLOCKED, group.blocked.toInt())
       put(RecipientTable.TYPE, RecipientTable.RecipientType.GV2.id)
       put(RecipientTable.STORAGE_SERVICE_ID, Base64.encodeWithPadding(StorageSyncHelper.generateKey()))
+      put(RecipientTable.AVATAR_COLOR, group.avatarColor?.toLocal()?.serialize())
       if (group.hideStory) {
         val extras = RecipientExtras.Builder().hideStory(true).build()
         put(RecipientTable.EXTRAS, extras.encode())
@@ -129,6 +134,10 @@ private fun Group.MemberBanned.toLocal(): DecryptedBannedMember {
 }
 
 private fun Group.GroupSnapshot.toLocal(operations: GroupsV2Operations.GroupOperations): DecryptedGroup {
+  val selfAciBytes = SignalStore.account.aci?.toByteString()
+  val requestingMembers = this.membersPendingAdminApproval.map { requesting -> requesting.toLocal() }
+  val isPlaceholder = requestingMembers.any { it.aciBytes == selfAciBytes }
+
   return DecryptedGroup(
     title = this.title?.title ?: "",
     avatar = this.avatarUrl,
@@ -137,10 +146,11 @@ private fun Group.GroupSnapshot.toLocal(operations: GroupsV2Operations.GroupOper
     revision = this.version,
     members = this.members.map { member -> member.toLocal() },
     pendingMembers = this.membersPendingProfileKey.map { pending -> pending.toLocal(operations) },
-    requestingMembers = this.membersPendingAdminApproval.map { requesting -> requesting.toLocal() },
+    requestingMembers = requestingMembers,
     inviteLinkPassword = this.inviteLinkPassword,
     description = this.description?.descriptionText ?: "",
     isAnnouncementGroup = if (this.announcements_only) EnabledState.ENABLED else EnabledState.DISABLED,
-    bannedMembers = this.members_banned.map { it.toLocal() }
+    bannedMembers = this.members_banned.map { it.toLocal() },
+    isPlaceholderGroup = isPlaceholder
   )
 }

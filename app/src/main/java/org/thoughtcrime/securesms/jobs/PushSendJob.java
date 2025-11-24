@@ -16,8 +16,6 @@ import androidx.annotation.Nullable;
 import com.annimon.stream.Stream;
 
 import org.greenrobot.eventbus.EventBus;
-import org.greenrobot.eventbus.Subscribe;
-import org.greenrobot.eventbus.ThreadMode;
 import org.signal.core.util.Hex;
 import org.signal.core.util.logging.Log;
 import org.signal.libsignal.metadata.certificate.InvalidCertificateException;
@@ -50,7 +48,7 @@ import org.thoughtcrime.securesms.jobmanager.impl.BackoffUtil;
 import org.thoughtcrime.securesms.keyvalue.CertificateType;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
 import org.thoughtcrime.securesms.linkpreview.LinkPreview;
-import org.thoughtcrime.securesms.mms.DecryptableStreamUriLoader.DecryptableUri;
+import org.thoughtcrime.securesms.mms.DecryptableUri;
 import org.thoughtcrime.securesms.mms.OutgoingMessage;
 import org.thoughtcrime.securesms.mms.PartAuthority;
 import org.thoughtcrime.securesms.mms.QuoteModel;
@@ -67,6 +65,7 @@ import org.thoughtcrime.securesms.util.RemoteConfig;
 import org.thoughtcrime.securesms.util.ImageCompressionUtil;
 import org.thoughtcrime.securesms.util.MediaUtil;
 import org.thoughtcrime.securesms.util.Util;
+import org.whispersystems.signalservice.api.messages.AttachmentTransferProgress;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachment;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentPointer;
 import org.whispersystems.signalservice.api.messages.SignalServiceAttachmentRemoteId;
@@ -76,7 +75,9 @@ import org.whispersystems.signalservice.api.messages.shared.SharedContact;
 import org.whispersystems.signalservice.api.push.ServiceId.ACI;
 import org.whispersystems.signalservice.api.push.exceptions.NonSuccessfulResponseCodeException;
 import org.whispersystems.signalservice.api.push.exceptions.ProofRequiredException;
+import org.whispersystems.signalservice.api.push.exceptions.RateLimitException;
 import org.whispersystems.signalservice.api.push.exceptions.ServerRejectedException;
+import org.whispersystems.signalservice.internal.push.AttachmentPointer;
 import org.whispersystems.signalservice.internal.push.BodyRange;
 
 import java.io.ByteArrayInputStream;
@@ -90,7 +91,6 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
 
@@ -175,6 +175,11 @@ public abstract class PushSendJob extends SendJob {
       if (backoff >= 0) {
         return TimeUnit.SECONDS.toMillis(backoff);
       }
+    } else if (exception instanceof RateLimitException) {
+      long backoff = ((RateLimitException) exception).getRetryAfterMilliseconds().orElse(-1L);
+      if (backoff >= 0) {
+        return backoff;
+      }
     } else if (exception instanceof NonSuccessfulResponseCodeException) {
       if (((NonSuccessfulResponseCodeException) exception).is5xx()) {
         return BackoffUtil.exponentialBackoff(pastAttemptCount, RemoteConfig.getServerErrorMaxBackoff());
@@ -219,8 +224,8 @@ public abstract class PushSendJob extends SendJob {
                                     .withResumableUploadSpec(AppDependencies.getSignalServiceMessageSender().getResumableUploadSpec())
                                     .withListener(new SignalServiceAttachment.ProgressListener() {
                                       @Override
-                                      public void onAttachmentProgress(long total, long progress) {
-                                        EventBus.getDefault().postSticky(new PartProgressEvent(attachment, PartProgressEvent.Type.NETWORK, total, progress));
+                                      public void onAttachmentProgress(@NonNull AttachmentTransferProgress progress) {
+                                        EventBus.getDefault().postSticky(new PartProgressEvent(attachment, PartProgressEvent.Type.NETWORK, progress));
                                       }
 
                                       @Override
@@ -251,7 +256,7 @@ public abstract class PushSendJob extends SendJob {
                              .map(Contact.Avatar::getAttachment).withoutNulls()
                              .toList());
 
-    return new HashSet<>(Stream.of(attachments).map(a -> {
+    HashSet<String> jobs = new HashSet<>(Stream.of(attachments).map(a -> {
                                  final AttachmentId attachmentId = ((DatabaseAttachment) a).attachmentId;
                                  Log.d(TAG, "Enqueueing job chain to upload " + attachmentId);
                                  AttachmentUploadJob attachmentUploadJob = new AttachmentUploadJob(attachmentId);
@@ -263,6 +268,18 @@ public abstract class PushSendJob extends SendJob {
                                  return attachmentUploadJob.getId();
                                })
                                .toList());
+
+    if (message.getOutgoingQuote() != null && message.getOutgoingQuote().getAttachment() != null) {
+      AttachmentId attachmentId = ((DatabaseAttachment) message.getOutgoingQuote().getAttachment()).attachmentId;
+
+      if (SignalDatabase.attachments().hasData(attachmentId)) {
+        AttachmentUploadJob quoteUploadJob = new AttachmentUploadJob(attachmentId);
+        jobManager.add(quoteUploadJob);
+        jobs.add(quoteUploadJob.getId());
+      }
+    }
+
+    return jobs;
   }
 
   protected @NonNull List<SignalServiceAttachment> getAttachmentPointersFor(List<Attachment> attachments) {
@@ -359,48 +376,19 @@ public abstract class PushSendJob extends SendJob {
     List<BodyRange>                                       bodyRanges           = getBodyRanges(message.getOutgoingQuote().getBodyRanges());
     QuoteModel.Type                                       quoteType            = message.getOutgoingQuote().getType();
     List<SignalServiceDataMessage.Quote.QuotedAttachment> quoteAttachments     = new LinkedList<>();
-    Optional<Attachment>                                  localQuoteAttachment = message.getOutgoingQuote()
-                                                                                        .getAttachments()
-                                                                                        .stream()
-                                                                                        .filter(a -> !MediaUtil.isViewOnceType(a.contentType))
-                                                                                        .findFirst();
+    Optional<Attachment>                                  localQuoteAttachment = Optional.ofNullable(message.getOutgoingQuote()).map(QuoteModel::getAttachment);
+
+    if (localQuoteAttachment.isPresent() && MediaUtil.isViewOnceType(localQuoteAttachment.get().contentType)) {
+      localQuoteAttachment = Optional.empty();
+    }
 
     if (localQuoteAttachment.isPresent()) {
-      Attachment attachment = localQuoteAttachment.get();
+      Attachment              attachment             = localQuoteAttachment.get();
+      SignalServiceAttachment quoteAttachmentPointer = getAttachmentPointerFor(localQuoteAttachment.get());
 
-      ImageCompressionUtil.Result thumbnailData = null;
-      SignalServiceAttachment     thumbnail     = null;
-
-      try {
-        if (MediaUtil.isImageType(attachment.contentType) && attachment.getUri() != null) {
-          thumbnailData = ImageCompressionUtil.compress(context, attachment.contentType, new DecryptableUri(attachment.getUri()), 100, 50);
-        } else if (Build.VERSION.SDK_INT >= 23 && MediaUtil.isVideoType(attachment.contentType) && attachment.getUri() != null) {
-          Bitmap bitmap = MediaUtil.getVideoThumbnail(context, attachment.getUri(), 1000);
-
-          if (bitmap != null) {
-            thumbnailData = ImageCompressionUtil.compress(context, attachment.contentType, new DecryptableUri(attachment.getUri()), 100, 50);
-          }
-        }
-
-        if (thumbnailData != null) {
-          SignalServiceAttachment.Builder builder = SignalServiceAttachment.newStreamBuilder()
-                                                                           .withContentType(thumbnailData.getMimeType())
-                                                                           .withWidth(thumbnailData.getWidth())
-                                                                           .withHeight(thumbnailData.getHeight())
-                                                                           .withLength(thumbnailData.getData().length)
-                                                                           .withStream(new ByteArrayInputStream(thumbnailData.getData()))
-                                                                           .withResumableUploadSpec(AppDependencies.getSignalServiceMessageSender().getResumableUploadSpec())
-                                                                           .withUuid(UUID.randomUUID());
-
-          thumbnail = builder.build();
-        }
-
-        quoteAttachments.add(new SignalServiceDataMessage.Quote.QuotedAttachment(attachment.videoGif ? MediaUtil.IMAGE_GIF : attachment.contentType,
-                                                                                 attachment.fileName,
-                                                                                 thumbnail));
-      } catch (BitmapDecodingException e) {
-        Log.w(TAG, e);
-      }
+      quoteAttachments.add(new SignalServiceDataMessage.Quote.QuotedAttachment(attachment.quoteTargetContentType != null ? attachment.quoteTargetContentType : MediaUtil.IMAGE_JPEG,
+                                                                               attachment.fileName,
+                                                                               quoteAttachmentPointer));
     }
 
     Recipient quoteAuthorRecipient = Recipient.resolved(quoteAuthor);
@@ -426,7 +414,7 @@ public abstract class PushSendJob extends SendJob {
       byte[]                  packKey    = Hex.fromStringCondensed(stickerAttachment.stickerLocator.packKey);
       int                     stickerId  = stickerAttachment.stickerLocator.stickerId;
       StickerRecord           record     = SignalDatabase.stickers().getSticker(stickerAttachment.stickerLocator.packId, stickerId, false);
-      String                  emoji      = record != null ? record.getEmoji() : null;
+      String                  emoji      = record != null ? record.emoji : null;
       SignalServiceAttachment attachment = getAttachmentPointerFor(stickerAttachment);
 
       return Optional.of(new SignalServiceDataMessage.Sticker(packId, packKey, stickerId, emoji, attachment));

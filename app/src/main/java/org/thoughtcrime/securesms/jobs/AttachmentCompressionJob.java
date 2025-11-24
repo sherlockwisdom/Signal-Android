@@ -26,7 +26,7 @@ import org.thoughtcrime.securesms.jobmanager.Job;
 import org.thoughtcrime.securesms.jobmanager.JsonJobData;
 import org.thoughtcrime.securesms.jobmanager.impl.NetworkConstraint;
 import org.thoughtcrime.securesms.jobmanager.persistence.JobSpec;
-import org.thoughtcrime.securesms.mms.DecryptableStreamUriLoader;
+import org.thoughtcrime.securesms.mms.DecryptableUri;
 import org.thoughtcrime.securesms.mms.MediaConstraints;
 import org.thoughtcrime.securesms.mms.MediaStream;
 import org.thoughtcrime.securesms.mms.MmsException;
@@ -84,11 +84,11 @@ public final class AttachmentCompressionJob extends BaseJob {
                                    int mmsSubscriptionId)
   {
     this(new Parameters.Builder()
-                       .addConstraint(NetworkConstraint.KEY)
-                       .setLifespan(TimeUnit.DAYS.toMillis(1))
-                       .setMaxAttempts(Parameters.UNLIMITED)
-                       .setQueue(isVideoTranscode ? "VIDEO_TRANSCODE" : "GENERIC_TRANSCODE")
-                       .build(),
+             .addConstraint(NetworkConstraint.KEY)
+             .setLifespan(TimeUnit.DAYS.toMillis(1))
+             .setMaxAttempts(Parameters.UNLIMITED)
+             .setQueue(isVideoTranscode ? "VIDEO_TRANSCODE" : "GENERIC_TRANSCODE")
+             .build(),
          attachmentId,
          mms,
          mmsSubscriptionId);
@@ -106,7 +106,7 @@ public final class AttachmentCompressionJob extends BaseJob {
   }
 
   @Override
-  public @Nullable byte [] serialize() {
+  public @Nullable byte[] serialize() {
     return new JsonJobData.Builder().putLong(KEY_ATTACHMENT_ID, attachmentId.id)
                                     .putBoolean(KEY_MMS, mms)
                                     .putInt(KEY_MMS_SUBSCRIPTION_ID, mmsSubscriptionId)
@@ -127,8 +127,8 @@ public final class AttachmentCompressionJob extends BaseJob {
   public void onAdded() {
     Log.i(TAG, "onAdded() " + attachmentId.toString());
 
-    final AttachmentTable    database     = SignalDatabase.attachments();
-    final DatabaseAttachment attachment   = database.getAttachment(attachmentId);
+    final AttachmentTable    database   = SignalDatabase.attachments();
+    final DatabaseAttachment attachment = database.getAttachment(attachmentId);
     final boolean pending = attachment != null && attachment.transferState != AttachmentTable.TRANSFER_PROGRESS_DONE
                             && attachment.transferState != AttachmentTable.TRANSFER_PROGRESS_PERMANENT_FAILURE;
 
@@ -267,10 +267,11 @@ public final class AttachmentCompressionJob extends BaseJob {
 
           boolean faststart = false;
           try {
-            try (OutputStream outputStream = ModernEncryptingPartOutputStream.createFor(attachmentSecret, file, true).second) {
-              transcoder.transcode(percent -> {
+            int mdatLength;
+            try (OutputStream outputStream = ModernEncryptingPartOutputStream.createFor(attachmentSecret, file, true).getSecond()) {
+              mdatLength = (int) transcoder.transcode(percent -> {
                 if (notification != null) {
-                  notification.setProgress(percent / 100f);
+                  notification.updateProgress(percent / 100f);
                 }
                 eventBus.postSticky(new PartProgressEvent(attachment,
                                                           PartProgressEvent.Type.COMPRESSION,
@@ -299,7 +300,7 @@ public final class AttachmentCompressionJob extends BaseJob {
             });
 
             final long plaintextLength = ModernEncryptingPartOutputStream.getPlaintextLength(file.length());
-            try (MediaStream mediaStream = new MediaStream(postProcessor.process(plaintextLength), MimeTypes.VIDEO_MP4, 0, 0, true)) {
+            try (MediaStream mediaStream = new MediaStream(postProcessor.processWithMdatLength(plaintextLength, mdatLength), MimeTypes.VIDEO_MP4, 0, 0, true)) {
               attachmentDatabase.updateAttachmentData(attachment, mediaStream);
               faststart = true;
             } catch (VideoPostProcessingException e) {
@@ -374,7 +375,7 @@ public final class AttachmentCompressionJob extends BaseJob {
       for (int size : mediaConstraints.getImageDimensionTargets(context)) {
         result = ImageCompressionUtil.compressWithinConstraints(context,
                                                                 attachment.contentType,
-                                                                new DecryptableStreamUriLoader.DecryptableUri(uri),
+                                                                new DecryptableUri(uri),
                                                                 size,
                                                                 mediaConstraints.getImageMaxSize(context),
                                                                 mediaConstraints.getImageCompressionQualitySetting(context));

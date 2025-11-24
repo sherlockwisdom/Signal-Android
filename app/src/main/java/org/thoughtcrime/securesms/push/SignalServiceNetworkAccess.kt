@@ -1,6 +1,8 @@
 package org.thoughtcrime.securesms.push
 
 import android.content.Context
+import android.net.ConnectivityManager
+import androidx.core.content.ContextCompat
 import com.google.i18n.phonenumbers.PhoneNumberUtil
 import okhttp3.CipherSuite
 import okhttp3.ConnectionSpec
@@ -19,7 +21,9 @@ import org.thoughtcrime.securesms.net.RemoteDeprecationDetectorInterceptor
 import org.thoughtcrime.securesms.net.SequentialDns
 import org.thoughtcrime.securesms.net.StandardUserAgentInterceptor
 import org.thoughtcrime.securesms.net.StaticDns
+import org.thoughtcrime.securesms.net.StorageServiceSizeLoggingInterceptor
 import org.whispersystems.signalservice.api.push.TrustStore
+import org.whispersystems.signalservice.internal.configuration.HttpProxy
 import org.whispersystems.signalservice.internal.configuration.SignalCdnUrl
 import org.whispersystems.signalservice.internal.configuration.SignalCdsiUrl
 import org.whispersystems.signalservice.internal.configuration.SignalServiceConfiguration
@@ -133,6 +137,17 @@ class SignalServiceNetworkAccess(context: Context) {
       .build()
 
     private val APP_CONNECTION_SPEC = ConnectionSpec.MODERN_TLS
+
+    @Suppress("DEPRECATION")
+    private fun getSystemHttpProxy(context: Context): HttpProxy? {
+      val connectivityManager = ContextCompat.getSystemService(context, ConnectivityManager::class.java) ?: return null
+
+      return connectivityManager
+        .activeNetwork
+        ?.let { connectivityManager.getLinkProperties(it)?.httpProxy }
+        ?.takeIf { !it.exclusionList.contains(BuildConfig.SIGNAL_URL.stripProtocol()) }
+        ?.let { proxy -> HttpProxy(proxy.host, proxy.port) }
+    }
   }
 
   private val serviceTrustStore: TrustStore = SignalServiceTrustStore(context)
@@ -141,7 +156,8 @@ class SignalServiceNetworkAccess(context: Context) {
 
   private val interceptors: List<Interceptor> = listOf(
     StandardUserAgentInterceptor(),
-    RemoteDeprecationDetectorInterceptor(),
+    StorageServiceSizeLoggingInterceptor(),
+    RemoteDeprecationDetectorInterceptor(this::getConfiguration),
     DeprecatedClientPreventionInterceptor(),
     DeviceTransferBlockingInterceptor.getInstance()
   )
@@ -169,7 +185,7 @@ class SignalServiceNetworkAccess(context: Context) {
     HostConfig("https://android.clients.google.com", G_HOST, PLAY_CONNECTION_SPEC),
     HostConfig("https://clients3.google.com", G_HOST, GMAPS_CONNECTION_SPEC),
     HostConfig("https://clients4.google.com", G_HOST, GMAPS_CONNECTION_SPEC),
-    HostConfig("https://inbox.google.com", G_HOST, GMAIL_CONNECTION_SPEC)
+    HostConfig("https://googlemail.com", G_HOST, GMAIL_CONNECTION_SPEC)
   )
 
   private val fUrls = arrayOf("https://github.githubassets.com", "https://pinterest.com", "https://www.redditstatic.com")
@@ -187,6 +203,7 @@ class SignalServiceNetworkAccess(context: Context) {
     networkInterceptors = interceptors,
     dns = Optional.of(DNS),
     signalProxy = Optional.empty(),
+    systemHttpProxy = Optional.empty(),
     zkGroupServerPublicParams = zkGroupServerPublicParams,
     genericServerPublicParams = genericServerPublicParams,
     backupServerPublicParams = backupServerPublicParams,
@@ -246,6 +263,7 @@ class SignalServiceNetworkAccess(context: Context) {
     networkInterceptors = interceptors,
     dns = Optional.of(DNS),
     signalProxy = if (SignalStore.proxy.isProxyEnabled) Optional.ofNullable(SignalStore.proxy.proxy) else Optional.empty(),
+    systemHttpProxy = Optional.ofNullable(getSystemHttpProxy(context)),
     zkGroupServerPublicParams = zkGroupServerPublicParams,
     genericServerPublicParams = genericServerPublicParams,
     backupServerPublicParams = backupServerPublicParams,
@@ -267,9 +285,11 @@ class SignalServiceNetworkAccess(context: Context) {
       SettingsValues.CensorshipCircumventionEnabled.ENABLED -> {
         censorshipConfiguration[countryCode] ?: defaultCensoredConfiguration
       }
+
       SettingsValues.CensorshipCircumventionEnabled.DISABLED -> {
         uncensoredConfiguration
       }
+
       SettingsValues.CensorshipCircumventionEnabled.DEFAULT -> {
         if (defaultCensoredCountryCodes.contains(countryCode)) {
           censorshipConfiguration[countryCode] ?: defaultCensoredConfiguration
@@ -316,6 +336,7 @@ class SignalServiceNetworkAccess(context: Context) {
       networkInterceptors = interceptors,
       dns = Optional.of(DNS),
       signalProxy = Optional.empty(),
+      systemHttpProxy = Optional.empty(),
       zkGroupServerPublicParams = zkGroupServerPublicParams,
       genericServerPublicParams = genericServerPublicParams,
       backupServerPublicParams = backupServerPublicParams,

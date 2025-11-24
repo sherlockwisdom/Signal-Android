@@ -76,7 +76,8 @@ class ByteSize(val bytes: Long) {
     }
   }
 
-  fun toUnitString(maxPlaces: Int = 1, spaced: Boolean = true): String {
+  @JvmOverloads
+  fun toUnitString(maxPlaces: Int = 2, spaced: Boolean = true): String {
     val (size, unit) = getLargestNonZeroValue()
 
     val formatter = NumberFormat.getInstance().apply {
@@ -92,11 +93,44 @@ class ByteSize(val bytes: Long) {
       }
     }
 
-    return "${formatter.format(size)}${if (spaced) " " else ""}${unit.label}"
+    return BidiUtil.forceLtr("${formatter.format(size)}${if (spaced) " " else ""}${unit.label}")
   }
 
   operator fun compareTo(other: ByteSize): Int {
     return bytes.compareTo(other.bytes)
+  }
+
+  operator fun plus(other: ByteSize): ByteSize {
+    return ByteSize(this.inWholeBytes + other.inWholeBytes)
+  }
+
+  fun percentageOf(other: ByteSize): Float {
+    return this.inWholeBytes.toFloat() / other.inWholeBytes.toFloat()
+  }
+
+  operator fun minus(other: ByteSize): ByteSize {
+    return ByteSize(this.inWholeBytes - other.inWholeBytes)
+  }
+
+  operator fun times(other: Long): ByteSize {
+    return ByteSize(this.inWholeBytes * other)
+  }
+
+  override fun toString(): String {
+    return "ByteSize(${toUnitString(maxPlaces = 4, spaced = false)})"
+  }
+
+  override fun equals(other: Any?): Boolean {
+    if (this === other) return true
+    if (javaClass != other?.javaClass) return false
+
+    other as ByteSize
+
+    return bytes == other.bytes
+  }
+
+  override fun hashCode(): Int {
+    return bytes.hashCode()
   }
 
   enum class Size(val label: String) {

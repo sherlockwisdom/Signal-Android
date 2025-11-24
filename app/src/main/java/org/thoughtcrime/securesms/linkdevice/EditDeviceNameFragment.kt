@@ -20,9 +20,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
+import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.text.input.TextFieldValue
@@ -32,10 +33,10 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import com.google.android.material.snackbar.Snackbar
-import org.signal.core.ui.Buttons
-import org.signal.core.ui.Previews
-import org.signal.core.ui.Scaffolds
-import org.signal.core.ui.SignalPreview
+import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.DayNightPreviews
+import org.signal.core.ui.compose.Previews
+import org.signal.core.ui.compose.Scaffolds
 import org.signal.core.util.isNotNullOrBlank
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.R
@@ -68,20 +69,22 @@ class EditDeviceNameFragment : ComposeFragment() {
         LinkDeviceSettingsState.OneTimeEvent.SnackbarNameChangeFailure -> {
           Snackbar.make(requireView(), context.getString(R.string.EditDeviceNameFragment__unable_to_change), Snackbar.LENGTH_LONG).show()
         }
-        LinkDeviceSettingsState.OneTimeEvent.HideFinishedSheet -> Unit
-        LinkDeviceSettingsState.OneTimeEvent.LaunchQrCodeScanner -> Unit
-        LinkDeviceSettingsState.OneTimeEvent.None -> Unit
-        LinkDeviceSettingsState.OneTimeEvent.ShowFinishedSheet -> Unit
-        is LinkDeviceSettingsState.OneTimeEvent.ToastLinked -> Unit
-        LinkDeviceSettingsState.OneTimeEvent.ToastNetworkFailed -> Unit
-        is LinkDeviceSettingsState.OneTimeEvent.ToastUnlinked -> Unit
+        LinkDeviceSettingsState.OneTimeEvent.HideFinishedSheet,
+        LinkDeviceSettingsState.OneTimeEvent.LaunchQrCodeScanner,
+        LinkDeviceSettingsState.OneTimeEvent.None,
+        LinkDeviceSettingsState.OneTimeEvent.ShowFinishedSheet,
+        is LinkDeviceSettingsState.OneTimeEvent.ToastLinked,
+        LinkDeviceSettingsState.OneTimeEvent.ToastNetworkFailed,
+        is LinkDeviceSettingsState.OneTimeEvent.ToastUnlinked,
+        LinkDeviceSettingsState.OneTimeEvent.LaunchEmail,
+        LinkDeviceSettingsState.OneTimeEvent.SnackbarLinkCancelled -> Unit
       }
     }
 
     Scaffolds.Settings(
       title = stringResource(id = R.string.EditDeviceNameFragment__edit),
       onNavigationClick = { navController.popBackStack() },
-      navigationIconPainter = painterResource(id = R.drawable.ic_arrow_left_24),
+      navigationIcon = ImageVector.vectorResource(id = R.drawable.symbol_arrow_start_24),
       navigationContentDescription = stringResource(id = R.string.Material3SearchToolbar__close)
     ) { contentPadding: PaddingValues ->
       EditNameScreen(
@@ -140,13 +143,13 @@ private fun EditNameScreen(
   }
 }
 
-@SignalPreview
+@DayNightPreviews
 @Composable
 private fun DeviceListScreenLinkingPreview() {
   Previews.Preview {
     EditNameScreen(
       state = LinkDeviceSettingsState(
-        deviceToEdit = Device(1, "Laptop", 0, 0)
+        deviceToEdit = Device(1, "Laptop", 0, 0, 0)
       )
     )
   }

@@ -6,10 +6,16 @@
 package org.thoughtcrime.securesms.registration.util
 
 import android.app.Application
-import io.mockk.Runs
+import assertk.assertThat
+import assertk.assertions.each
+import assertk.assertions.extracting
+import assertk.assertions.hasSize
+import assertk.assertions.isEmpty
+import assertk.assertions.isEqualTo
 import io.mockk.every
-import io.mockk.just
+import io.mockk.mockk
 import io.mockk.mockkObject
+import io.mockk.mockkStatic
 import io.mockk.unmockkAll
 import io.mockk.verify
 import org.junit.After
@@ -20,8 +26,11 @@ import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import org.robolectric.annotation.Config
 import org.signal.core.util.logging.Log.initialize
-import org.thoughtcrime.securesms.assertIs
+import org.thoughtcrime.securesms.database.model.databaseprotos.RestoreDecisionState
 import org.thoughtcrime.securesms.keyvalue.PhoneNumberPrivacyValues
+import org.thoughtcrime.securesms.keyvalue.SignalStore
+import org.thoughtcrime.securesms.keyvalue.Skipped
+import org.thoughtcrime.securesms.keyvalue.Start
 import org.thoughtcrime.securesms.profiles.ProfileName
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.testutil.LogRecorder
@@ -32,7 +41,6 @@ import org.thoughtcrime.securesms.util.RemoteConfig
 @RunWith(RobolectricTestRunner::class)
 @Config(application = Application::class, manifest = Config.NONE)
 class RegistrationUtilTest {
-
   @get:Rule
   val signalStore = MockSignalStoreRule(relaxed = setOf(PhoneNumberPrivacyValues::class))
 
@@ -44,11 +52,20 @@ class RegistrationUtilTest {
   @Before
   fun setup() {
     mockkObject(Recipient)
-    mockkObject(RemoteConfig)
-    every { RemoteConfig.init() } just Runs
+    mockkStatic(RemoteConfig::class)
 
     logRecorder = LogRecorder()
     initialize(logRecorder)
+
+    every { SignalStore.backup.backupTier } returns null
+    every { SignalStore.backup.backupsInitialized = any() } answers { }
+    every { SignalStore.backup.cachedMediaCdnPath = any() } answers { }
+    every { SignalStore.backup.mediaCredentials } returns mockk {
+      every { clearAll() } answers {}
+    }
+    every { SignalStore.backup.messageCredentials } returns mockk {
+      every { clearAll() } answers {}
+    }
   }
 
   @After
@@ -57,40 +74,12 @@ class RegistrationUtilTest {
   }
 
   @Test
-  fun maybeMarkRegistrationComplete_allValidNoRestoreOption() {
-    every { signalStore.registration.isRegistrationComplete } returns false
-    every { signalStore.account.isRegistered } returns true
-    every { Recipient.self() } returns Recipient(profileName = ProfileName.fromParts("Dark", "Helmet"))
-    every { signalStore.svr.hasOptedInWithAccess() } returns true
-    every { RemoteConfig.restoreAfterRegistration } returns false
-
-    RegistrationUtil.maybeMarkRegistrationComplete()
-
-    verify { signalStore.registration.markRegistrationComplete() }
-  }
-
-  @Test
-  fun maybeMarkRegistrationComplete_allValidNoRestoreOptionSvrOptOut() {
-    every { signalStore.registration.isRegistrationComplete } returns false
-    every { signalStore.account.isRegistered } returns true
-    every { Recipient.self() } returns Recipient(profileName = ProfileName.fromParts("Dark", "Helmet"))
-    every { signalStore.svr.hasOptedInWithAccess() } returns false
-    every { signalStore.svr.hasOptedOut() } returns true
-    every { RemoteConfig.restoreAfterRegistration } returns false
-
-    RegistrationUtil.maybeMarkRegistrationComplete()
-
-    verify { signalStore.registration.markRegistrationComplete() }
-  }
-
-  @Test
   fun maybeMarkRegistrationComplete_allValidWithRestoreOption() {
     every { signalStore.registration.isRegistrationComplete } returns false
     every { signalStore.account.isRegistered } returns true
     every { Recipient.self() } returns Recipient(profileName = ProfileName.fromParts("Dark", "Helmet"))
-    every { signalStore.svr.hasOptedInWithAccess() } returns true
-    every { RemoteConfig.restoreAfterRegistration } returns true
-    every { signalStore.registration.hasSkippedTransferOrRestore() } returns true
+    every { signalStore.svr.hasPin() } returns true
+    every { signalStore.registration.restoreDecisionState } returns RestoreDecisionState.Skipped
 
     RegistrationUtil.maybeMarkRegistrationComplete()
 
@@ -110,23 +99,24 @@ class RegistrationUtilTest {
     RegistrationUtil.maybeMarkRegistrationComplete()
 
     every { Recipient.self() } returns Recipient(profileName = ProfileName.fromParts("Dark", "Helmet"))
-    every { signalStore.svr.hasOptedInWithAccess() } returns false
+    every { signalStore.svr.hasPin() } returns false
     every { signalStore.svr.hasOptedOut() } returns false
+    every { signalStore.account.isLinkedDevice } returns false
 
     RegistrationUtil.maybeMarkRegistrationComplete()
 
-    every { signalStore.svr.hasOptedInWithAccess() } returns true
-    every { RemoteConfig.restoreAfterRegistration } returns true
-    every { signalStore.registration.hasSkippedTransferOrRestore() } returns false
-    every { signalStore.registration.hasCompletedRestore() } returns false
+    every { signalStore.svr.hasPin() } returns true
+    every { signalStore.registration.restoreDecisionState } returns RestoreDecisionState.Start
 
     RegistrationUtil.maybeMarkRegistrationComplete()
 
     verify(exactly = 0) { signalStore.registration.markRegistrationComplete() }
 
     val regUtilLogs = logRecorder.information.filter { it.tag == "RegistrationUtil" }
-    regUtilLogs.size assertIs 4
-    regUtilLogs.all { it.message == "Registration is not yet complete." } assertIs true
+    assertThat(regUtilLogs).hasSize(4)
+    assertThat(regUtilLogs)
+      .extracting { it.message }
+      .each { it.isEqualTo("Registration is not yet complete.") }
   }
 
   @Test
@@ -138,6 +128,6 @@ class RegistrationUtilTest {
     verify(exactly = 0) { signalStore.registration.markRegistrationComplete() }
 
     val regUtilLogs = logRecorder.information.filter { it.tag == "RegistrationUtil" }
-    regUtilLogs.size assertIs 0
+    assertThat(regUtilLogs).isEmpty()
   }
 }

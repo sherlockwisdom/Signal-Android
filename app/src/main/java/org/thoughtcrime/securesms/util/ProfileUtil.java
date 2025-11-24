@@ -11,7 +11,6 @@ import org.signal.core.util.logging.Log;
 import org.signal.libsignal.protocol.IdentityKey;
 import org.signal.libsignal.protocol.IdentityKeyPair;
 import org.signal.libsignal.protocol.InvalidKeyException;
-import org.signal.libsignal.protocol.util.Pair;
 import org.signal.libsignal.zkgroup.InvalidInputException;
 import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
 import org.signal.libsignal.zkgroup.profiles.ProfileKey;
@@ -28,6 +27,7 @@ import org.thoughtcrime.securesms.jobs.ProfileUploadJob;
 import org.thoughtcrime.securesms.jobs.RefreshAttributesJob;
 import org.thoughtcrime.securesms.jobs.RefreshOwnProfileJob;
 import org.thoughtcrime.securesms.keyvalue.SignalStore;
+import org.thoughtcrime.securesms.net.SignalNetwork;
 import org.thoughtcrime.securesms.payments.MobileCoinPublicAddress;
 import org.thoughtcrime.securesms.payments.MobileCoinPublicAddressProfileUtil;
 import org.thoughtcrime.securesms.payments.PaymentsAddressException;
@@ -35,7 +35,8 @@ import org.thoughtcrime.securesms.profiles.AvatarHelper;
 import org.thoughtcrime.securesms.profiles.ProfileName;
 import org.thoughtcrime.securesms.recipients.Recipient;
 import org.thoughtcrime.securesms.recipients.RecipientUtil;
-import org.whispersystems.signalservice.api.SignalServiceAccountManager;
+import org.whispersystems.signalservice.api.NetworkResult;
+import org.whispersystems.signalservice.api.NetworkResultUtil;
 import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
 import org.whispersystems.signalservice.api.crypto.ProfileCipher;
 import org.whispersystems.signalservice.api.crypto.SealedSenderAccess;
@@ -55,6 +56,8 @@ import java.util.Locale;
 import java.util.Optional;
 import java.util.stream.Collectors;
 
+import kotlin.Pair;
+
 import io.reactivex.rxjava3.core.Single;
 
 /**
@@ -72,6 +75,11 @@ public final class ProfileUtil {
    */
   @WorkerThread
   public static void handleSelfProfileKeyChange() {
+    if (SignalStore.account().isLinkedDevice()) {
+      Log.i(TAG, "Linked devices shouldn't rotate self profile key after initial link");
+      return;
+    }
+
     List<Job> gv2UpdateJobs = SignalDatabase.groups()
                                             .getAllGroupV2Ids()
                                             .stream()
@@ -105,7 +113,7 @@ public final class ProfileUtil {
       throws IOException
   {
     Pair<Recipient, ServiceResponse<ProfileAndCredential>> response = retrieveProfile(context, recipient, requestType, allowUnidentifiedAccess).blockingGet();
-    return new ProfileService.ProfileResponseProcessor(response.second()).getResultOrThrow();
+    return new ProfileService.ProfileResponseProcessor(response.getSecond()).getResultOrThrow();
   }
 
   @WorkerThread
@@ -322,8 +330,7 @@ public final class ProfileUtil {
     if (profileKey != null) {
       Log.i(TAG, String.format("Updating profile key credential on recipient %s, fetching", recipient.getId()));
 
-      Optional<ExpiringProfileKeyCredential> profileKeyCredentialOptional = AppDependencies.getSignalServiceAccountManager()
-                                                                                           .resolveProfileKeyCredential(recipient.requireAci(), profileKey, Locale.getDefault());
+      Optional<ExpiringProfileKeyCredential> profileKeyCredentialOptional = retrieveProfileSync(AppDependencies.getApplication(), recipient, SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL, false).getExpiringProfileKeyCredential();
 
       if (profileKeyCredentialOptional.isPresent()) {
         boolean updatedProfileKey = SignalDatabase.recipients().setProfileKeyCredential(recipient.getId(), profileKey, profileKeyCredentialOptional.get());
@@ -334,7 +341,11 @@ public final class ProfileUtil {
           Log.i(TAG, String.format("Got new profile key credential for recipient %s", recipient.getId()));
           return profileKeyCredentialOptional;
         }
+      } else {
+        Log.w(TAG, "Failed to fetch updated profile key credential for recipient " + recipient.getId());
       }
+    } else {
+      Log.w(TAG, "Unable to fetch credential as no profile key exists for " + recipient.getId());
     }
 
     return Optional.empty();
@@ -365,20 +376,22 @@ public final class ProfileUtil {
       Log.d(TAG, "Uploading " + (avatar.stream != null && avatar.stream.getLength() != 0 ? "non-" : "") + "empty avatar.");
     }
 
-    ProfileKey                  profileKey     = ProfileKeyUtil.getSelfProfileKey();
-    SignalServiceAccountManager accountManager = AppDependencies.getSignalServiceAccountManager();
-    String                      avatarPath     = accountManager.setVersionedProfile(SignalStore.account().requireAci(),
-                                                                                    profileKey,
-                                                                                    profileName.serialize(),
-                                                                                    about,
-                                                                                    aboutEmoji,
-                                                                                    Optional.ofNullable(paymentsAddress),
-                                                                                    avatar,
-                                                                                    badgeIds,
-                                                                                    SignalStore.phoneNumberPrivacy().isPhoneNumberSharingEnabled()).orElse(null);
+    ProfileKey            profileKey = ProfileKeyUtil.getSelfProfileKey();
+    NetworkResult<String> result     = SignalNetwork.profile().setVersionedProfile(SignalStore.account().requireAci(),
+                                                                                   profileKey,
+                                                                                   profileName.serialize(),
+                                                                                   about,
+                                                                                   aboutEmoji,
+                                                                                   paymentsAddress,
+                                                                                   avatar,
+                                                                                   badgeIds,
+                                                                                   SignalStore.phoneNumberPrivacy().isPhoneNumberSharingEnabled());
+
+    String avatarPath = NetworkResultUtil.toSetProfileLegacy(result);
+
     SignalStore.registration().setHasUploadedProfile(true);
     if (!avatar.keepTheSame) {
-      SignalDatabase.recipients().setProfileAvatar(Recipient.self().getId(), avatarPath);
+      SignalDatabase.recipients().setProfileAvatar(Recipient.self().getId(), avatarPath, false);
     }
     AppDependencies.getJobManager().add(new RefreshOwnProfileJob());
   }

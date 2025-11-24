@@ -51,7 +51,10 @@ object SignalServiceProtoUtil {
         bodyRanges.isNotEmpty() ||
         sticker != null ||
         reaction != null ||
-        hasRemoteDelete
+        hasRemoteDelete ||
+        pollCreate != null ||
+        pollVote != null ||
+        pollTerminate != null
     }
 
   val DataMessage.hasDisallowedAnnouncementOnlyContent: Boolean
@@ -97,7 +100,7 @@ object SignalServiceProtoUtil {
   val DataMessage.isInvalid: Boolean
     get() {
       if (isViewOnce == true) {
-        val contentType = attachments[0].contentType?.lowercase()
+        val contentType = attachments.getOrNull(0)?.contentType?.lowercase()
         return attachments.size != 1 || !MediaUtil.isImageOrVideoType(contentType)
       }
       return false
@@ -142,14 +145,14 @@ object SignalServiceProtoUtil {
     }
 
   fun Sent.isUnidentified(serviceId: ServiceId?): Boolean {
-    return serviceId != null && unidentifiedStatus.firstOrNull { ServiceId.parseOrNull(it.destinationServiceId) == serviceId }?.unidentified ?: false
+    return serviceId != null && unidentifiedStatus.firstOrNull { ServiceId.parseOrNull(it.destinationServiceId, it.destinationServiceIdBinary) == serviceId }?.unidentified ?: false
   }
 
   val Sent.serviceIdsToUnidentifiedStatus: Map<ServiceId, Boolean>
     get() {
       return unidentifiedStatus
         .mapNotNull { status ->
-          val serviceId = ServiceId.parseOrNull(status.destinationServiceId)
+          val serviceId = ServiceId.parseOrNull(status.destinationServiceId, status.destinationServiceIdBinary)
           if (serviceId != null) {
             serviceId to (status.unidentified ?: false)
           } else {

@@ -19,8 +19,12 @@ interface BillingApi {
    */
   fun getBillingPurchaseResults(): Flow<BillingPurchaseResult> = emptyFlow()
 
-  suspend fun isApiAvailable(): Boolean = false
+  suspend fun getApiAvailability(): BillingResponseCode = BillingResponseCode.FEATURE_NOT_SUPPORTED
 
+  /**
+   * Queries the Billing API for product pricing. This value should be cached by
+   * the implementor for 24 hours.
+   */
   suspend fun queryProduct(): BillingProduct? = null
 
   /**

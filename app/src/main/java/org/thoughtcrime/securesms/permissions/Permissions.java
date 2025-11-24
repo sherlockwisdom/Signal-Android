@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
-import android.os.Build;
 import android.provider.Settings;
 import android.util.DisplayMetrics;
 import android.view.Display;
@@ -49,10 +48,6 @@ public class Permissions {
 
   public static PermissionsBuilder with(@NonNull Fragment fragment) {
     return new PermissionsBuilder(new FragmentPermissionObject(fragment));
-  }
-
-  public static boolean isRuntimePermissionsRequired() {
-    return Build.VERSION.SDK_INT >= 23;
   }
 
   public static class PermissionsBuilder {
@@ -206,6 +201,8 @@ public class Permissions {
                                          : RationaleDialog.createFor(permissionObject.getContext(), rationaleDialogTitle, rationaleDialogDetails, rationalDialogHeader);
       builder.setPositiveButton(R.string.Permissions_continue, (dialog, which) -> executePermissionsRequest(request))
              .setNegativeButton(R.string.Permissions_not_now, (dialog, which) -> executeNoPermissionsRequest(request))
+             .setBackgroundInsetTop(0)
+             .setBackgroundInsetBottom(0)
              .setCancelable(rationaleDialogCancelable);
       if (rationaleDialogMessage != null) {
         builder.show().getWindow().setLayout((int)(permissionObject.getWindowWidth() * .75), ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -274,14 +271,12 @@ public class Permissions {
   }
 
   public static boolean hasAny(@NonNull Context context, String... permissions) {
-    return !isRuntimePermissionsRequired() ||
-        Stream.of(permissions).anyMatch(permission -> ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED);
+    return Stream.of(permissions).anyMatch(permission -> ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED);
 
   }
 
   public static boolean hasAll(@NonNull Context context, String... permissions) {
-    return !isRuntimePermissionsRequired() ||
-        Stream.of(permissions).allMatch(permission -> ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED);
+    return Stream.of(permissions).allMatch(permission -> ContextCompat.checkSelfPermission(context, permission) == PackageManager.PERMISSION_GRANTED);
 
   }
 
