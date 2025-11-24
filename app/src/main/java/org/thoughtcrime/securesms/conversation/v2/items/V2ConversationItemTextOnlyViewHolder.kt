@@ -274,6 +274,12 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
       bodyBubbleDrawable.clearLocalChatColors()
     }
 
+//    if(!conversationMessage.messageRecord.isRemoteDelete)
+//      binding.reply.setBackgroundColor(themeDelegate.getReplyIconBackgroundColor())
+
+    if(conversationMessage.messageRecord.isRemoteDelete && binding.isIncoming)
+      binding.bodyWrapper.setBackgroundColor(context.getColor(R.color.core_red_highlight_50))
+
     binding.reply.setBackgroundColor(themeDelegate.getReplyIconBackgroundColor())
 
     itemView.updateLayoutParams<ViewGroup.MarginLayoutParams> {
@@ -431,6 +437,9 @@ open class V2ConversationItemTextOnlyViewHolder<Model : MappingModel<Model>>(
 
     binding.body.visible = bodyText.isNotEmpty()
     binding.body.text = bodyText
+
+//    if(record.isRemoteDelete)
+//      binding.bodyWrapper.setBackgroundColor(context.getColor(R.color.core_red_highlight_50))
   }
 
   private fun linkifyMessageBody(messageBody: Spannable) {
