@@ -34,9 +34,12 @@ import okio.ByteString
 import okio.ByteString.Companion.toByteString
 import org.json.JSONArray
 import org.json.JSONException
+import org.signal.core.models.backup.MediaId
+import org.signal.core.models.backup.MediaName
 import org.signal.core.util.Base64
 import org.signal.core.util.SqlUtil
 import org.signal.core.util.ThreadUtil
+import org.signal.core.util.UuidUtil
 import org.signal.core.util.copyTo
 import org.signal.core.util.count
 import org.signal.core.util.delete
@@ -116,10 +119,7 @@ import org.thoughtcrime.securesms.util.StorageUtil
 import org.thoughtcrime.securesms.util.Util
 import org.thoughtcrime.securesms.video.EncryptedMediaDataSource
 import org.whispersystems.signalservice.api.attachment.AttachmentUploadResult
-import org.whispersystems.signalservice.api.backup.MediaId
-import org.whispersystems.signalservice.api.backup.MediaName
 import org.whispersystems.signalservice.api.crypto.AttachmentCipherStreamUtil
-import org.whispersystems.signalservice.api.util.UuidUtil
 import org.whispersystems.signalservice.internal.crypto.PaddingInputStream
 import org.whispersystems.signalservice.internal.util.JsonUtil
 import java.io.ByteArrayInputStream
@@ -1112,7 +1112,7 @@ class AttachmentTable(
    * Marking offloaded only clears the strong references to the on disk file and clears other local file data like hashes.
    * Another operation must run to actually delete the data from disk. See [deleteAbandonedAttachmentFiles].
    */
-  fun markEligibleAttachmentsAsOptimized() {
+  fun markEligibleAttachmentsAsOptimized(minimumAge: Duration = 30.days) {
     val now = System.currentTimeMillis()
 
     val subSelect = """
@@ -1136,7 +1136,7 @@ class AttachmentTable(
       )
       AND
       (
-        ${MessageTable.TABLE_NAME}.${MessageTable.DATE_RECEIVED} < ${now - 30.days.inWholeMilliseconds}
+        ${MessageTable.TABLE_NAME}.${MessageTable.DATE_RECEIVED} < ${now - minimumAge.inWholeMilliseconds}
       )
     """
 

@@ -36,11 +36,11 @@ fun isLargeScreenSupportEnabled(): Boolean {
 
 @OptIn(ExperimentalWindowCoreApi::class)
 fun Resources.getWindowSizeClass(): WindowSizeClass {
-  return WindowSizeClass.compute(displayMetrics.widthPixels, displayMetrics.heightPixels, displayMetrics.density)
+  return WindowSizeClass.compute(displayMetrics.widthPixels / displayMetrics.density, displayMetrics.heightPixels / displayMetrics.density)
 }
 
 /**
- * Split Pane is enabled as long as the width size class is MEDIUM or greater
+ * Determines whether the UI should display in split-pane mode based on available screen space.
  */
 @JvmOverloads
 fun WindowSizeClass.isSplitPane(
