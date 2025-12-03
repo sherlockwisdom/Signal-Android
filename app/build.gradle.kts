@@ -22,8 +22,8 @@ plugins {
 
 apply(from = "static-ips.gradle.kts")
 
-val canonicalVersionCode = 1622
-val canonicalVersionName = "7.66.2"
+val canonicalVersionCode = 1626
+val canonicalVersionName = "7.67.0"
 val currentHotfixVersion = 0
 val maxHotfixVersions = 100
 
@@ -507,6 +507,7 @@ dependencies {
   implementation(project(":sticky-header-grid"))
   implementation(project(":photoview"))
   implementation(project(":core-ui"))
+  implementation(project(":core-models"))
 
   implementation(libs.androidx.fragment.ktx)
   implementation(libs.androidx.appcompat) {
