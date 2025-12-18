@@ -9,13 +9,19 @@ import androidx.lifecycle.ViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.update
+import org.signal.core.util.logging.Log
 import org.signal.storageservice.protos.calls.quality.SubmitCallQualitySurveyRequest
 import org.thoughtcrime.securesms.dependencies.AppDependencies
+import org.thoughtcrime.securesms.jobmanager.impl.NetworkConstraint
 import org.thoughtcrime.securesms.jobs.CallQualitySurveySubmissionJob
 
 class CallQualityScreenViewModel(
   val initialRequest: SubmitCallQualitySurveyRequest
 ) : ViewModel() {
+
+  companion object {
+    private val TAG = Log.tag(CallQualityScreenViewModel::class)
+  }
 
   private val internalState = MutableStateFlow(CallQualitySheetState())
   val state: StateFlow<CallQualitySheetState> = internalState
@@ -36,7 +42,22 @@ class CallQualityScreenViewModel(
     internalState.update { it.copy(isShareDebugLogSelected = shareDebugLog) }
   }
 
+  fun clearFailedDueToNetworkAvailability() {
+    internalState.update { it.copy(failedDueToNetworkAvailability = false) }
+  }
+
   fun submit() {
+    if (!NetworkConstraint.isMet(AppDependencies.application)) {
+      Log.w(TAG, "User does not have a network connection. Failing immediately with retry dialog.")
+      internalState.update { it.copy(failedDueToNetworkAvailability = true) }
+      return
+    }
+
+    if (initialRequest.call_type.isEmpty()) {
+      Log.i(TAG, "Ignoring survey submission for blank call_type.")
+      return
+    }
+
     val stateSnapshot = state.value
     val somethingElseDescription: String? = if (stateSnapshot.selectedQualityIssues.contains(CallQualityIssue.SOMETHING_ELSE)) {
       stateSnapshot.somethingElseDescription.takeIf { it.isNotEmpty() }

@@ -101,7 +101,7 @@ private fun AddToGroupsScreen(
   val callbacks = remember {
     object : UiCallbacks {
       override fun onSearchQueryChanged(query: String) = viewModel.onSearchQueryChanged(query)
-      override fun onSelectionChanged(newSelections: List<SelectedContact>, totalMembersCount: Int) = viewModel.selectGroups(newSelections)
+      override fun onSelectionChanged(newSelections: List<SelectedContact>) = viewModel.selectGroups(newSelections)
       override fun addToSelectedGroups() = viewModel.addToSelectedGroups()
       override fun onAddConfirmed(groupRecipient: Recipient) = viewModel.addToGroups(listOf(groupRecipient))
       override fun onUserMessageDismissed(userMessage: UserMessage) = viewModel.clearUserMessage()
@@ -180,7 +180,7 @@ private fun AddToGroupsRecipientPicker(
     searchBarHint = stringResource(R.string.AddToGroupActivity_search),
     searchQuery = uiState.searchQuery,
     enabledKeyboardTypes = listOf(RecipientPicker.KeyboardType.Text),
-    displayModes = setOf(RecipientPicker.DisplayMode.ACTIVE_GROUPS, RecipientPicker.DisplayMode.GROUPS_AFTER_CONTACTS),
+    displayModes = setOf(RecipientPicker.DisplayMode.ACTIVE_GROUPS, RecipientPicker.DisplayMode.GROUPS_AFTER_CONTACTS, RecipientPicker.DisplayMode.HIDE_NEW),
     selectionLimits = uiState.selectionLimits,
     preselectedRecipients = uiState.existingGroupMemberships,
     includeRecents = true,

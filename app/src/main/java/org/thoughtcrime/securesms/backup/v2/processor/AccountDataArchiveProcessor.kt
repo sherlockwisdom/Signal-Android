@@ -9,7 +9,6 @@ import android.content.Context
 import okio.ByteString.Companion.EMPTY
 import okio.ByteString.Companion.toByteString
 import org.signal.core.util.UuidUtil
-import org.signal.core.util.isNotNullOrBlank
 import org.signal.core.util.logging.Log
 import org.signal.core.util.toByteArray
 import org.signal.libsignal.zkgroup.backups.BackupLevel
@@ -86,6 +85,8 @@ object AccountDataArchiveProcessor {
     val mobileAutoDownload = TextSecurePreferences.getMobileMediaDownloadAllowed(context)
     val wifiAutoDownload = TextSecurePreferences.getWifiMediaDownloadAllowed(context)
 
+    val username = selfRecord.username?.takeIf { it.isValidUsername() }
+
     emitter.emit(
       Frame(
         account = AccountData(
@@ -94,8 +95,8 @@ object AccountDataArchiveProcessor {
           familyName = selfRecord.signalProfileName.familyName,
           avatarUrlPath = selfRecord.signalProfileAvatar ?: "",
           svrPin = SignalStore.svr.pin ?: "",
-          username = selfRecord.username?.takeIf { it.isValidUsername() },
-          usernameLink = if (selfRecord.username.isNotNullOrBlank() && signalStore.accountValues.usernameLink != null) {
+          username = username,
+          usernameLink = if (username != null && signalStore.accountValues.usernameLink != null) {
             AccountData.UsernameLink(
               entropy = signalStore.accountValues.usernameLink?.entropy?.toByteString() ?: EMPTY,
               serverId = signalStore.accountValues.usernameLink?.serverId?.toByteArray()?.toByteString() ?: EMPTY,
@@ -109,6 +110,7 @@ object AccountDataArchiveProcessor {
             typingIndicators = TextSecurePreferences.isTypingIndicatorsEnabled(context),
             readReceipts = TextSecurePreferences.isReadReceiptsEnabled(context),
             sealedSenderIndicators = TextSecurePreferences.isShowUnidentifiedDeliveryIndicatorsEnabled(context),
+            allowSealedSenderFromAnyone = TextSecurePreferences.isUniversalUnidentifiedAccess(context),
             linkPreviews = signalStore.settingsValues.isLinkPreviewsEnabled,
             notDiscoverableByPhoneNumber = signalStore.phoneNumberPrivacyValues.phoneNumberDiscoverabilityMode == PhoneNumberDiscoverabilityMode.NOT_DISCOVERABLE,
             phoneNumberSharingMode = signalStore.phoneNumberPrivacyValues.phoneNumberSharingMode.toRemotePhoneNumberSharingMode(),
@@ -249,6 +251,7 @@ object AccountDataArchiveProcessor {
     TextSecurePreferences.setReadReceiptsEnabled(context, settings.readReceipts)
     TextSecurePreferences.setTypingIndicatorsEnabled(context, settings.typingIndicators)
     TextSecurePreferences.setShowUnidentifiedDeliveryIndicatorsEnabled(context, settings.sealedSenderIndicators)
+    TextSecurePreferences.setIsUnidentifiedDeliveryEnabled(context, settings.allowSealedSenderFromAnyone)
     SignalStore.settings.isLinkPreviewsEnabled = settings.linkPreviews
     SignalStore.phoneNumberPrivacy.phoneNumberDiscoverabilityMode = if (settings.notDiscoverableByPhoneNumber) PhoneNumberDiscoverabilityMode.NOT_DISCOVERABLE else PhoneNumberDiscoverabilityMode.DISCOVERABLE
     SignalStore.phoneNumberPrivacy.phoneNumberSharingMode = settings.phoneNumberSharingMode.toLocalPhoneNumberMode()
@@ -269,11 +272,11 @@ object AccountDataArchiveProcessor {
     SignalStore.settings.setCallDataMode(settings.callsUseLessDataSetting.toLocalCallDataMode())
 
     if (settings.autoDownloadSettings != null) {
-      val mobileDownloadSet = settings.autoDownloadSettings.toLocalAutoDownloadSet(AccountData.AutoDownloadSettings.AutoDownloadOption.WIFI_AND_CELLULAR)
-      val wifiDownloadSet = settings.autoDownloadSettings.toLocalAutoDownloadSet(AccountData.AutoDownloadSettings.AutoDownloadOption.WIFI)
+      val mobileAndWifiDownloadSet = settings.autoDownloadSettings.toLocalAutoDownloadSet(AccountData.AutoDownloadSettings.AutoDownloadOption.WIFI_AND_CELLULAR)
+      val wifiDownloadSet = mobileAndWifiDownloadSet + settings.autoDownloadSettings.toLocalAutoDownloadSet(AccountData.AutoDownloadSettings.AutoDownloadOption.WIFI)
 
       TextSecurePreferences.getSharedPreferences(context).edit().apply {
-        putStringSet(TextSecurePreferences.MEDIA_DOWNLOAD_MOBILE_PREF, mobileDownloadSet)
+        putStringSet(TextSecurePreferences.MEDIA_DOWNLOAD_MOBILE_PREF, mobileAndWifiDownloadSet)
         putStringSet(TextSecurePreferences.MEDIA_DOWNLOAD_WIFI_PREF, wifiDownloadSet)
         apply()
       }

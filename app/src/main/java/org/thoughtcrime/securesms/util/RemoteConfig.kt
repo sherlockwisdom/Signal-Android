@@ -1130,13 +1130,6 @@ object RemoteConfig {
     hotSwappable = false
   )
 
-  /** Whether to allow different WindowSizeClasses to be used to determine screen layout */
-  val largeScreenUi: Boolean by remoteBoolean(
-    key = "android.largeScreenUI.2",
-    hotSwappable = false,
-    defaultValue = false
-  )
-
   @JvmStatic
   @get:JvmName("useMessageSendRestFallback")
   val useMessageSendRestFallback: Boolean by remoteBoolean(
@@ -1233,16 +1226,16 @@ object RemoteConfig {
   @JvmStatic
   @get:JvmName("callQualitySurvey")
   val callQualitySurvey: Boolean by remoteBoolean(
-    key = "android.callQualitySurvey",
+    key = "android.callQualitySurvey.4",
     defaultValue = false,
     hotSwappable = true
   )
 
   @JvmStatic
-  @get:JvmName("callQualitySurveyPercent")
-  val callQualitySurveyPercent: Int by remoteInt(
-    key = "android.callQualitySurveyPercent",
-    defaultValue = 1,
+  @get:JvmName("callQualitySurveyPPM")
+  val callQualitySurveyPPM: String by remoteString(
+    key = "android.callQualitySurveyPPM",
+    defaultValue = "*:10000",
     hotSwappable = true
   )
   // endregion

@@ -182,7 +182,7 @@ class ChatItemArchiveExporter(
       val builder = record.toBasicChatItemBuilder(selfRecipientId, extraData.groupReceiptsById[id], exportState, backupStartTime)
       transformTimer.emit("basic")
 
-      if (builder == null) {
+      if (builder == null || builder.authorId == exportState.releaseNoteRecipientId) {
         continue
       }
 
@@ -312,7 +312,7 @@ class ChatItemArchiveExporter(
         }
 
         MessageTypes.isThreadMergeType(record.type) -> {
-          builder.updateMessage = record.toRemoteThreadMergeUpdate(record.dateSent)?.takeIf { exportState.recipientIdToAci[builder.authorId] != null } ?: continue
+          builder.updateMessage = record.toRemoteThreadMergeUpdate(record.dateSent)?.takeIf { builder.authorIsAciContact(exportState) } ?: continue
           transformTimer.emit("thread-merge")
         }
 
@@ -395,6 +395,11 @@ class ChatItemArchiveExporter(
         }
 
         extraData.pollsById[record.id] != null -> {
+          if (exportState.threadIdToRecipientId[builder.chatId] !in exportState.groupRecipientIds) {
+            Log.w(TAG, ExportSkips.pollNotInGroupChat(record.dateSent))
+            continue
+          }
+
           val poll = extraData.pollsById[record.id]!!
           if (poll.question.isEmpty() || poll.question.length > MAX_POLL_CHARACTER_LENGTH) {
             Log.w(TAG, ExportSkips.invalidPollQuestion(record.dateSent))
@@ -1719,6 +1724,10 @@ private fun ChatItem.withDowngradeVoiceNotes(): ChatItem {
       }
     )
   )
+}
+
+private fun ChatItem.Builder.authorIsAciContact(exportState: ExportState): Boolean {
+  return exportState.recipientIdToAci[this.authorId] != null && this.authorId != exportState.selfRecipientId.toLong() && this.authorId != exportState.releaseNoteRecipientId
 }
 
 private fun Cursor.toBackupMessageRecord(pastIds: Set<Long>, backupStartTime: Long): BackupMessageRecord? {

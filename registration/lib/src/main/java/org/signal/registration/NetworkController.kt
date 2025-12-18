@@ -9,6 +9,7 @@ import android.os.Parcelable
 import kotlinx.parcelize.Parcelize
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import org.signal.core.models.MasterKey
 import org.signal.core.util.serialization.ByteArrayToBase64Serializer
 import org.signal.libsignal.protocol.IdentityKey
 import org.signal.libsignal.protocol.state.KyberPreKeyRecord
@@ -88,9 +89,60 @@ interface NetworkController {
   suspend fun getFcmToken(): String?
 
   /**
+   * Waits for a push challenge token to arrive via FCM.
+   * This is a suspending function that will complete when the token arrives.
+   * The caller should wrap this in withTimeoutOrNull to handle timeout scenarios.
+   *
+   * @return The push challenge token, or null if cancelled/unavailable.
+   */
+  suspend fun awaitPushChallengeToken(): String?
+
+  /**
    * Returns the URL to load in the WebView for captcha verification.
    */
   fun getCaptchaUrl(): String
+
+  /**
+   * Attempts to restore the master key from SVR using the provided credentials and PIN.
+   *
+   * This is called when the user encounters a registration lock and needs to prove
+   * they know their PIN to proceed with registration.
+   *
+   * @param svr2Credentials The SVR2 credentials provided by the server during the registration lock response.
+   * @param pin The user-entered PIN.
+   * @return The restored master key on success, or an appropriate error.
+   */
+  suspend fun restoreMasterKeyFromSvr(
+    svr2Credentials: SvrCredentials,
+    pin: String
+  ): RegistrationNetworkResult<MasterKeyResponse, RestoreMasterKeyError>
+
+  /**
+   * Backs up the master key to SVR, protected by the user's PIN.
+   *
+   * @param pin The user-chosen PIN to protect the backup.
+   * @param masterKey The master key to backup.
+   * @return Success or an appropriate error.
+   */
+  suspend fun setPinAndMasterKeyOnSvr(
+    pin: String,
+    masterKey: MasterKey
+  ): RegistrationNetworkResult<Unit, BackupMasterKeyError>
+
+  /**
+   * Enables registration lock on the account using the registration lock token
+   * derived from the master key.
+   *
+   * @return Success or an appropriate error.
+   */
+  suspend fun enableRegistrationLock(): RegistrationNetworkResult<Unit, SetRegistrationLockError>
+
+  /**
+   * Disables registration lock on the account.
+   *
+   * @return Success or an appropriate error.
+   */
+  suspend fun disableRegistrationLock(): RegistrationNetworkResult<Unit, SetRegistrationLockError>
 
   // TODO
 //  /**
@@ -167,12 +219,34 @@ interface NetworkController {
   }
 
   sealed class RegisterAccountError() {
+    data class SessionNotFoundOrNotVerified(val message: String) : RegisterAccountError()
     data class RegistrationRecoveryPasswordIncorrect(val message: String) : RegisterAccountError()
     data object DeviceTransferPossible : RegisterAccountError()
     data class InvalidRequest(val message: String) : RegisterAccountError()
     data class RegistrationLock(val data: RegistrationLockResponse) : RegisterAccountError()
     data class RateLimited(val retryAfter: Duration) : RegisterAccountError()
   }
+
+  sealed class RestoreMasterKeyError() {
+    data class WrongPin(val triesRemaining: Int) : RestoreMasterKeyError()
+    data object NoDataFound : RestoreMasterKeyError()
+  }
+
+  sealed class BackupMasterKeyError() {
+    data object EnclaveNotFound : BackupMasterKeyError()
+    data object NotRegistered : BackupMasterKeyError()
+  }
+
+  sealed class SetRegistrationLockError() {
+    data class InvalidRequest(val message: String) : SetRegistrationLockError()
+    data object Unauthorized : SetRegistrationLockError()
+    data object NotRegistered : SetRegistrationLockError()
+    data object NoPinSet : SetRegistrationLockError()
+  }
+
+  data class MasterKeyResponse(
+    val masterKey: MasterKey
+  )
 
   @Serializable
   @Parcelize
@@ -252,14 +326,14 @@ interface NetworkController {
   data class RegistrationLockResponse(
     val timeRemaining: Long,
     val svr2Credentials: SvrCredentials
-  ) {
+  )
 
-    @Serializable
-    data class SvrCredentials(
-      val username: String,
-      val password: String
-    )
-  }
+  @Serializable
+  @Parcelize
+  data class SvrCredentials(
+    val username: String,
+    val password: String
+  ) : Parcelable
 
   @Serializable
   data class ThirdPartyServiceErrorResponse(

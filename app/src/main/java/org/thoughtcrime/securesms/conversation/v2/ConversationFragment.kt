@@ -347,7 +347,6 @@ import org.thoughtcrime.securesms.util.SignalLocalMetrics
 import org.thoughtcrime.securesms.util.TextSecurePreferences
 import org.thoughtcrime.securesms.util.ThemeUtil
 import org.thoughtcrime.securesms.util.ViewUtil
-import org.thoughtcrime.securesms.util.WindowUtil
 import org.thoughtcrime.securesms.util.atMidnight
 import org.thoughtcrime.securesms.util.atUTC
 import org.thoughtcrime.securesms.util.doAfterNextLayout
@@ -370,7 +369,6 @@ import org.thoughtcrime.securesms.verify.VerifyIdentityActivity
 import org.thoughtcrime.securesms.wallpaper.ChatWallpaper
 import org.thoughtcrime.securesms.wallpaper.ChatWallpaperDimLevelUtil
 import org.thoughtcrime.securesms.window.getWindowSizeClass
-import org.thoughtcrime.securesms.window.isLargeScreenSupportEnabled
 import org.thoughtcrime.securesms.window.isSplitPane
 import java.time.Instant
 import java.time.LocalDateTime
@@ -407,6 +405,7 @@ class ConversationFragment :
   companion object {
     private val TAG = Log.tag(ConversationFragment::class.java)
     private val POLL_SPINNER_DELAY = 500.milliseconds
+    private val PIN_SPINNER_DELAY = 500.milliseconds
 
     private const val ACTION_PINNED_SHORTCUT = "action_pinned_shortcut"
     private const val SAVED_STATE_IS_SEARCH_REQUESTED = "is_search_requested"
@@ -570,6 +569,7 @@ class ConversationFragment :
   private var dataObserver: DataObserver? = null
   private var menuProvider: ConversationOptionsMenu.Provider? = null
   private var scrollListener: ScrollListener? = null
+  private var keyboardEvents: KeyboardEvents? = null
   private var progressDialog: ProgressCardDialogFragment? = null
 
   private val jumpAndPulseScrollStrategy = object : ScrollToPositionDelegate.ScrollStrategy {
@@ -713,11 +713,6 @@ class ConversationFragment :
   override fun onResume() {
     super.onResume()
 
-    if (!isLargeScreenSupportEnabled()) {
-      WindowUtil.setLightNavigationBarFromTheme(requireActivity())
-      WindowUtil.setLightStatusBarFromTheme(requireActivity())
-    }
-
     EventBus.getDefault().register(this)
 
     groupCallViewModel.peekGroupCall()
@@ -776,6 +771,12 @@ class ConversationFragment :
   }
 
   override fun onDestroyView() {
+    keyboardEvents?.let {
+      container.removeInputListener(it)
+      container.removeKeyboardStateListener(it)
+    }
+    keyboardEvents = null
+
     super.onDestroyView()
     if (pinnedShortcutReceiver != null) {
       requireActivity().unregisterReceiver(pinnedShortcutReceiver)
@@ -1160,9 +1161,10 @@ class ConversationFragment :
     dataObserver = DataObserver()
     adapter.registerAdapterDataObserver(dataObserver!!)
 
-    val keyboardEvents = KeyboardEvents()
-    container.addInputListener(keyboardEvents)
-    container.addKeyboardStateListener(keyboardEvents)
+    keyboardEvents = KeyboardEvents().also {
+      container.addInputListener(it)
+      container.addKeyboardStateListener(it)
+    }
 
     childFragmentManager.setFragmentResultListener(AttachmentKeyboardFragment.RESULT_KEY, viewLifecycleOwner, AttachmentKeyboardFragmentListener())
     motionEventRelay.setDrain(MotionEventRelayDrain(this))
@@ -1513,16 +1515,12 @@ class ConversationFragment :
   }
 
   private fun presentNavigationIconForNormal() {
-    if (isLargeScreenSupportEnabled()) {
-      lifecycleScope.launch {
-        repeatOnLifecycle(Lifecycle.State.RESUMED) {
-          mainNavigationViewModel.isFullScreenPane.collect { isFullScreenPane ->
-            updateNavigationIconForNormal(isFullScreenPane)
-          }
+    lifecycleScope.launch {
+      repeatOnLifecycle(Lifecycle.State.RESUMED) {
+        mainNavigationViewModel.isFullScreenPane.collect { isFullScreenPane ->
+          updateNavigationIconForNormal(isFullScreenPane)
         }
       }
-    } else {
-      updateNavigationIconForNormal(true)
     }
   }
 
@@ -1728,7 +1726,23 @@ class ConversationFragment :
             duration = if (values[selection] == -1) kotlin.time.Duration.INFINITE else values[selection].days,
             threadRecipient = conversationMessage.threadRecipient
           )
-          .subscribe()
+          .doOnSubscribe {
+            handler.postDelayed({ showSpinner() }, PIN_SPINNER_DELAY.inWholeMilliseconds)
+          }
+          .doFinally {
+            handler.removeCallbacksAndMessages(null)
+            hideSpinner()
+          }
+          .subscribeBy(
+            onError = {
+              Log.w(TAG, "Error received during pin message!", it)
+              MaterialAlertDialogBuilder(requireContext())
+                .setTitle(R.string.PinnedMessage__couldnt_pin)
+                .setMessage(getString(R.string.PinnedMessage__check_connection))
+                .setPositiveButton(android.R.string.ok) { dialog: DialogInterface?, which: Int -> dialog!!.dismiss() }
+                .show()
+            }
+          )
         dialog.dismiss()
       }
       .setNegativeButton(android.R.string.cancel) { dialog, _ ->
@@ -1738,7 +1752,25 @@ class ConversationFragment :
   }
 
   private fun handleUnpinMessage(messageId: Long) {
-    viewModel.unpinMessage(messageId)
+    disposables += viewModel
+      .unpinMessage(messageId)
+      .doOnSubscribe {
+        handler.postDelayed({ showSpinner() }, PIN_SPINNER_DELAY.inWholeMilliseconds)
+      }
+      .doFinally {
+        handler.removeCallbacksAndMessages(null)
+        hideSpinner()
+      }
+      .subscribeBy(
+        onError = {
+          Log.w(TAG, "Error received during unpin message!", it)
+          MaterialAlertDialogBuilder(requireContext())
+            .setTitle(R.string.PinnedMessage__couldnt_unpin)
+            .setMessage(getString(R.string.PinnedMessage__check_connection))
+            .setPositiveButton(android.R.string.ok) { dialog: DialogInterface?, which: Int -> dialog!!.dismiss() }
+            .show()
+        }
+      )
   }
 
   private fun handleVideoCall() {
@@ -3641,11 +3673,6 @@ class ConversationFragment :
                   getVoiceNoteMediaController().resumePlayback(selectedConversationModel.audioUri, messageRecord.id)
                 }
 
-                if (!isLargeScreenSupportEnabled()) {
-                  WindowUtil.setLightStatusBarFromTheme(requireActivity())
-                  WindowUtil.setLightNavigationBarFromTheme(requireActivity())
-                }
-
                 clearFocusedItem()
 
                 if (mp4Holder != null) {
@@ -4695,9 +4722,11 @@ class ConversationFragment :
             binding.navBar.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.signal_background_primary))
           }
         }
+
         MEDIA_KEYBOARD_FRAGMENT_CREATOR_ID -> {
           binding.navBar.setBackgroundColor(ThemeUtil.getThemedColor(requireContext(), R.attr.mediaKeyboardBottomBarBackgroundColor))
         }
+
         else -> {
           Log.w(TAG, "Not setting navbar coloring for unknown creator id $fragmentCreatorId")
         }
@@ -4724,6 +4753,9 @@ class ConversationFragment :
     }
 
     override fun onKeyboardAnimationEnded() {
+      if (view == null) {
+        return
+      }
       if (!container.isKeyboardShowing) {
         closeEmojiSearch()
       }
