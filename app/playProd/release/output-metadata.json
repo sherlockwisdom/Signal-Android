@@ -11,35 +11,9 @@
       "type": "UNIVERSAL",
       "filters": [],
       "attributes": [],
-      "versionCode": 149600,
-      "versionName": "7.28.4",
-      "outputFile": "Signal-Android-play-prod-universal-release-7.28.4.apk"
-    },
-    {
-      "type": "ONE_OF_MANY",
-      "filters": [
-        {
-          "filterType": "ABI",
-          "value": "x86"
-        }
-      ],
-      "attributes": [],
-      "versionCode": 149600,
-      "versionName": "7.28.4",
-      "outputFile": "Signal-Android-play-prod-x86-release-7.28.4.apk"
-    },
-    {
-      "type": "ONE_OF_MANY",
-      "filters": [
-        {
-          "filterType": "ABI",
-          "value": "x86_64"
-        }
-      ],
-      "attributes": [],
-      "versionCode": 149600,
-      "versionName": "7.28.4",
-      "outputFile": "Signal-Android-play-prod-x86_64-release-7.28.4.apk"
+      "versionCode": 163200,
+      "versionName": "7.68.4",
+      "outputFile": "Signal-Android-play-prod-universal-release-7.68.4.apk"
     },
     {
       "type": "ONE_OF_MANY",
@@ -50,9 +24,35 @@
         }
       ],
       "attributes": [],
-      "versionCode": 149600,
-      "versionName": "7.28.4",
-      "outputFile": "Signal-Android-play-prod-armeabi-v7a-release-7.28.4.apk"
+      "versionCode": 163200,
+      "versionName": "7.68.4",
+      "outputFile": "Signal-Android-play-prod-armeabi-v7a-release-7.68.4.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "x86"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 163200,
+      "versionName": "7.68.4",
+      "outputFile": "Signal-Android-play-prod-x86-release-7.68.4.apk"
+    },
+    {
+      "type": "ONE_OF_MANY",
+      "filters": [
+        {
+          "filterType": "ABI",
+          "value": "x86_64"
+        }
+      ],
+      "attributes": [],
+      "versionCode": 163200,
+      "versionName": "7.68.4",
+      "outputFile": "Signal-Android-play-prod-x86_64-release-7.68.4.apk"
     },
     {
       "type": "ONE_OF_MANY",
@@ -63,9 +63,9 @@
         }
       ],
       "attributes": [],
-      "versionCode": 149600,
-      "versionName": "7.28.4",
-      "outputFile": "Signal-Android-play-prod-arm64-v8a-release-7.28.4.apk"
+      "versionCode": 163200,
+      "versionName": "7.68.4",
+      "outputFile": "Signal-Android-play-prod-arm64-v8a-release-7.68.4.apk"
     }
   ],
   "elementType": "File",
@@ -74,24 +74,24 @@
       "minApi": 28,
       "maxApi": 30,
       "baselineProfiles": [
-        "baselineProfiles/1/Signal-Android-play-prod-universal-release-7.28.4.dm",
-        "baselineProfiles/1/Signal-Android-play-prod-x86-release-7.28.4.dm",
-        "baselineProfiles/1/Signal-Android-play-prod-x86_64-release-7.28.4.dm",
-        "baselineProfiles/1/Signal-Android-play-prod-armeabi-v7a-release-7.28.4.dm",
-        "baselineProfiles/1/Signal-Android-play-prod-arm64-v8a-release-7.28.4.dm"
+        "baselineProfiles/1/Signal-Android-play-prod-universal-release-7.68.4.dm",
+        "baselineProfiles/1/Signal-Android-play-prod-armeabi-v7a-release-7.68.4.dm",
+        "baselineProfiles/1/Signal-Android-play-prod-x86-release-7.68.4.dm",
+        "baselineProfiles/1/Signal-Android-play-prod-x86_64-release-7.68.4.dm",
+        "baselineProfiles/1/Signal-Android-play-prod-arm64-v8a-release-7.68.4.dm"
       ]
     },
     {
       "minApi": 31,
       "maxApi": 2147483647,
       "baselineProfiles": [
-        "baselineProfiles/0/Signal-Android-play-prod-universal-release-7.28.4.dm",
-        "baselineProfiles/0/Signal-Android-play-prod-x86-release-7.28.4.dm",
-        "baselineProfiles/0/Signal-Android-play-prod-x86_64-release-7.28.4.dm",
-        "baselineProfiles/0/Signal-Android-play-prod-armeabi-v7a-release-7.28.4.dm",
-        "baselineProfiles/0/Signal-Android-play-prod-arm64-v8a-release-7.28.4.dm"
+        "baselineProfiles/0/Signal-Android-play-prod-universal-release-7.68.4.dm",
+        "baselineProfiles/0/Signal-Android-play-prod-armeabi-v7a-release-7.68.4.dm",
+        "baselineProfiles/0/Signal-Android-play-prod-x86-release-7.68.4.dm",
+        "baselineProfiles/0/Signal-Android-play-prod-x86_64-release-7.68.4.dm",
+        "baselineProfiles/0/Signal-Android-play-prod-arm64-v8a-release-7.68.4.dm"
       ]
     }
   ],
-  "minSdkVersionForDexing": 21
+  "minSdkVersionForDexing": 23
 }
