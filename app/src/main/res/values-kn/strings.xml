@@ -968,6 +968,11 @@
     <!-- DateUtils -->
     <string name="DateUtils_just_now">ಈಗ</string>
     <string name="DateUtils_minutes_ago">%1$dನಿ</string>
+    <!-- Content description when describing how many minutes ago something has happened -->
+    <plurals name="DateUtils_minutes_ago_content_description">
+        <item quantity="one">%1$dನಿಮಿಷಗಳು</item>
+        <item quantity="other">%1$dನಿಮಿಷಗಳು</item>
+    </plurals>
     <string name="DateUtils_today">ಇಂದು</string>
     <string name="DateUtils_yesterday">ನಿನ್ನೆ</string>
     <!-- When scheduling a message, %1$s replaced with either today, tonight, or tomorrow. %2$s replaced with the time. e.g. Tonight at 9:00pm -->
@@ -1633,6 +1638,8 @@
     <string name="GroupJoinBottomSheetDialogFragment_unable_to_join_group_please_try_again_later">ಗ್ರೂಪ್‌ಗೆ ಸೇರಲು ಅಸಾಧ್ಯ. ದಯವಿಟ್ಟು ಪುನಃ ನಂತರ ಪ್ರಯತ್ನಿಸಿ</string>
     <string name="GroupJoinBottomSheetDialogFragment_encountered_a_network_error">ನೆಟ್‌ವರ್ಕ್ ದೋಷವನ್ನು ಎದುರಿಸಿದೆ.</string>
     <string name="GroupJoinBottomSheetDialogFragment_this_group_link_is_not_active">ಗುಂಪಿನ ಲಿಂಕ್ ಸಕ್ರಿಯವಾಗಿಲ್ಲ</string>
+    <!-- Toast message shown when trying to join a group by link but the group is full -->
+    <string name="GroupJoinBottomSheetDialogFragment_group_limit_reached">ಗುಂಪಿನ ಮಿತಿ ತಲುಪಿದೆ, ಗುಂಪಿಗೆ ಸೇರಿಕೊಳ್ಳಲು ಸಾಧ್ಯವಾಗುತ್ತಿಲ್ಲ</string>
     <!-- Title shown when there was an known issue getting group information from a group link -->
     <string name="GroupJoinBottomSheetDialogFragment_cant_join_group">ಗ್ರೂಪ್‌ಗೆ ಸೇರಲು ಸಾಧ್ಯವಿಲ್ಲ</string>
     <!-- Message shown when you try to get information for a group via link but an admin has removed you -->
@@ -2694,6 +2701,12 @@
     <!-- SwitchCameraButton -->
     <!-- Content description for the button that switches between front and back camera during a call -->
     <string name="SwitchCameraButton__switch_camera_direction">ಕ್ಯಾಮೆರಾ ದಿಕ್ಕನ್ನು ಬದಲಾಯಿಸಿ</string>
+
+    <!-- CallQualityDiagnosticsScreen -->
+    <!-- Title for the call quality diagnostics screen -->
+    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Diagnostic information</string>
+    <!-- Content description for the close/back navigation button -->
+    <string name="CallQualityDiagnosticsScreen__close">Close</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">ಸ್ಕ್ರೀನ್ ಹಂಚಿಕೆಯನ್ನು ನೋಡಲು ಸ್ವೈಪ್ ಮಾಡಿ</string>
@@ -3804,6 +3817,15 @@
     <string name="verify_display_fragment__mark_as_verified">ಪರಿಶೀಲಿಸಲಾಗಿದೆ ಎಂದು ಗುರುತಿಸಿ</string>
     <string name="verify_display_fragment__clear_verification">ದೃಢೀಕರಣವನ್ನು ತೆರವುಗೊಳಿಸಿ</string>
 
+    <!-- Title for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal now auto-verifies end-to-end encryption</string>
+    <!-- Body for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__body">When you verify a safety number, Signal will automatically confirm whether the connection is secure using a process called key transparency. You can still verify connections manually using a QR code or number.</string>
+    <!-- Button to learn more about automatic verification -->
+    <string name="VerifyAutomaticallyEducationSheet__learn_more">Learn more</string>
+    <!-- Button to go to verification page -->
+    <string name="VerifyAutomaticallyEducationSheet__verify">Verify</string>
+
     <!-- verity_scan_fragment -->
     <string name="verify_scan_fragment__scan_the_qr_code_on_your_contact">ನಿಮ್ಮ ಸಂಪರ್ಕದ ಸಾಧನದಲ್ಲಿ ಕ್ಯುಆರ್‌ ಕೋಡ್ ಅನ್ನು ಸ್ಕ್ಯಾನ್ ಮಾಡಿ.</string>
 
@@ -4177,6 +4199,8 @@
     <string name="preferences_normal">ಸಾಧಾರಣ</string>
     <!-- Preference summary for compact navigation bar size -->
     <string name="preferences_compact">ಚಿಕ್ಕ</string>
+    <!-- Dialog message body explaining that we have to restart the app in order to apply the user\'s new language setting.  -->
+    <string name="preferences_language_change_confirmation_message">ಹೊಸ ಭಾಷೆಯ ಸೆಟ್ಟಿಂಗ್ ಅನ್ನು ಅನ್ವಯಿಸಲು ಆ್ಯಪ್ ಮರುಪ್ರಾರಂಭಗೊಳ್ಳುತ್ತದೆ.</string>
 
 
     <string name="configurable_single_select__customize_option">ಆಯ್ಕೆಯನ್ನು ಅಗತ್ಯಾನುಗುಣಗೊಳಿಸಿರಿ</string>
@@ -8927,7 +8951,7 @@
     <!-- Dialog title when you go to end a poll -->
     <string name="Poll__end_poll_title">ಸಮೀಕ್ಷೆ ಕೊನೆಗೊಳಿಬೇಕೇ?</string>
     <!-- Dialog body when you go to end a poll -->
-    <string name="Poll__end_poll_body">ಗುಂಪಿನ ಸದಸ್ಯರು ಇನ್ನು ಮುಂದೆ ಈ ಸಮೀಕ್ಷೆಯಲ್ಲಿ ವೋಟ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗುವುದಿಲ್ಲ.</string>
+    <string name="Poll__end_poll_body">ಈ ಚಾಟ್‌ನ ಸದಸ್ಯರು ಇನ್ನು ಮುಂದೆ ಈ ಸಮೀಕ್ಷೆಯಲ್ಲಿ ವೋಟ್ ಮಾಡಲು ಸಾಧ್ಯವಾಗುವುದಿಲ್ಲ.</string>
     <!-- Body used in dialog when we are waiting for network -->
     <string name="Poll__waiting_for_network">ನೆಟ್ ವರ್ಕ್ ಗೆ ನಿರೀಕ್ಷಿಸಲಾಗುತ್ತಿದೆ…</string>
     <!-- Header when creating a new poll -->
@@ -8984,7 +9008,7 @@
 
     <!-- CallQualitySomethingElseScreen -->
     <!-- Title for the "Something else" call quality issue screen -->
-    <string name="CallQualitySomethingElseScreen__title">ಬೇರೆ ಸಮಸ್ಯೆ</string>
+    <string name="CallQualitySomethingElseScreen__title">ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ</string>
     <!-- Label for text field where user describes their call quality issue -->
     <string name="CallQualitySomethingElseScreen__describe_your_issue">ನಿಮ್ಮ ಸಮಸ್ಯೆಯನ್ನು ವಿವರಿಸಿ</string>
     <!-- Privacy notice explaining that issue details will be kept private and used to improve Signal calls -->
@@ -9014,11 +9038,15 @@
     <!-- Title asking user to help improve Signal -->
     <string name="CallQualitySheet__help_us_improve">ಸುಧಾರಿಸಲು ನಮಗೆ ಸಹಾಯ ಮಾಡಿ</string>
     <!-- First part of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_prefix">ನಿಮ್ಮ ಡಯಾಗ್ನೋಸ್ಟಿಕ್ಸ್ ಮಾಹಿತಿಯನ್ನು ನಮಗೆ ಕಳುಹಿಸುವುದರಿಂದ ಕರೆಯ ಗುಣಮಟ್ಟವನ್ನು ಸುಧಾರಿಸಲು ನಮಗೆ ಸಹಾಯವಾಗುತ್ತದೆ. ನೀವು </string>
+    <string name="CallQualitySheet__help_us_improve_description_prefix">Submitting will share your feedback along with</string>
+    <!-- Clickable text to launch diagnostic fragment -->
+    <string name="CallQualitySheet__diagnostic_information_about_your_call">diagnostic information about your call</string>
+    <!-- End of description explaining diagnostics help improve call quality -->
+    <string name="CallQualitySheet__help_us_improve_description_suffix">You can optionally share a debug log to help us improve call quality.</string>
+    <!-- Text explaining the debug log -->
+    <string name="CallQualitySheet__information_shared_with_us">Information shared with us contains low level app information and does not include the contents of your calls.</string>
     <!-- Link text to view debug log -->
-    <string name="CallQualitySheet__view_your_debug_log">ನಿಮ್ಮ ಡೀಬಗ್ ಲಾಗ್ ಅನ್ನು</string>
-    <!-- Last part of description about viewing debug log before submitting -->
-    <string name="CallQualitySheet__help_us_improve_description_suffix"> ಸಲ್ಲಿಸುವ ಮೊದಲೇ ವೀಕ್ಷಿಸಬಹುದು.</string>
+    <string name="CallQualitySheet__view_debug_log">View debug log</string>
     <!-- Toggle label for sharing debug log -->
     <string name="CallQualitySheet__share_debug_log">ಡೀಬಗ್ ಲಾಗ್ ಹಂಚಿಕೊಳ್ಳಿ</string>
     <!-- Privacy notice explaining what debug logs contain and why they are helpful -->

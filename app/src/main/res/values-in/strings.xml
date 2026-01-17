@@ -948,6 +948,10 @@
     <!-- DateUtils -->
     <string name="DateUtils_just_now">Sekarang</string>
     <string name="DateUtils_minutes_ago">%1$dmenit</string>
+    <!-- Content description when describing how many minutes ago something has happened -->
+    <plurals name="DateUtils_minutes_ago_content_description">
+        <item quantity="other">%1$d menit</item>
+    </plurals>
     <string name="DateUtils_today">Hari ini</string>
     <string name="DateUtils_yesterday">Kemarin</string>
     <!-- When scheduling a message, %1$s replaced with either today, tonight, or tomorrow. %2$s replaced with the time. e.g. Tonight at 9:00pm -->
@@ -1590,6 +1594,8 @@
     <string name="GroupJoinBottomSheetDialogFragment_unable_to_join_group_please_try_again_later">Tidak dapat bergabung ke grup. Mohon coba lagi nanti</string>
     <string name="GroupJoinBottomSheetDialogFragment_encountered_a_network_error">Terjadi kesalahan jaringan.</string>
     <string name="GroupJoinBottomSheetDialogFragment_this_group_link_is_not_active">Tautan grup ini tidak aktif</string>
+    <!-- Toast message shown when trying to join a group by link but the group is full -->
+    <string name="GroupJoinBottomSheetDialogFragment_group_limit_reached">Tak dapat bergabung, anggota grup sudah maksimal</string>
     <!-- Title shown when there was an known issue getting group information from a group link -->
     <string name="GroupJoinBottomSheetDialogFragment_cant_join_group">Tidak dapat bergabung dengan grup</string>
     <!-- Message shown when you try to get information for a group via link but an admin has removed you -->
@@ -2606,6 +2612,12 @@
     <!-- SwitchCameraButton -->
     <!-- Content description for the button that switches between front and back camera during a call -->
     <string name="SwitchCameraButton__switch_camera_direction">Ganti arah kamera</string>
+
+    <!-- CallQualityDiagnosticsScreen -->
+    <!-- Title for the call quality diagnostics screen -->
+    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Diagnostic information</string>
+    <!-- Content description for the close/back navigation button -->
+    <string name="CallQualityDiagnosticsScreen__close">Close</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">Usap untuk melihat layar yang dibagikan</string>
@@ -3693,6 +3705,15 @@
     <string name="verify_display_fragment__mark_as_verified">Tandai terverifikasi</string>
     <string name="verify_display_fragment__clear_verification">Hapus verifikasi</string>
 
+    <!-- Title for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal now auto-verifies end-to-end encryption</string>
+    <!-- Body for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__body">When you verify a safety number, Signal will automatically confirm whether the connection is secure using a process called key transparency. You can still verify connections manually using a QR code or number.</string>
+    <!-- Button to learn more about automatic verification -->
+    <string name="VerifyAutomaticallyEducationSheet__learn_more">Learn more</string>
+    <!-- Button to go to verification page -->
+    <string name="VerifyAutomaticallyEducationSheet__verify">Verify</string>
+
     <!-- verity_scan_fragment -->
     <string name="verify_scan_fragment__scan_the_qr_code_on_your_contact">Pindai kode QR pada perangkat kontak Anda.</string>
 
@@ -3844,7 +3865,7 @@
     <string name="preferences__pref_use_address_book_photos">Gunakan foto dari kontak</string>
     <string name="preferences__display_contact_photos_from_your_address_book_if_available">Tampilkan foto dari kontak jika tersedia</string>
     <!-- Preference menu item title for a toggle switch for preserving the archived state of muted chats. -->
-    <string name="preferences__pref_keep_muted_chats_archived">Biarkan Obrolan yang Dibisukan tetap Diarsipkan</string>
+    <string name="preferences__pref_keep_muted_chats_archived">Biarkan obrolan yang dibisukan tetap dalam arsip</string>
     <!-- Preference menu item description for a toggle switch for preserving the archived state of muted chats. -->
     <string name="preferences__muted_chats_that_are_archived_will_remain_archived">Obrolan dibisukan yang diarsipkan akan tetap diarsipkan saat ada pesan baru yang masuk.</string>
     <string name="preferences__generate_link_previews">Buat pratinjau tautan</string>
@@ -4063,6 +4084,8 @@
     <string name="preferences_normal">Normal</string>
     <!-- Preference summary for compact navigation bar size -->
     <string name="preferences_compact">Ringkas</string>
+    <!-- Dialog message body explaining that we have to restart the app in order to apply the user\'s new language setting.  -->
+    <string name="preferences_language_change_confirmation_message">Aplikasi akan dimulai ulang untuk menerapkan pengaturan bahasa baru.</string>
 
 
     <string name="configurable_single_select__customize_option">Sesuaikan opsi</string>
@@ -6015,9 +6038,9 @@
     <!-- Title of a page in the bottom sheet. Placeholder is a user\'s short-name -->
     <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal">%1$s mendukung Signal</string>
     <!-- Description of a page in the bottom sheet of a monthly badge. Placeholder is a user\'s short-name -->
-    <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal_with_a_monthly">%1$s mendukung Signal dengan donasi bulanan. Signal adalah organisasi nirlaba tanpa pengiklan dan investor, didukung hanya oleh orang seperti Anda.</string>
+    <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal_with_a_monthly">%1$s mendukung Signal dengan donasi bulanan. Signal adalah organisasi nirlaba tanpa pengiklan atau investor, hanya didukung orang baik seperti Anda.</string>
     <!-- Description of a page in the bottom sheet of a one-time badge. Placeholder is a user\'s short-name -->
-    <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal_with_a_donation">%1$s mendukung Signal dengan donasi. Signal adalah lembaga nirlaba tanpa pengiklan dan investor, didukung hanya oleh orang-orang seperti Anda.</string>
+    <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal_with_a_donation">%1$s mendukung Signal dengan donasi. Signal adalah organisasi nirlaba tanpa pengiklan atau investor, hanya didukung orang baik seperti Anda.</string>
 
     <string name="ImageView__badge">Lencana</string>
 
@@ -6069,14 +6092,14 @@
     <string name="ManageDonationsFragment__my_support">Dukungan saya</string>
     <string name="ManageDonationsFragment__manage_subscription">Kelola langganan</string>
     <!-- Label for Donation Receipts button -->
-    <string name="ManageDonationsFragment__donation_receipts">Resi Donasi</string>
+    <string name="ManageDonationsFragment__donation_receipts">Struk donasi</string>
     <string name="ManageDonationsFragment__badges">Lencana</string>
     <!-- Label that externally links to Signal Donor FAQ page -->
     <string name="ManageDonationsFragment__subscription_faq">Pertanyaan Umum tentang Donatur</string>
     <!-- Preference heading for other ways to donate -->
     <string name="ManageDonationsFragment__other_ways_to_give">Cara lain untuk memberi</string>
     <!-- Preference label to launch badge gifting -->
-    <string name="ManageDonationsFragment__donate_for_a_friend">Donasi untuk Teman</string>
+    <string name="ManageDonationsFragment__donate_for_a_friend">Donasi untuk teman</string>
     <!-- Dialog title shown when a donation requires verifying/confirmation outside of the app and the user hasn\'t done that yet -->
     <string name="ManageDonationsFragment__couldnt_confirm_donation">Tidak dapat mengonfirmasi donasi</string>
     <!-- Dialog message shown when a monthly donation requires verifying/confirmation outside of the app and the user hasn\'t done that yet, placeholder is money amount -->
@@ -8741,7 +8764,7 @@
     <!-- Dialog title when you go to end a poll -->
     <string name="Poll__end_poll_title">Akhiri polling?</string>
     <!-- Dialog body when you go to end a poll -->
-    <string name="Poll__end_poll_body">Anggota grup sudah tidak bisa memilih dalam polling ini.</string>
+    <string name="Poll__end_poll_body">Para anggota di chat ini sudah tidak bisa memberi suara untuk polling ini.</string>
     <!-- Body used in dialog when we are waiting for network -->
     <string name="Poll__waiting_for_network">Menunggu jaringan …</string>
     <!-- Header when creating a new poll -->
@@ -8798,7 +8821,7 @@
 
     <!-- CallQualitySomethingElseScreen -->
     <!-- Title for the "Something else" call quality issue screen -->
-    <string name="CallQualitySomethingElseScreen__title">Lainnya</string>
+    <string name="CallQualitySomethingElseScreen__title">Jelaskan masalah</string>
     <!-- Label for text field where user describes their call quality issue -->
     <string name="CallQualitySomethingElseScreen__describe_your_issue">Jelaskan masalah yang Anda alami</string>
     <!-- Privacy notice explaining that issue details will be kept private and used to improve Signal calls -->
@@ -8828,11 +8851,15 @@
     <!-- Title asking user to help improve Signal -->
     <string name="CallQualitySheet__help_us_improve">Bantu kami meningkatkan kualitas</string>
     <!-- First part of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_prefix">Kirimkan info diagnostik sebagai bahan evaluasi dalam meningkatkan kualitas panggilan. Anda dapat </string>
+    <string name="CallQualitySheet__help_us_improve_description_prefix">Submitting will share your feedback along with</string>
+    <!-- Clickable text to launch diagnostic fragment -->
+    <string name="CallQualitySheet__diagnostic_information_about_your_call">diagnostic information about your call</string>
+    <!-- End of description explaining diagnostics help improve call quality -->
+    <string name="CallQualitySheet__help_us_improve_description_suffix">You can optionally share a debug log to help us improve call quality.</string>
+    <!-- Text explaining the debug log -->
+    <string name="CallQualitySheet__information_shared_with_us">Information shared with us contains low level app information and does not include the contents of your calls.</string>
     <!-- Link text to view debug log -->
-    <string name="CallQualitySheet__view_your_debug_log">melihat catatan debug</string>
-    <!-- Last part of description about viewing debug log before submitting -->
-    <string name="CallQualitySheet__help_us_improve_description_suffix"> sebelum mengirim.</string>
+    <string name="CallQualitySheet__view_debug_log">View debug log</string>
     <!-- Toggle label for sharing debug log -->
     <string name="CallQualitySheet__share_debug_log">Bagikan catatan debug</string>
     <!-- Privacy notice explaining what debug logs contain and why they are helpful -->

@@ -968,6 +968,11 @@
     <!-- DateUtils -->
     <string name="DateUtils_just_now">Сада</string>
     <string name="DateUtils_minutes_ago">%1$d m</string>
+    <!-- Content description when describing how many minutes ago something has happened -->
+    <plurals name="DateUtils_minutes_ago_content_description">
+        <item quantity="one">%1$d min</item>
+        <item quantity="other">%1$d min</item>
+    </plurals>
     <string name="DateUtils_today">Данас</string>
     <string name="DateUtils_yesterday">Јуче</string>
     <!-- When scheduling a message, %1$s replaced with either today, tonight, or tomorrow. %2$s replaced with the time. e.g. Tonight at 9:00pm -->
@@ -1633,6 +1638,8 @@
     <string name="GroupJoinBottomSheetDialogFragment_unable_to_join_group_please_try_again_later">Придруживање групи није успело. Пробајте поново касније</string>
     <string name="GroupJoinBottomSheetDialogFragment_encountered_a_network_error">Дошло је до грешке са мрежом.</string>
     <string name="GroupJoinBottomSheetDialogFragment_this_group_link_is_not_active">Линк за групу није активан</string>
+    <!-- Toast message shown when trying to join a group by link but the group is full -->
+    <string name="GroupJoinBottomSheetDialogFragment_group_limit_reached">Ограничење групе је достигнуто, придруживање групи није могуће</string>
     <!-- Title shown when there was an known issue getting group information from a group link -->
     <string name="GroupJoinBottomSheetDialogFragment_cant_join_group">Не можете да се придружите групи</string>
     <!-- Message shown when you try to get information for a group via link but an admin has removed you -->
@@ -2694,6 +2701,12 @@
     <!-- SwitchCameraButton -->
     <!-- Content description for the button that switches between front and back camera during a call -->
     <string name="SwitchCameraButton__switch_camera_direction">Промени смер камере</string>
+
+    <!-- CallQualityDiagnosticsScreen -->
+    <!-- Title for the call quality diagnostics screen -->
+    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Diagnostic information</string>
+    <!-- Content description for the close/back navigation button -->
+    <string name="CallQualityDiagnosticsScreen__close">Close</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">Превуците да видите дељење екрана</string>
@@ -3804,6 +3817,15 @@
     <string name="verify_display_fragment__mark_as_verified">Означи као верификовано</string>
     <string name="verify_display_fragment__clear_verification">Избриши верификацију</string>
 
+    <!-- Title for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal now auto-verifies end-to-end encryption</string>
+    <!-- Body for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__body">When you verify a safety number, Signal will automatically confirm whether the connection is secure using a process called key transparency. You can still verify connections manually using a QR code or number.</string>
+    <!-- Button to learn more about automatic verification -->
+    <string name="VerifyAutomaticallyEducationSheet__learn_more">Learn more</string>
+    <!-- Button to go to verification page -->
+    <string name="VerifyAutomaticallyEducationSheet__verify">Verify</string>
+
     <!-- verity_scan_fragment -->
     <string name="verify_scan_fragment__scan_the_qr_code_on_your_contact">Скенирајте QR код приказан на уређају вашег контакта.</string>
 
@@ -3956,7 +3978,7 @@
     <string name="preferences__pref_use_address_book_photos">Користи слике из адресара</string>
     <string name="preferences__display_contact_photos_from_your_address_book_if_available">Прикажи слике контаката из адресара ако су доступне</string>
     <!-- Preference menu item title for a toggle switch for preserving the archived state of muted chats. -->
-    <string name="preferences__pref_keep_muted_chats_archived">Остави ћаскања са искљученим обавештењима архивирана</string>
+    <string name="preferences__pref_keep_muted_chats_archived">Остави ћаскања са искљученим обавештењима у архиви</string>
     <!-- Preference menu item description for a toggle switch for preserving the archived state of muted chats. -->
     <string name="preferences__muted_chats_that_are_archived_will_remain_archived">Ћаскања са искљученим обавештењима која су архивирана остаће архивирана када стигне нова порука.</string>
     <string name="preferences__generate_link_previews">Генериши приказ линка</string>
@@ -4177,6 +4199,8 @@
     <string name="preferences_normal">Нормално</string>
     <!-- Preference summary for compact navigation bar size -->
     <string name="preferences_compact">Компактно</string>
+    <!-- Dialog message body explaining that we have to restart the app in order to apply the user\'s new language setting.  -->
+    <string name="preferences_language_change_confirmation_message">Апликација ће се поново покренути да би се применило ново подешавање језика.</string>
 
 
     <string name="configurable_single_select__customize_option">Прилагодите опцију</string>
@@ -8927,7 +8951,7 @@
     <!-- Dialog title when you go to end a poll -->
     <string name="Poll__end_poll_title">Желите ли да прекинете анкету?</string>
     <!-- Dialog body when you go to end a poll -->
-    <string name="Poll__end_poll_body">Чланови групе више неће моћи да гласају у овој анкети.</string>
+    <string name="Poll__end_poll_body">Чланови овог ћаскања више неће моћи да гласају у овој анкети.</string>
     <!-- Body used in dialog when we are waiting for network -->
     <string name="Poll__waiting_for_network">Чека се мрежа…</string>
     <!-- Header when creating a new poll -->
@@ -8984,7 +9008,7 @@
 
     <!-- CallQualitySomethingElseScreen -->
     <!-- Title for the "Something else" call quality issue screen -->
-    <string name="CallQualitySomethingElseScreen__title">Нешто друго</string>
+    <string name="CallQualitySomethingElseScreen__title">Опишите проблем</string>
     <!-- Label for text field where user describes their call quality issue -->
     <string name="CallQualitySomethingElseScreen__describe_your_issue">Опишите проблем</string>
     <!-- Privacy notice explaining that issue details will be kept private and used to improve Signal calls -->
@@ -9014,11 +9038,15 @@
     <!-- Title asking user to help improve Signal -->
     <string name="CallQualitySheet__help_us_improve">Помозите нам да се побољшамо</string>
     <!-- First part of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_prefix">Слање дијагностичких података нам помаже да побољшамо квалитет позива. Можете да </string>
+    <string name="CallQualitySheet__help_us_improve_description_prefix">Submitting will share your feedback along with</string>
+    <!-- Clickable text to launch diagnostic fragment -->
+    <string name="CallQualitySheet__diagnostic_information_about_your_call">diagnostic information about your call</string>
+    <!-- End of description explaining diagnostics help improve call quality -->
+    <string name="CallQualitySheet__help_us_improve_description_suffix">You can optionally share a debug log to help us improve call quality.</string>
+    <!-- Text explaining the debug log -->
+    <string name="CallQualitySheet__information_shared_with_us">Information shared with us contains low level app information and does not include the contents of your calls.</string>
     <!-- Link text to view debug log -->
-    <string name="CallQualitySheet__view_your_debug_log">видите извештај о грешкама</string>
-    <!-- Last part of description about viewing debug log before submitting -->
-    <string name="CallQualitySheet__help_us_improve_description_suffix"> пре слања.</string>
+    <string name="CallQualitySheet__view_debug_log">View debug log</string>
     <!-- Toggle label for sharing debug log -->
     <string name="CallQualitySheet__share_debug_log">Пошаљи извештај о грешкама</string>
     <!-- Privacy notice explaining what debug logs contain and why they are helpful -->

@@ -1008,6 +1008,13 @@
     <!-- DateUtils -->
     <string name="DateUtils_just_now">Зараз</string>
     <string name="DateUtils_minutes_ago">%1$d хв</string>
+    <!-- Content description when describing how many minutes ago something has happened -->
+    <plurals name="DateUtils_minutes_ago_content_description">
+        <item quantity="one">%1$d хвіліна</item>
+        <item quantity="few">%1$d хвіліны</item>
+        <item quantity="many">%1$d хвілін</item>
+        <item quantity="other">%1$d хвілін</item>
+    </plurals>
     <string name="DateUtils_today">Сёння</string>
     <string name="DateUtils_yesterday">Учора</string>
     <!-- When scheduling a message, %1$s replaced with either today, tonight, or tomorrow. %2$s replaced with the time. e.g. Tonight at 9:00pm -->
@@ -1719,6 +1726,8 @@
     <string name="GroupJoinBottomSheetDialogFragment_unable_to_join_group_please_try_again_later">Немагчыма далучыцца да групы. Калі ласка, паўтарыце спробу пазней</string>
     <string name="GroupJoinBottomSheetDialogFragment_encountered_a_network_error">Адбылася памылка сеткі.</string>
     <string name="GroupJoinBottomSheetDialogFragment_this_group_link_is_not_active">Гэта спасылка на групу неактыўная</string>
+    <!-- Toast message shown when trying to join a group by link but the group is full -->
+    <string name="GroupJoinBottomSheetDialogFragment_group_limit_reached">Ліміт групы дасягнуты: далучыцца да яе немагчыма</string>
     <!-- Title shown when there was an known issue getting group information from a group link -->
     <string name="GroupJoinBottomSheetDialogFragment_cant_join_group">Немагчыма далучыцца да групы</string>
     <!-- Message shown when you try to get information for a group via link but an admin has removed you -->
@@ -2870,6 +2879,12 @@
     <!-- SwitchCameraButton -->
     <!-- Content description for the button that switches between front and back camera during a call -->
     <string name="SwitchCameraButton__switch_camera_direction">Змяніць напрамак камеры</string>
+
+    <!-- CallQualityDiagnosticsScreen -->
+    <!-- Title for the call quality diagnostics screen -->
+    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Diagnostic information</string>
+    <!-- Content description for the close/back navigation button -->
+    <string name="CallQualityDiagnosticsScreen__close">Close</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">Правесці пальцам, каб прагледзець экран</string>
@@ -4026,6 +4041,15 @@
     <string name="verify_display_fragment__mark_as_verified">Пазначыць як праверанае</string>
     <string name="verify_display_fragment__clear_verification">Ачысціць праверку</string>
 
+    <!-- Title for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal now auto-verifies end-to-end encryption</string>
+    <!-- Body for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__body">When you verify a safety number, Signal will automatically confirm whether the connection is secure using a process called key transparency. You can still verify connections manually using a QR code or number.</string>
+    <!-- Button to learn more about automatic verification -->
+    <string name="VerifyAutomaticallyEducationSheet__learn_more">Learn more</string>
+    <!-- Button to go to verification page -->
+    <string name="VerifyAutomaticallyEducationSheet__verify">Verify</string>
+
     <!-- verity_scan_fragment -->
     <string name="verify_scan_fragment__scan_the_qr_code_on_your_contact">Сканаваць QR-код на прыладзе вашага кантакту.</string>
 
@@ -4405,6 +4429,8 @@
     <string name="preferences_normal">Звычайны</string>
     <!-- Preference summary for compact navigation bar size -->
     <string name="preferences_compact">Кампактны</string>
+    <!-- Dialog message body explaining that we have to restart the app in order to apply the user\'s new language setting.  -->
+    <string name="preferences_language_change_confirmation_message">Каб пераключыцца на новую мову, неабходна перазапусціць праграму.</string>
 
 
     <string name="configurable_single_select__customize_option">Наладзіць опцыю</string>
@@ -5056,7 +5082,7 @@
     <!--    Countdown to when the user can request a new SMS code during registration.-->
     <string name="RegistrationActivity_resend_sms_available_in">Паўторна адправіць код (%1$02d:%2$02d)</string>
     <string name="RegistrationActivity_contact_signal_support">Звярнуцца да службы падтрымкі Signal</string>
-    <string name="RegistrationActivity_code_support_subject">Рэгістрацыя Signal - Код праверкі для Android</string>
+    <string name="RegistrationActivity_code_support_subject">Рэгістрацыя Signal - Праверачны код для Android</string>
     <string name="RegistrationActivity_incorrect_code">Няправільны код</string>
     <string name="BackupUtil_never">Ніколі</string>
     <!-- Subtext below last backup time when we do not know when the last backup was -->
@@ -7022,7 +7048,7 @@
     <!-- Displayed when a story has no views -->
     <string name="StoryViewsFragment__no_views_yet">Пакуль няма праглядаў</string>
     <!-- Displayed when user has disabled receipts -->
-    <string name="StoryViewsFragment__enable_view_receipts_to_see_whos_viewed_your_story">Уключыце апавяшчэнні аб праглядах, каб ведаць, хто прагледзеў вашы гісторыі.</string>
+    <string name="StoryViewsFragment__enable_view_receipts_to_see_whos_viewed_your_story">Уключыце «Прагледзець даныя праглядаў», каб ведаць, хто прагледзеў вашы гісторыі.</string>
     <!-- Button label displayed when user has disabled receipts -->
     <string name="StoryViewsFragment__go_to_settings">Перайсці ў налады</string>
     <!-- Dialog action to remove viewer from a story -->
@@ -7502,7 +7528,7 @@
     <string name="StoriesPrivacySettingsFragment__stories">Гісторыі</string>
     <!-- Story views header -->
     <!-- Story view receipts toggle title -->
-    <string name="StoriesPrivacySettingsFragment__view_receipts">Апавяшчэнні аб праглядзе</string>
+    <string name="StoriesPrivacySettingsFragment__view_receipts">Прагледзець даныя праглядаў</string>
     <!-- Story view receipts toggle message -->
     <string name="StoriesPrivacySettingsFragment__see_and_share">Даведвайцеся і абагульвайце інфармацыю аб праглядах гісторый. Калі гэта функцыя адключана, вы не будзеце ведаць, што нехта прагледзеў вашу гісторыю.</string>
 
@@ -9299,7 +9325,7 @@
     <!-- Dialog title when you go to end a poll -->
     <string name="Poll__end_poll_title">Завяршыць апытанне?</string>
     <!-- Dialog body when you go to end a poll -->
-    <string name="Poll__end_poll_body">Удзельнікі групы больш не змогуць аддаваць галасы ў гэтым апытанні.</string>
+    <string name="Poll__end_poll_body">Удзельнікі гэтага чата больш не змогуць аддаваць галасы ў дадзеным апытанні.</string>
     <!-- Body used in dialog when we are waiting for network -->
     <string name="Poll__waiting_for_network">Чакаем сетку…</string>
     <!-- Header when creating a new poll -->
@@ -9356,7 +9382,7 @@
 
     <!-- CallQualitySomethingElseScreen -->
     <!-- Title for the "Something else" call quality issue screen -->
-    <string name="CallQualitySomethingElseScreen__title">Нешта іншае</string>
+    <string name="CallQualitySomethingElseScreen__title">Апішыце праблему</string>
     <!-- Label for text field where user describes their call quality issue -->
     <string name="CallQualitySomethingElseScreen__describe_your_issue">Апішыце сваю праблему</string>
     <!-- Privacy notice explaining that issue details will be kept private and used to improve Signal calls -->
@@ -9386,11 +9412,15 @@
     <!-- Title asking user to help improve Signal -->
     <string name="CallQualitySheet__help_us_improve">Дапамажыце палепшыць наш сэрвіс</string>
     <!-- First part of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_prefix">Калі мы атрымліваем ад вас інфармацыю па дыягностыцы, нам лягчэй палепшыць якасць званкоў. Вы можаце </string>
+    <string name="CallQualitySheet__help_us_improve_description_prefix">Submitting will share your feedback along with</string>
+    <!-- Clickable text to launch diagnostic fragment -->
+    <string name="CallQualitySheet__diagnostic_information_about_your_call">diagnostic information about your call</string>
+    <!-- End of description explaining diagnostics help improve call quality -->
+    <string name="CallQualitySheet__help_us_improve_description_suffix">You can optionally share a debug log to help us improve call quality.</string>
+    <!-- Text explaining the debug log -->
+    <string name="CallQualitySheet__information_shared_with_us">Information shared with us contains low level app information and does not include the contents of your calls.</string>
     <!-- Link text to view debug log -->
-    <string name="CallQualitySheet__view_your_debug_log">прагледзець журнал адладкі</string>
-    <!-- Last part of description about viewing debug log before submitting -->
-    <string name="CallQualitySheet__help_us_improve_description_suffix"> перад адпраўкай інфармацыі.</string>
+    <string name="CallQualitySheet__view_debug_log">View debug log</string>
     <!-- Toggle label for sharing debug log -->
     <string name="CallQualitySheet__share_debug_log">Адправіць журнал адладкі</string>
     <!-- Privacy notice explaining what debug logs contain and why they are helpful -->

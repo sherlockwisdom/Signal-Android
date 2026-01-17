@@ -968,6 +968,11 @@
     <!-- DateUtils -->
     <string name="DateUtils_just_now">Ora</string>
     <string name="DateUtils_minutes_ago">%1$dmin</string>
+    <!-- Content description when describing how many minutes ago something has happened -->
+    <plurals name="DateUtils_minutes_ago_content_description">
+        <item quantity="one">%1$d minuto</item>
+        <item quantity="other">%1$d minuti</item>
+    </plurals>
     <string name="DateUtils_today">Oggi</string>
     <string name="DateUtils_yesterday">Ieri</string>
     <!-- When scheduling a message, %1$s replaced with either today, tonight, or tomorrow. %2$s replaced with the time. e.g. Tonight at 9:00pm -->
@@ -1633,6 +1638,8 @@
     <string name="GroupJoinBottomSheetDialogFragment_unable_to_join_group_please_try_again_later">Impossibile unirsi al gruppo. Riprova più tardi</string>
     <string name="GroupJoinBottomSheetDialogFragment_encountered_a_network_error">Si è verificato un errore di rete.</string>
     <string name="GroupJoinBottomSheetDialogFragment_this_group_link_is_not_active">Questo link del gruppo non è attivo</string>
+    <!-- Toast message shown when trying to join a group by link but the group is full -->
+    <string name="GroupJoinBottomSheetDialogFragment_group_limit_reached">Limite del gruppo raggiunto, impossibile unirsi</string>
     <!-- Title shown when there was an known issue getting group information from a group link -->
     <string name="GroupJoinBottomSheetDialogFragment_cant_join_group">Impossibile unirsi al gruppo</string>
     <!-- Message shown when you try to get information for a group via link but an admin has removed you -->
@@ -2694,6 +2701,12 @@
     <!-- SwitchCameraButton -->
     <!-- Content description for the button that switches between front and back camera during a call -->
     <string name="SwitchCameraButton__switch_camera_direction">Cambia orientamento fotocamera</string>
+
+    <!-- CallQualityDiagnosticsScreen -->
+    <!-- Title for the call quality diagnostics screen -->
+    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Diagnostic information</string>
+    <!-- Content description for the close/back navigation button -->
+    <string name="CallQualityDiagnosticsScreen__close">Close</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">Scorri per vedere la condivisione dello schermo</string>
@@ -3804,6 +3817,15 @@
     <string name="verify_display_fragment__mark_as_verified">Segna come verificato</string>
     <string name="verify_display_fragment__clear_verification">Rimuovi verifica</string>
 
+    <!-- Title for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal now auto-verifies end-to-end encryption</string>
+    <!-- Body for auto verification education sheet -->
+    <string name="VerifyAutomaticallyEducationSheet__body">When you verify a safety number, Signal will automatically confirm whether the connection is secure using a process called key transparency. You can still verify connections manually using a QR code or number.</string>
+    <!-- Button to learn more about automatic verification -->
+    <string name="VerifyAutomaticallyEducationSheet__learn_more">Learn more</string>
+    <!-- Button to go to verification page -->
+    <string name="VerifyAutomaticallyEducationSheet__verify">Verify</string>
+
     <!-- verity_scan_fragment -->
     <string name="verify_scan_fragment__scan_the_qr_code_on_your_contact">Scansiona il codice QR sul dispositivo del tuo contatto.</string>
 
@@ -4177,6 +4199,8 @@
     <string name="preferences_normal">Normale</string>
     <!-- Preference summary for compact navigation bar size -->
     <string name="preferences_compact">Compatta</string>
+    <!-- Dialog message body explaining that we have to restart the app in order to apply the user\'s new language setting.  -->
+    <string name="preferences_language_change_confirmation_message">L\'app verrà riavviata per applicare le nuove preferenze sulla lingua.</string>
 
 
     <string name="configurable_single_select__customize_option">Personalizza opzione</string>
@@ -6214,7 +6238,7 @@
     <string name="ManageDonationsFragment__my_support">Il mio supporto</string>
     <string name="ManageDonationsFragment__manage_subscription">Gestisci contributo</string>
     <!-- Label for Donation Receipts button -->
-    <string name="ManageDonationsFragment__donation_receipts">Ricevute donazioni</string>
+    <string name="ManageDonationsFragment__donation_receipts">Ricevute delle donazioni</string>
     <string name="ManageDonationsFragment__badges">Badge</string>
     <!-- Label that externally links to Signal Donor FAQ page -->
     <string name="ManageDonationsFragment__subscription_faq">FAQ sulle donazioni</string>
@@ -8927,7 +8951,7 @@
     <!-- Dialog title when you go to end a poll -->
     <string name="Poll__end_poll_title">Terminare il sondaggio?</string>
     <!-- Dialog body when you go to end a poll -->
-    <string name="Poll__end_poll_body">Chi fa parte di questo gruppo non potrà più votare nel sondaggio.</string>
+    <string name="Poll__end_poll_body">Chi fa parte di questa chat non potrà più votare in questo sondaggio.</string>
     <!-- Body used in dialog when we are waiting for network -->
     <string name="Poll__waiting_for_network">In attesa di una connessione…</string>
     <!-- Header when creating a new poll -->
@@ -8984,7 +9008,7 @@
 
     <!-- CallQualitySomethingElseScreen -->
     <!-- Title for the "Something else" call quality issue screen -->
-    <string name="CallQualitySomethingElseScreen__title">Qualcos\'altro</string>
+    <string name="CallQualitySomethingElseScreen__title">Descrivi il problema</string>
     <!-- Label for text field where user describes their call quality issue -->
     <string name="CallQualitySomethingElseScreen__describe_your_issue">Descrivi il tuo problema</string>
     <!-- Privacy notice explaining that issue details will be kept private and used to improve Signal calls -->
@@ -9014,11 +9038,15 @@
     <!-- Title asking user to help improve Signal -->
     <string name="CallQualitySheet__help_us_improve">Aiutaci a migliorare</string>
     <!-- First part of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_prefix">Inviaci i tuoi dati diagnostici per aiutarci a migliorare la qualità delle chiamate. Puoi </string>
+    <string name="CallQualitySheet__help_us_improve_description_prefix">Submitting will share your feedback along with</string>
+    <!-- Clickable text to launch diagnostic fragment -->
+    <string name="CallQualitySheet__diagnostic_information_about_your_call">diagnostic information about your call</string>
+    <!-- End of description explaining diagnostics help improve call quality -->
+    <string name="CallQualitySheet__help_us_improve_description_suffix">You can optionally share a debug log to help us improve call quality.</string>
+    <!-- Text explaining the debug log -->
+    <string name="CallQualitySheet__information_shared_with_us">Information shared with us contains low level app information and does not include the contents of your calls.</string>
     <!-- Link text to view debug log -->
-    <string name="CallQualitySheet__view_your_debug_log">vedere il tuo log di debug</string>
-    <!-- Last part of description about viewing debug log before submitting -->
-    <string name="CallQualitySheet__help_us_improve_description_suffix"> prima di inviarcelo.</string>
+    <string name="CallQualitySheet__view_debug_log">View debug log</string>
     <!-- Toggle label for sharing debug log -->
     <string name="CallQualitySheet__share_debug_log">Condividi log di debug</string>
     <!-- Privacy notice explaining what debug logs contain and why they are helpful -->

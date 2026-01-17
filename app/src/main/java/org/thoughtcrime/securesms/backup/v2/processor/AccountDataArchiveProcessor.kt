@@ -142,7 +142,8 @@ object AccountDataArchiveProcessor {
               db = db,
               chatColors = chatColors,
               chatColorId = chatColors?.id?.takeIf { it.isValid(exportState) } ?: ChatColors.Id.NotSet,
-              chatWallpaper = chatWallpaper
+              chatWallpaper = chatWallpaper,
+              backupMode = exportState.backupMode
             )
           ),
           donationSubscriberData = donationSubscriber?.toSubscriberData(signalStore.inAppPaymentValues.isDonationSubscriptionManuallyCancelled()),
@@ -251,7 +252,7 @@ object AccountDataArchiveProcessor {
     TextSecurePreferences.setReadReceiptsEnabled(context, settings.readReceipts)
     TextSecurePreferences.setTypingIndicatorsEnabled(context, settings.typingIndicators)
     TextSecurePreferences.setShowUnidentifiedDeliveryIndicatorsEnabled(context, settings.sealedSenderIndicators)
-    TextSecurePreferences.setIsUnidentifiedDeliveryEnabled(context, settings.allowSealedSenderFromAnyone)
+    TextSecurePreferences.setIsUniversalUnidentifiedAccess(context, settings.allowSealedSenderFromAnyone)
     SignalStore.settings.isLinkPreviewsEnabled = settings.linkPreviews
     SignalStore.phoneNumberPrivacy.phoneNumberDiscoverabilityMode = if (settings.notDiscoverableByPhoneNumber) PhoneNumberDiscoverabilityMode.NOT_DISCOVERABLE else PhoneNumberDiscoverabilityMode.DISCOVERABLE
     SignalStore.phoneNumberPrivacy.phoneNumberSharingMode = settings.phoneNumberSharingMode.toLocalPhoneNumberMode()
