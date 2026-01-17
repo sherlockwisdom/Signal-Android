@@ -667,9 +667,9 @@ class ConversationRepository(
           .withMimeType(thumbnailSlide.contentType)
           .createForSingleSessionOnDisk(applicationContext)
 
-        attachments.deleteAttachmentFilesForViewOnceMessage(mmsMessageRecord.id)
-        AppDependencies.viewOnceMessageManager.scheduleIfNecessary()
-        AppDependencies.jobManager.add(MultiDeviceViewOnceOpenJob(MessageTable.SyncMessageId(mmsMessageRecord.fromRecipient.id, mmsMessageRecord.dateSent)))
+//        attachments.deleteAttachmentFilesForViewOnceMessage(mmsMessageRecord.id)
+//        AppDependencies.viewOnceMessageManager.scheduleIfNecessary()
+//        AppDependencies.jobManager.add(MultiDeviceViewOnceOpenJob(MessageTable.SyncMessageId(mmsMessageRecord.fromRecipient.id, mmsMessageRecord.dateSent)))
 
         tempUri
       } catch (e: IOException) {
