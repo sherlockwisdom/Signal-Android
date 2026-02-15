@@ -44,19 +44,20 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.navigation.NavController
 import androidx.navigation.fragment.findNavController
 import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.ComposeFragment
 import org.signal.core.ui.compose.DayNightPreviews
 import org.signal.core.ui.compose.Dialogs
 import org.signal.core.ui.compose.Dividers
 import org.signal.core.ui.compose.DropdownMenus
 import org.signal.core.ui.compose.Previews
 import org.signal.core.ui.compose.Scaffolds
+import org.signal.core.ui.compose.SignalIcons
 import org.signal.core.ui.compose.copied.androidx.compose.DragAndDropEvent
 import org.signal.core.ui.compose.copied.androidx.compose.DraggableItem
 import org.signal.core.ui.compose.copied.androidx.compose.dragContainer
 import org.signal.core.ui.compose.copied.androidx.compose.rememberDragDropState
 import org.signal.core.util.toInt
 import org.thoughtcrime.securesms.R
-import org.thoughtcrime.securesms.compose.ComposeFragment
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.util.navigation.safeNavigate
 
@@ -76,7 +77,7 @@ class ChatFoldersFragment : ComposeFragment() {
     Scaffolds.Settings(
       title = stringResource(id = R.string.ChatsSettingsFragment__chat_folders),
       onNavigationClick = { requireActivity().onNavigateUp() },
-      navigationIcon = ImageVector.vectorResource(id = R.drawable.symbol_arrow_start_24),
+      navigationIcon = SignalIcons.ArrowStart.imageVector,
       navigationContentDescription = stringResource(id = R.string.Material3SearchToolbar__close)
     ) { contentPadding: PaddingValues ->
       FoldersScreen(
@@ -369,7 +370,7 @@ fun FolderRow(
             .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
           Icon(
-            painter = painterResource(id = R.drawable.symbol_edit_24),
+            painter = SignalIcons.Edit.painter,
             contentDescription = null
           )
           Text(
@@ -387,7 +388,7 @@ fun FolderRow(
             .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
           Icon(
-            painter = painterResource(id = R.drawable.symbol_trash_24),
+            painter = SignalIcons.Trash.painter,
             contentDescription = null
           )
           Text(

@@ -26,7 +26,7 @@ dependencies {
   // Project dependencies
   implementation(project(":core:ui"))
   implementation(project(":core:util"))
-  implementation(project(":core:models"))
+  implementation(project(":core:models-jvm"))
   implementation(libs.libsignal.android)
 
   // Compose BOM
@@ -59,6 +59,7 @@ dependencies {
   implementation(libs.google.libphonenumber)
 
   // Testing
+  testImplementation(testFixtures(project(":core:ui")))
   testImplementation(testLibs.junit.junit)
   testImplementation(testLibs.mockk)
   testImplementation(testLibs.assertk)

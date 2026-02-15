@@ -100,6 +100,15 @@ import kotlinx.coroutines.launch
 import org.greenrobot.eventbus.EventBus
 import org.greenrobot.eventbus.Subscribe
 import org.greenrobot.eventbus.ThreadMode
+import org.signal.core.models.media.Media
+import org.signal.core.models.media.TransformProperties
+import org.signal.core.ui.BottomSheetUtil
+import org.signal.core.ui.getWindowSizeClass
+import org.signal.core.ui.isSplitPane
+import org.signal.core.ui.logging.LoggingFragment
+import org.signal.core.ui.permissions.Permissions
+import org.signal.core.ui.util.ThemeUtil
+import org.signal.core.ui.view.Stub
 import org.signal.core.util.ByteLimitInputFilter
 import org.signal.core.util.PendingIntentFlags
 import org.signal.core.util.Result
@@ -116,7 +125,6 @@ import org.signal.ringrtc.CallLinkEpoch
 import org.signal.ringrtc.CallLinkRootKey
 import org.thoughtcrime.securesms.BlockUnblockDialog
 import org.thoughtcrime.securesms.GroupMembersDialog
-import org.thoughtcrime.securesms.LoggingFragment
 import org.thoughtcrime.securesms.MainActivity
 import org.thoughtcrime.securesms.MuteDialog
 import org.thoughtcrime.securesms.R
@@ -228,7 +236,6 @@ import org.thoughtcrime.securesms.conversation.v2.groups.ConversationGroupViewMo
 import org.thoughtcrime.securesms.conversation.v2.items.ChatColorsDrawable
 import org.thoughtcrime.securesms.conversation.v2.items.InteractiveConversationElement
 import org.thoughtcrime.securesms.conversation.v2.keyboard.AttachmentKeyboardFragment
-import org.thoughtcrime.securesms.database.AttachmentTable
 import org.thoughtcrime.securesms.database.DraftTable
 import org.thoughtcrime.securesms.database.model.IdentityRecord
 import org.thoughtcrime.securesms.database.model.InMemoryMessageRecord
@@ -279,7 +286,6 @@ import org.thoughtcrime.securesms.main.MainSnackbarHostKey
 import org.thoughtcrime.securesms.mediaoverview.MediaOverviewActivity
 import org.thoughtcrime.securesms.mediapreview.MediaIntentFactory
 import org.thoughtcrime.securesms.mediapreview.MediaPreviewV2Activity
-import org.thoughtcrime.securesms.mediasend.Media
 import org.thoughtcrime.securesms.mediasend.MediaSendActivityResult
 import org.thoughtcrime.securesms.messagedetails.MessageDetailsFragment
 import org.thoughtcrime.securesms.messagerequests.MessageRequestRepository
@@ -298,7 +304,6 @@ import org.thoughtcrime.securesms.mms.VideoSlide
 import org.thoughtcrime.securesms.nicknames.NicknameActivity
 import org.thoughtcrime.securesms.notifications.v2.ConversationId
 import org.thoughtcrime.securesms.payments.preferences.PaymentsActivity
-import org.thoughtcrime.securesms.permissions.Permissions
 import org.thoughtcrime.securesms.polls.Poll
 import org.thoughtcrime.securesms.polls.PollOption
 import org.thoughtcrime.securesms.polls.PollRecord
@@ -326,7 +331,6 @@ import org.thoughtcrime.securesms.stickers.manage.StickerManagementScreen
 import org.thoughtcrime.securesms.stickers.preview.StickerPackPreviewActivity
 import org.thoughtcrime.securesms.stories.StoryViewerArgs
 import org.thoughtcrime.securesms.stories.viewer.StoryViewerActivity
-import org.thoughtcrime.securesms.util.BottomSheetUtil
 import org.thoughtcrime.securesms.util.BubbleUtil
 import org.thoughtcrime.securesms.util.CommunicationActions
 import org.thoughtcrime.securesms.util.ContextUtil
@@ -347,7 +351,6 @@ import org.thoughtcrime.securesms.util.PlayStoreUtil
 import org.thoughtcrime.securesms.util.RemoteConfig
 import org.thoughtcrime.securesms.util.SignalLocalMetrics
 import org.thoughtcrime.securesms.util.TextSecurePreferences
-import org.thoughtcrime.securesms.util.ThemeUtil
 import org.thoughtcrime.securesms.util.ViewUtil
 import org.thoughtcrime.securesms.util.atMidnight
 import org.thoughtcrime.securesms.util.atUTC
@@ -365,14 +368,10 @@ import org.thoughtcrime.securesms.util.padding
 import org.thoughtcrime.securesms.util.setIncognitoKeyboardEnabled
 import org.thoughtcrime.securesms.util.toMillis
 import org.thoughtcrime.securesms.util.viewModel
-import org.thoughtcrime.securesms.util.views.Stub
 import org.thoughtcrime.securesms.util.visible
-import org.thoughtcrime.securesms.verify.VerifyAutomaticallyEducationSheet
 import org.thoughtcrime.securesms.verify.VerifyIdentityActivity
 import org.thoughtcrime.securesms.wallpaper.ChatWallpaper
 import org.thoughtcrime.securesms.wallpaper.ChatWallpaperDimLevelUtil
-import org.thoughtcrime.securesms.window.getWindowSizeClass
-import org.thoughtcrime.securesms.window.isSplitPane
 import java.time.Instant
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -381,6 +380,7 @@ import java.util.Optional
 import java.util.concurrent.ExecutionException
 import kotlin.time.Duration.Companion.days
 import kotlin.time.Duration.Companion.milliseconds
+import org.signal.core.ui.R as CoreUiR
 
 /**
  * A single unified fragment for Conversations.
@@ -575,6 +575,7 @@ class ConversationFragment :
   private var keyboardEvents: KeyboardEvents? = null
   private var progressDialog: ProgressCardDialogFragment? = null
   private var firstPinRender: Boolean = true
+  private var skipNextBackPressHandling: Boolean = false
 
   private val jumpAndPulseScrollStrategy = object : ScrollToPositionDelegate.ScrollStrategy {
     override fun performScroll(recyclerView: RecyclerView, layoutManager: LinearLayoutManager, position: Int, smooth: Boolean) {
@@ -662,7 +663,6 @@ class ConversationFragment :
     presentGroupConversationSubtitle(createGroupSubtitleString(viewModel.titleViewParticipantsSnapshot))
     presentActionBarMenu()
     presentStoryRing()
-    presentVerifyAutomaticallySheet()
 
     observeConversationThread()
 
@@ -973,10 +973,35 @@ class ConversationFragment :
     return viewModel.backPressedState.map {
       if (it.shouldHandleBackPressed()) {
         FragmentBackPressedInfo.Enabled({
-          BackPressedCallback().handleOnBackPressed()
+          handleBackPressed()
         })
       } else {
         FragmentBackPressedInfo.Disabled
+      }
+    }
+  }
+
+  private fun handleBackPressed() {
+    if (skipNextBackPressHandling) {
+      skipNextBackPressHandling = false
+      return
+    }
+
+    Log.d(TAG, "handleBackPressed()")
+    val state = viewModel.backPressedState.value
+
+    when {
+      state.isReactionDelegateShowing -> reactionDelegate.hide()
+      state.isSearchRequested -> searchMenuItem?.collapseActionView()
+      state.isInActionMode -> finishActionMode()
+      state.isMediaKeyboardShowing -> container.hideInput()
+      else -> {
+        // State has changed since the back handler was enabled. Let the back press proceed
+        // to the next handler by triggering onBackPressed again after setting a skip flag
+        // to avoid infinite recursion.
+        Log.d(TAG, "handleBackPressed() - state changed, forwarding back press")
+        skipNextBackPressHandling = true
+        requireActivity().onBackPressedDispatcher.onBackPressed()
       }
     }
   }
@@ -1416,12 +1441,6 @@ class ConversationFragment :
     }
   }
 
-  private fun presentVerifyAutomaticallySheet() {
-    if (RemoteConfig.keyTransparency && !SignalStore.uiHints.hasSeenVerifyAutomaticallySheet() && viewModel.recipientSnapshot?.isIndividual == true) {
-      VerifyAutomaticallyEducationSheet.show(parentFragmentManager)
-    }
-  }
-
   private fun presentInputReadyState(inputReadyState: InputReadyState) {
     presentConversationTitle(inputReadyState.conversationRecipient)
 
@@ -1487,7 +1506,7 @@ class ConversationFragment :
         isVideoGif = videoGif,
         bucketId = null,
         caption = null,
-        transformProperties = AttachmentTable.TransformProperties.forSentMediaQuality(SignalStore.settings.sentMediaQuality.code),
+        transformProperties = TransformProperties.forSentMediaQuality(SignalStore.settings.sentMediaQuality.code),
         fileName = null
       )
       conversationActivityResultContracts.launchMediaEditor(listOf(media), recipientId, composeText.textTrimmed)
@@ -1529,6 +1548,7 @@ class ConversationFragment :
 
     when (args.conversationScreenType) {
       ConversationScreenType.NORMAL -> presentNavigationIconForNormal()
+
       ConversationScreenType.BUBBLE,
       ConversationScreenType.POPUP -> presentNavigationIconForBubble()
     }
@@ -1546,7 +1566,13 @@ class ConversationFragment :
 
   private fun updateNavigationIconForNormal(isFullScreenPane: Boolean) {
     if (!resources.getWindowSizeClass().isSplitPane() || isFullScreenPane) {
-      binding.toolbar.setNavigationIcon(R.drawable.symbol_arrow_start_24)
+      binding.toolbar.setNavigationIcon(CoreUiR.drawable.symbol_arrow_start_24)
+      binding.toolbar.navigationIcon?.setTint(
+        ContextCompat.getColor(
+          requireContext(),
+          if (viewModel.wallpaperSnapshot != null) CoreUiR.color.signal_colorNeutralInverse else CoreUiR.color.signal_colorOnSurface
+        )
+      )
       binding.toolbar.setNavigationContentDescription(R.string.ConversationFragment__content_description_back_button)
       binding.toolbar.setNavigationOnClickListener {
         binding.root.hideKeyboard(composeText)
@@ -1629,14 +1655,15 @@ class ConversationFragment :
     val toolbarTint = ContextCompat.getColor(
       requireContext(),
       if (chatWallpaper != null) {
-        R.color.signal_colorNeutralInverse
+        CoreUiR.color.signal_colorNeutralInverse
       } else {
-        R.color.signal_colorOnSurface
+        CoreUiR.color.signal_colorOnSurface
       }
     )
 
     binding.toolbar.setTitleTextColor(toolbarTint)
     binding.toolbar.setActionItemTint(toolbarTint)
+    binding.toolbar.navigationIcon?.setTint(toolbarTint)
 
     val wallpaperEnabled = chatWallpaper != null
     binding.conversationWallpaper.visible = wallpaperEnabled
@@ -1658,7 +1685,7 @@ class ConversationFragment :
     binding.scrollDateHeader.setTextColor(
       ContextCompat.getColor(
         requireContext(),
-        if (wallpaperEnabled) R.color.sticky_header_foreground_wallpaper else R.color.signal_colorOnSurfaceVariant
+        if (wallpaperEnabled) R.color.sticky_header_foreground_wallpaper else CoreUiR.color.signal_colorOnSurfaceVariant
       )
     )
 
@@ -1671,7 +1698,7 @@ class ConversationFragment :
     val navColor = if (chatWallpaper != null) {
       R.color.conversation_navigation_wallpaper
     } else {
-      R.color.signal_colorBackground
+      CoreUiR.color.signal_colorBackground
     }
 
     binding.navBar.setBackgroundColor(ContextCompat.getColor(requireContext(), navColor))
@@ -2065,6 +2092,7 @@ class ConversationFragment :
     val keyboardMode: TextSecurePreferences.MediaKeyboardMode = TextSecurePreferences.getMediaKeyboardMode(requireContext())
     val stickerIntro: Boolean = !TextSecurePreferences.hasSeenStickerIntroTooltip(requireContext())
 
+    keyboardPagerViewModel.resetPages()
     inputPanel.showMediaKeyboardToggle(true)
 
     val keyboardPage = when (keyboardMode) {
@@ -2398,7 +2426,7 @@ class ConversationFragment :
 
     if (menuState.shouldShowEditAction()) {
       items.add(
-        ActionItem(R.drawable.symbol_edit_24, resources.getString(R.string.conversation_selection__menu_edit)) {
+        ActionItem(CoreUiR.drawable.symbol_edit_24, resources.getString(R.string.conversation_selection__menu_edit)) {
           handleEditMessage(getSelectedConversationMessage())
           finishActionMode()
         }
@@ -2407,7 +2435,7 @@ class ConversationFragment :
 
     if (menuState.shouldShowForwardAction()) {
       items.add(
-        ActionItem(R.drawable.symbol_forward_24, resources.getString(R.string.conversation_selection__menu_forward)) {
+        ActionItem(CoreUiR.drawable.symbol_forward_24, resources.getString(R.string.conversation_selection__menu_forward)) {
           handleForwardMessageParts(selectedParts)
         }
       )
@@ -2415,7 +2443,7 @@ class ConversationFragment :
 
     if (menuState.shouldShowSaveAttachmentAction()) {
       items.add(
-        ActionItem(R.drawable.symbol_save_android_24, getResources().getString(R.string.conversation_selection__menu_save)) {
+        ActionItem(R.drawable.symbol_save_android_24, resources.getString(R.string.conversation_selection__menu_save)) {
           handleSaveAttachment(getSelectedConversationMessage().messageRecord as MmsMessageRecord)
           finishActionMode()
         }
@@ -2424,7 +2452,7 @@ class ConversationFragment :
 
     if (menuState.shouldShowCopyAction()) {
       items.add(
-        ActionItem(R.drawable.symbol_copy_android_24, getResources().getString(R.string.conversation_selection__menu_copy)) {
+        ActionItem(CoreUiR.drawable.symbol_copy_android_24, resources.getString(R.string.conversation_selection__menu_copy)) {
           handleCopyMessage(selectedParts)
           finishActionMode()
         }
@@ -2433,7 +2461,7 @@ class ConversationFragment :
 
     if (menuState.shouldShowDetailsAction()) {
       items.add(
-        ActionItem(R.drawable.symbol_info_24, getResources().getString(R.string.conversation_selection__menu_message_details)) {
+        ActionItem(CoreUiR.drawable.symbol_info_24, resources.getString(R.string.conversation_selection__menu_message_details)) {
           handleDisplayDetails(getSelectedConversationMessage())
           finishActionMode()
         }
@@ -2442,7 +2470,7 @@ class ConversationFragment :
 
     if (menuState.shouldShowDeleteAction()) {
       items.add(
-        ActionItem(R.drawable.symbol_trash_24, getResources().getString(R.string.conversation_selection__menu_delete)) {
+        ActionItem(CoreUiR.drawable.symbol_trash_24, resources.getString(R.string.conversation_selection__menu_delete)) {
           handleDeleteMessages(selectedParts)
           finishActionMode()
         }
@@ -2659,18 +2687,7 @@ class ConversationFragment :
 
   private inner class BackPressedCallback : OnBackPressedCallback(false) {
     override fun handleOnBackPressed() {
-      Log.d(TAG, "onBackPressed()")
-      val state = viewModel.backPressedState.value
-
-      if (state.isReactionDelegateShowing) {
-        reactionDelegate.hide()
-      } else if (state.isSearchRequested) {
-        searchMenuItem?.collapseActionView()
-      } else if (state.isInActionMode) {
-        finishActionMode()
-      } else if (state.isMediaKeyboardShowing) {
-        container.hideInput()
-      }
+      handleBackPressed()
     }
   }
 
@@ -3852,9 +3869,9 @@ class ConversationFragment :
       val toolbarTextAndIconColor = ContextCompat.getColor(
         requireContext(),
         if (viewModel.wallpaperSnapshot != null) {
-          R.color.signal_colorNeutralInverse
+          CoreUiR.color.signal_colorNeutralInverse
         } else {
-          R.color.signal_colorOnSurface
+          CoreUiR.color.signal_colorOnSurface
         }
       )
 

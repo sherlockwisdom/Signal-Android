@@ -23,6 +23,9 @@ android {
 
   defaultConfig {
     minSdk = libs.versions.minSdk.get().toInt()
+
+    testInstrumentationRunnerArguments["androidx.benchmark.suppressErrors"] = "EMULATOR"
+
     testInstrumentationRunner = "androidx.benchmark.junit4.AndroidBenchmarkRunner"
   }
 
@@ -45,7 +48,7 @@ dependencies {
   lintChecks(project(":lintchecks"))
 
   implementation(project(":core:util"))
-  implementation(project(":core:models"))
+  implementation(project(":core:models-jvm"))
 
   // Base dependencies
   androidTestImplementation(testLibs.junit.junit)

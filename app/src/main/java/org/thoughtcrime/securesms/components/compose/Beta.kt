@@ -16,15 +16,14 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.alpha
-import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.signal.core.ui.compose.DayNightPreviews
 import org.signal.core.ui.compose.Previews
 import org.signal.core.ui.compose.Rows
+import org.signal.core.ui.compose.SignalIcons
 import org.signal.core.ui.compose.horizontalGutters
 import org.signal.core.ui.compose.theme.SignalTheme
 import org.thoughtcrime.securesms.R
@@ -80,9 +79,10 @@ fun BetaHeader(modifier: Modifier = Modifier) {
         shape = RoundedCornerShape(12.dp)
       )
       .padding(16.dp)
+      .fillMaxWidth()
   ) {
     Icon(
-      imageVector = ImageVector.vectorResource(id = R.drawable.symbol_info_24),
+      imageVector = SignalIcons.Info.imageVector,
       contentDescription = stringResource(id = R.string.Beta__info),
       tint = MaterialTheme.colorScheme.onPrimaryContainer
     )

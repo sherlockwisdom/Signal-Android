@@ -18,6 +18,7 @@ import androidx.annotation.StringRes;
 
 import com.bumptech.glide.RequestManager;
 
+import org.signal.core.ui.view.Stub;
 import org.signal.ringrtc.CallLinkRootKey;
 import org.thoughtcrime.securesms.R;
 import org.thoughtcrime.securesms.avatar.fallback.FallbackAvatar;
@@ -28,9 +29,8 @@ import org.thoughtcrime.securesms.linkpreview.LinkPreview;
 import org.thoughtcrime.securesms.linkpreview.LinkPreviewRepository;
 import org.thoughtcrime.securesms.mms.ImageSlide;
 import org.thoughtcrime.securesms.mms.SlidesClickedListener;
-import org.thoughtcrime.securesms.util.Util;
+import org.signal.core.util.Util;
 import org.thoughtcrime.securesms.util.ViewUtil;
-import org.thoughtcrime.securesms.util.views.Stub;
 
 import java.text.DateFormat;
 import java.text.SimpleDateFormat;

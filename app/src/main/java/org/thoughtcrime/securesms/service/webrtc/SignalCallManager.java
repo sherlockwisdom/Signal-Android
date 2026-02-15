@@ -71,7 +71,7 @@ import org.thoughtcrime.securesms.service.webrtc.state.WebRtcServiceState;
 import org.thoughtcrime.securesms.util.AppForegroundObserver;
 import org.thoughtcrime.securesms.util.RecipientAccessList;
 import org.thoughtcrime.securesms.util.TextSecurePreferences;
-import org.thoughtcrime.securesms.util.Util;
+import org.signal.core.util.Util;
 import org.thoughtcrime.securesms.util.rx.RxStore;
 import org.thoughtcrime.securesms.webrtc.CallNotificationBuilder;
 import org.thoughtcrime.securesms.webrtc.audio.SignalAudioManager;
@@ -94,6 +94,7 @@ import org.whispersystems.signalservice.api.push.exceptions.UnregisteredUserExce
 import org.whispersystems.signalservice.internal.push.SyncMessage;
 
 import java.io.IOException;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -218,6 +219,8 @@ public final class SignalCallManager implements CallManager.Observer, GroupCall.
       if (previous != serviceState) {
         if (serviceState.getCallInfoState().getCallState() != WebRtcViewModel.State.IDLE) {
           postStateUpdate(serviceState);
+        } else if (previous.getCallInfoState().getCallState() != WebRtcViewModel.State.IDLE) {
+          EventBus.getDefault().removeStickyEvent(WebRtcViewModel.class);
         }
       }
     });
@@ -357,6 +360,10 @@ public final class SignalCallManager implements CallManager.Observer, GroupCall.
 
   public void onAudioDeviceChanged(@NonNull SignalAudioManager.AudioDevice activeDevice, @NonNull Set<SignalAudioManager.AudioDevice> availableDevices) {
     process((s, p) -> p.handleAudioDeviceChanged(s, activeDevice, availableDevices));
+  }
+
+  public void onAudioDeviceChangeFailed() {
+    process((s, p) -> p.handleAudioDeviceChangeFailed(s));
   }
 
   public void onBluetoothPermissionDenied() {
@@ -929,6 +936,11 @@ public final class SignalCallManager implements CallManager.Observer, GroupCall.
         Log.w(TAG, "onSendCallMessageToGroup failed", e);
       }
     });
+  }
+
+  @Override
+  public void onSendCallMessageToAdhocGroup(@NonNull byte[] message, @NonNull CallManager.CallMessageUrgency urgency, Instant expiration, @NonNull Map<UUID, byte[]> recipientsToEndorsements) {
+    Log.w(TAG, "onSendCallMessageToAdhocGroup(): not handled yet!");
   }
 
   @Override

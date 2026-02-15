@@ -20,24 +20,23 @@ import android.content.ContentValues
 import android.content.Context
 import android.database.Cursor
 import android.media.MediaDataSource
-import android.os.Parcelable
 import android.text.TextUtils
 import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import androidx.core.content.contentValuesOf
 import com.bumptech.glide.Glide
-import com.fasterxml.jackson.annotation.JsonProperty
-import kotlinx.parcelize.IgnoredOnParcel
-import kotlinx.parcelize.Parcelize
-import kotlinx.serialization.Serializable
 import okio.ByteString.Companion.toByteString
 import org.json.JSONArray
 import org.json.JSONException
+import org.signal.blurhash.BlurHash
 import org.signal.core.models.backup.MediaId
 import org.signal.core.models.backup.MediaName
+import org.signal.core.models.media.TransformProperties
+import org.signal.core.ui.util.StorageUtil
 import org.signal.core.util.Base64
 import org.signal.core.util.SqlUtil
 import org.signal.core.util.ThreadUtil
+import org.signal.core.util.Util
 import org.signal.core.util.UuidUtil
 import org.signal.core.util.copyTo
 import org.signal.core.util.count
@@ -68,6 +67,7 @@ import org.signal.core.util.select
 import org.signal.core.util.toInt
 import org.signal.core.util.update
 import org.signal.core.util.withinTransaction
+import org.signal.glide.decryptableuri.DecryptableUri
 import org.thoughtcrime.securesms.attachments.ArchivedAttachment
 import org.thoughtcrime.securesms.attachments.Attachment
 import org.thoughtcrime.securesms.attachments.AttachmentId
@@ -80,7 +80,6 @@ import org.thoughtcrime.securesms.audio.AudioHash
 import org.thoughtcrime.securesms.backup.v2.ArchivedMediaObject
 import org.thoughtcrime.securesms.backup.v2.exporters.ChatItemArchiveExporter
 import org.thoughtcrime.securesms.backup.v2.proto.BackupDebugInfo
-import org.thoughtcrime.securesms.blurhash.BlurHash
 import org.thoughtcrime.securesms.crypto.AttachmentSecret
 import org.thoughtcrime.securesms.crypto.ClassicDecryptingPartInputStream
 import org.thoughtcrime.securesms.crypto.ModernDecryptingPartInputStream
@@ -106,11 +105,9 @@ import org.thoughtcrime.securesms.jobs.AttachmentDownloadJob
 import org.thoughtcrime.securesms.jobs.AttachmentUploadJob
 import org.thoughtcrime.securesms.jobs.GenerateAudioWaveFormJob
 import org.thoughtcrime.securesms.keyvalue.SignalStore
-import org.thoughtcrime.securesms.mms.DecryptableUri
 import org.thoughtcrime.securesms.mms.MediaStream
 import org.thoughtcrime.securesms.mms.MmsException
 import org.thoughtcrime.securesms.mms.PartAuthority
-import org.thoughtcrime.securesms.mms.SentMediaQuality
 import org.thoughtcrime.securesms.stickers.StickerLocator
 import org.thoughtcrime.securesms.util.BitmapDecodingException
 import org.thoughtcrime.securesms.util.FileUtils
@@ -118,13 +115,10 @@ import org.thoughtcrime.securesms.util.ImageCompressionUtil
 import org.thoughtcrime.securesms.util.JsonUtils.SaneJSONObject
 import org.thoughtcrime.securesms.util.MediaUtil
 import org.thoughtcrime.securesms.util.RemoteConfig
-import org.thoughtcrime.securesms.util.StorageUtil
-import org.thoughtcrime.securesms.util.Util
 import org.thoughtcrime.securesms.video.EncryptedMediaDataSource
 import org.whispersystems.signalservice.api.attachment.AttachmentUploadResult
 import org.whispersystems.signalservice.api.crypto.AttachmentCipherStreamUtil
 import org.whispersystems.signalservice.internal.crypto.PaddingInputStream
-import org.whispersystems.signalservice.internal.util.JsonUtil
 import java.io.ByteArrayInputStream
 import java.io.File
 import java.io.FileNotFoundException
@@ -134,7 +128,6 @@ import java.security.DigestInputStream
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.LinkedList
-import java.util.Optional
 import java.util.UUID
 import kotlin.text.appendLine
 import kotlin.time.Duration
@@ -735,6 +728,12 @@ class AttachmentTable(
       .readToList { AttachmentId(it.requireLong(ID)) }
   }
 
+  private data class AttachmentKeyDupeData(
+    val id: AttachmentId,
+    val quote: Boolean,
+    val sticker: Boolean
+  )
+
   /**
    * At archive creation time, we need to ensure that all relevant attachments have populated [REMOTE_KEY]s.
    * This does that.
@@ -744,7 +743,7 @@ class AttachmentTable(
     var notQuoteOrStickerDupeNotFoundCount = 0
     var notQuoteOrStickerDupeFoundCount = 0
 
-    val missingKeys = readableDatabase
+    val missingKeys: Map<String, List<AttachmentKeyDupeData>> = readableDatabase
       .select(ID, DATA_FILE, QUOTE, STICKER_ID)
       .from(TABLE_NAME)
       .where(
@@ -756,10 +755,16 @@ class AttachmentTable(
         """
       )
       .run()
-      .readToList { Triple(AttachmentId(it.requireLong(ID)), it.requireBoolean(QUOTE), it.requireInt(STICKER_ID) >= 0) to it.requireNonNullString(DATA_FILE) }
+      .readToList {
+        AttachmentKeyDupeData(
+          id = AttachmentId(it.requireLong(ID)),
+          quote = it.requireBoolean(QUOTE),
+          sticker = it.requireInt(STICKER_ID) >= 0
+        ) to it.requireNonNullString(DATA_FILE)
+      }
       .groupBy({ (_, dataFile) -> dataFile }, { (record, _) -> record })
 
-    missingKeys.forEach { dataFile, ids ->
+    missingKeys.forEach { (dataFile, dupeData) ->
       val duplicateAttachmentWithRemoteData = readableDatabase
         .select()
         .from(TABLE_NAME)
@@ -777,7 +782,7 @@ class AttachmentTable(
       if (duplicateAttachmentWithRemoteData != null) {
         val (duplicateAttachment, duplicateAttachmentDataInfo) = duplicateAttachmentWithRemoteData
 
-        ids.forEach { (attachmentId, isQuote, isSticker) ->
+        dupeData.forEach { (attachmentId, isQuote, isSticker) ->
           Log.w(TAG, "[createRemoteKeyForAttachmentsThatNeedArchiveUpload][$attachmentId] Missing key but found same data file with remote data. Updating. isQuote:$isQuote isSticker:$isSticker")
 
           writableDatabase
@@ -805,10 +810,13 @@ class AttachmentTable(
           totalCount++
         }
       } else {
-        ids.forEach { (attachmentId, isQuote, isSticker) ->
-          Log.w(TAG, "[createRemoteKeyForAttachmentsThatNeedArchiveUpload][$attachmentId] Missing key. Generating. isQuote:$isQuote isSticker:$isSticker")
+        val key = Util.getSecretBytes(64)
+        if (dupeData.size > 1) {
+          Log.w(TAG, "[createRemoteKeyForAttachmentsThatNeedArchiveUpload] Generated new key for: ${dupeData.joinToString { it.id.toString() }}")
+        }
 
-          val key = Util.getSecretBytes(64)
+        dupeData.forEach { (attachmentId, isQuote, isSticker) ->
+          Log.w(TAG, "[createRemoteKeyForAttachmentsThatNeedArchiveUpload][$attachmentId] Missing key. Assigning new one. isQuote:$isQuote isSticker:$isSticker")
 
           writableDatabase.update(TABLE_NAME)
             .values(REMOTE_KEY to Base64.encodeWithPadding(key))
@@ -1958,6 +1966,7 @@ class AttachmentTable(
 
       Log.d(TAG, "[updateMessageId] Updated $updatedCount out of $attachmentIdSize ids.")
     }
+    AppDependencies.databaseObserver.notifyMessageUpdateObservers(MessageId(mmsId))
   }
 
   fun createRemoteKeyIfNecessary(attachmentId: AttachmentId) {
@@ -2241,7 +2250,7 @@ class AttachmentTable(
       .where("$ID = ?", attachmentId.id)
       .run()
       .readToSingleObject {
-        TransformProperties.parse(it.requireString(TRANSFORM_PROPERTIES))
+        parseTransformProperties(it.requireString(TRANSFORM_PROPERTIES))
       }
   }
 
@@ -2308,7 +2317,7 @@ class AttachmentTable(
               },
               blurHash = if (MediaUtil.isAudioType(contentType)) null else BlurHash.parseOrNull(jsonObject.getString(BLUR_HASH)),
               audioHash = if (MediaUtil.isAudioType(contentType)) AudioHash.parseOrNull(jsonObject.getString(BLUR_HASH)) else null,
-              transformProperties = TransformProperties.parse(jsonObject.getString(TRANSFORM_PROPERTIES)),
+              transformProperties = parseTransformProperties(jsonObject.getString(TRANSFORM_PROPERTIES)),
               displayOrder = jsonObject.getInt(DISPLAY_ORDER),
               uploadTimestamp = jsonObject.getLong(UPLOAD_TIMESTAMP),
               dataHash = jsonObject.getString(DATA_HASH_END),
@@ -3354,7 +3363,7 @@ class AttachmentTable(
       stickerLocator = cursor.readStickerLocator(),
       blurHash = if (MediaUtil.isAudioType(contentType)) null else BlurHash.parseOrNull(cursor.requireString(BLUR_HASH)),
       audioHash = if (MediaUtil.isAudioType(contentType)) AudioHash.parseOrNull(cursor.requireString(BLUR_HASH)) else null,
-      transformProperties = TransformProperties.parse(cursor.requireString(TRANSFORM_PROPERTIES)),
+      transformProperties = parseTransformProperties(cursor.requireString(TRANSFORM_PROPERTIES)),
       displayOrder = cursor.requireInt(DISPLAY_ORDER),
       uploadTimestamp = cursor.requireLong(UPLOAD_TIMESTAMP),
       dataHash = cursor.requireString(DATA_HASH_END),
@@ -3385,7 +3394,7 @@ class AttachmentTable(
       random = random,
       hashStart = this.requireString(DATA_HASH_START),
       hashEnd = this.requireString(DATA_HASH_END),
-      transformProperties = TransformProperties.parse(this.requireString(TRANSFORM_PROPERTIES)),
+      transformProperties = parseTransformProperties(this.requireString(TRANSFORM_PROPERTIES)),
       uploadTimestamp = this.requireLong(UPLOAD_TIMESTAMP),
       archiveCdn = this.requireIntOrNull(ARCHIVE_CDN),
       archiveTransferState = this.requireInt(ARCHIVE_TRANSFER_STATE),
@@ -3530,7 +3539,9 @@ class AttachmentTable(
         .readToSingleLong(0)
     }
 
-    val uniqueEligibleMediaNamesWithThumbnailsCount = readableDatabase.query("SELECT COUNT(*) FROM (SELECT DISTINCT $DATA_HASH_END, $REMOTE_KEY FROM $TABLE_NAME WHERE $DATA_HASH_END NOT NULL AND $REMOTE_KEY NOT NULL AND $THUMBNAIL_FILE NOT NULL AND $QUOTE = 0 AND $MESSAGE_ID != $WALLPAPER_MESSAGE_ID)").readToSingleLong(-1L)
+    val uniqueEligibleMediaNamesWithThumbnailsCount =
+      readableDatabase.query("SELECT COUNT(*) FROM (SELECT DISTINCT $DATA_HASH_END, $REMOTE_KEY FROM $TABLE_NAME WHERE $DATA_HASH_END NOT NULL AND $REMOTE_KEY NOT NULL AND $THUMBNAIL_FILE NOT NULL AND $QUOTE = 0 AND $MESSAGE_ID != $WALLPAPER_MESSAGE_ID)")
+        .readToSingleLong(-1L)
     val archiveStatusMediaNameThumbnailCounts: Map<ArchiveTransferState, Long> = ArchiveTransferState.entries.associateWith { state ->
       readableDatabase.query(
         """
@@ -3786,119 +3797,6 @@ class AttachmentTable(
     val file: File,
     val random: ByteArray
   )
-
-  @Serializable
-  @Parcelize
-  data class TransformProperties(
-    @JsonProperty("skipTransform")
-    @JvmField
-    val skipTransform: Boolean = false,
-
-    @JsonProperty("videoTrim")
-    @JvmField
-    val videoTrim: Boolean = false,
-
-    @JsonProperty("videoTrimStartTimeUs")
-    @JvmField
-    val videoTrimStartTimeUs: Long = 0,
-
-    @JsonProperty("videoTrimEndTimeUs")
-    @JvmField
-    val videoTrimEndTimeUs: Long = 0,
-
-    @JsonProperty("sentMediaQuality")
-    @JvmField
-    val sentMediaQuality: Int = SentMediaQuality.STANDARD.code,
-
-    @JsonProperty("mp4Faststart")
-    @JvmField
-    val mp4FastStart: Boolean = false
-  ) : Parcelable {
-    fun shouldSkipTransform(): Boolean {
-      return skipTransform
-    }
-
-    @IgnoredOnParcel
-    @JsonProperty("videoEdited")
-    val videoEdited: Boolean = videoTrim
-
-    fun withSkipTransform(): TransformProperties {
-      return this.copy(
-        skipTransform = true
-      )
-    }
-
-    fun withMp4FastStart(): TransformProperties {
-      return this.copy(mp4FastStart = true)
-    }
-
-    fun serialize(): String {
-      return JsonUtil.toJson(this)
-    }
-
-    companion object {
-      private val DEFAULT_MEDIA_QUALITY = SentMediaQuality.STANDARD.code
-
-      @JvmStatic
-      fun empty(): TransformProperties {
-        return TransformProperties(
-          skipTransform = false,
-          videoTrim = false,
-          videoTrimStartTimeUs = 0,
-          videoTrimEndTimeUs = 0,
-          sentMediaQuality = DEFAULT_MEDIA_QUALITY,
-          mp4FastStart = false
-        )
-      }
-
-      fun forSkipTransform(): TransformProperties {
-        return TransformProperties(
-          skipTransform = true,
-          videoTrim = false,
-          videoTrimStartTimeUs = 0,
-          videoTrimEndTimeUs = 0,
-          sentMediaQuality = DEFAULT_MEDIA_QUALITY,
-          mp4FastStart = false
-        )
-      }
-
-      fun forVideoTrim(videoTrimStartTimeUs: Long, videoTrimEndTimeUs: Long): TransformProperties {
-        return TransformProperties(
-          skipTransform = false,
-          videoTrim = true,
-          videoTrimStartTimeUs = videoTrimStartTimeUs,
-          videoTrimEndTimeUs = videoTrimEndTimeUs,
-          sentMediaQuality = DEFAULT_MEDIA_QUALITY,
-          mp4FastStart = false
-        )
-      }
-
-      @JvmStatic
-      fun forSentMediaQuality(currentProperties: Optional<TransformProperties>, sentMediaQuality: SentMediaQuality): TransformProperties {
-        val existing = currentProperties.orElse(empty())
-        return existing.copy(sentMediaQuality = sentMediaQuality.code)
-      }
-
-      @JvmStatic
-      fun forSentMediaQuality(sentMediaQuality: Int): TransformProperties {
-        return TransformProperties(sentMediaQuality = sentMediaQuality)
-      }
-
-      @JvmStatic
-      fun parse(serialized: String?): TransformProperties {
-        return if (serialized == null) {
-          empty()
-        } else {
-          try {
-            JsonUtil.fromJson(serialized, TransformProperties::class.java)
-          } catch (e: IOException) {
-            Log.w(TAG, "Failed to parse TransformProperties!", e)
-            empty()
-          }
-        }
-      }
-    }
-  }
 
   enum class ThumbnailRestoreState(val value: Int) {
     /** No thumbnail downloaded. */

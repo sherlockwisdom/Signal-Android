@@ -311,8 +311,22 @@
     <string name="CameraXFragment_to_capture_videos">音声付きの動画を撮るには：</string>
     <!-- Dialog description that explains the steps needed to give Signal camera permissions -->
     <string name="CameraXFragment_to_scan_qr_codes">QRコードをスキャンするには：</string>
+    <!-- Error message shown when we try to take a photo, but fail -->
+    <string name="CameraXFragment_photo_capture_failed">写真を撮れませんでした。もう一度お試しください。</string>
+    <!-- Error message shown when we try to take a photo, but fail when trying to process it (convert it into something the user can see). -->
+    <string name="CameraXFragment_photo_processing_failed">写真を処理できませんでした。もう一度お試しください。</string>
+    <!-- Accessibility label for the switch camera button -->
+    <string name="CameraXFragment_switch_camera">カメラを切り替える</string>
+    <!-- Accessibility label for flash button when flash is off -->
+    <string name="CameraXFragment_flash_off">フラッシュ：オフ</string>
+    <!-- Accessibility label for flash button when flash is on -->
+    <string name="CameraXFragment_flash_on">フラッシュ：オン</string>
+    <!-- Accessibility label for flash button when flash is set to auto -->
+    <string name="CameraXFragment_flash_auto">フラッシュ：自動</string>
+    <!-- Accessibility label for the send button in media selection -->
+    <string name="CameraXFragment_send">送信する</string>
 
-    <!-- CameraContacts -->
+<!-- CameraContacts -->
     <string name="CameraContacts_recent_contacts">最近使った連絡先</string>
     <string name="CameraContacts_signal_contacts">Signalの連絡先</string>
     <string name="CameraContacts_signal_groups">Signalのグループ</string>
@@ -408,7 +422,7 @@
     <string name="ContactShareEditActivity_type_work">職場</string>
     <string name="ContactShareEditActivity_type_missing">その他</string>
     <string name="ContactShareEditActivity_invalid_contact">選択された連絡先は無効です</string>
-    <!-- Content descrption for name edit button on contact share edit activity -->
+    <!-- Content description for name edit button on contact share edit activity -->
     <string name="ContactShareEditActivity__edit_name">名前を編集</string>
     <!-- Content description for user avatar in edit activity -->
     <string name="ContactShareEditActivity__avatar">アバター</string>
@@ -920,7 +934,7 @@
     <string name="BackupsPreferenceFragment__backup_time">バックアップする時間</string>
     <string name="BackupsPreferenceFragment__verify_backup_passphrase">バックアップ用パスフレーズの確認</string>
     <string name="BackupsPreferenceFragment__test_your_backup_passphrase">バックアップ用パスフレーズが合っているか確認してください</string>
-    <string name="BackupsPreferenceFragment__turn_on">有効にする</string>
+    <string name="BackupsPreferenceFragment__turn_on">バックアップを有効化</string>
     <string name="BackupsPreferenceFragment__turn_off">無効にする</string>
     <string name="BackupsPreferenceFragment__to_restore_a_backup">"バックアップを復元するには、新しいSignalをインストールしてください。その後アプリを開き、「バックアップを復元する」をタップしてバックアップファイルの場所を指定します。 %1$s"</string>
     <string name="BackupsPreferenceFragment__learn_more">詳しく見る</string>
@@ -2615,9 +2629,9 @@
 
     <!-- CallQualityDiagnosticsScreen -->
     <!-- Title for the call quality diagnostics screen -->
-    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Diagnostic information</string>
+    <string name="CallQualityDiagnosticsScreen__diagnostic_information">診断情報</string>
     <!-- Content description for the close/back navigation button -->
-    <string name="CallQualityDiagnosticsScreen__close">Close</string>
+    <string name="CallQualityDiagnosticsScreen__close">閉じる</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">スワイプすると画面共有を表示します</string>
@@ -2662,7 +2676,8 @@
     <string name="RegistrationActivity_i_understand">分かりました</string>
     <string name="RegistrationActivity_play_services_error">Google Play開発者サービスのエラー</string>
     <string name="RegistrationActivity_google_play_services_is_updating_or_unavailable">Google Play開発者サービスは更新中か一時的に使用不能です。再度試してください。</string>
-    <string name="RegistrationActivity_terms_and_privacy">使用条件とプライバシーポリシー</string>
+    <!-- Non-English translations should use "Signal is a nonprofit" instead, dropping the 501c3 reference. -->
+    <string name="RegistrationActivity_terms_and_privacy">Signalは非営利団体です\n利用規約とプライバシーポリシー</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_and_media_in_order_to_connect_with_friends">Signalは、ご友人とのつながりやメッセージ送信を支えるため、連絡先とメディアへのアクセス許可が必要です。連絡先はエンドツーエンドで暗号化し、Signalプライベートコンタクトディスカバリーを使用してアップロードされるため、Signalのサービス管理者は閲覧できません。</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_in_order_to_connect_with_friends">Signalは、ご友人とのつながりを支えるため、連絡先へのアクセス許可が必要です。連絡先はエンドツーエンドで暗号化し、Signalプライベートコンタクトディスカバリーを使用してアップロードされるため、Signalのサービス管理者は閲覧できません。</string>
     <string name="RegistrationActivity_rate_limited_to_service">この番号の登録試行回数が多すぎます。あとで再度試してください。</string>
@@ -3704,15 +3719,55 @@
     <string name="verify_display_fragment__loading">読み込んでいます…</string>
     <string name="verify_display_fragment__mark_as_verified">検証済みにする</string>
     <string name="verify_display_fragment__clear_verification">未検証にする</string>
+    <!-- Header title for automatic key verification -->
+    <string name="verify_display_fragment__automatic">自動キー確認</string>
+    <!-- Button text to verify automatically    -->
+    <string name="verify_display_fragment__verify_automatic">自動で確認</string>
+    <!-- Loading text when verifying -->
+    <string name="verify_display_fragment__verifying">暗号化を確認しています…</string>
+    <!-- Success text shown when encryption is verified -->
+    <string name="verify_display_fragment__encryption_verified">暗号化が確認されました</string>
+    <!-- Text shown when verification fails -->
+    <string name="verify_display_fragment__encryption_unavailable">自動確認できません</string>
+    <!-- Caption text explaining more about automatic verification   -->
+    <string name="verify_display_fragment__auto_verify_not_available">すべてのチャットが自動確認できるわけではありません。</string>
+  <!-- Removed by excludeNonTranslatables <string name="verify_display_fragment__link" translatable="false">https://support.signal.org/hc/articles/10223569377562</string> -->
+
+    <!-- Bottom sheet title when encryption is auto-verified -->
+    <string name="EncryptionVerifiedSheet__title_success">このチャットの暗号化は自動確認されました</string>
+    <!-- Bottom sheet body when encryption is auto-verified -->
+    <string name="EncryptionVerifiedSheet__body_success">電話番号を通じて接続している連絡先の場合、Signalはkey transparencyと呼ばれるプロセスを使用して、接続の安全性を自動的に確認します。安全性を強化するには、前の画面の番号を相手と比較するか、相手の端末のコードをスキャンして、エンドツーエンドの暗号化を手動で確認してください。</string>
+    <!-- Bottom sheet title when encryption is no longer auto-verified -->
+    <string name="EncryptionVerifiedSheet__title_no_longer_unavailable">このチャットで自動確認ができなくなりました</string>
+    <!-- Bottom sheet body when encryption is no longer auto-verified. Placeholder is the name of the person. -->
+    <string name="EncryptionVerifiedSheet__body_no_longer_unavailable">Signalは、このチャットの暗号化を自動で確認できなくなりました。%1$sが電話番号を変更した可能性があります。前の画面の番号を相手と比較するか、相手の端末のコードをスキャンして、エンドツーエンドの暗号化を手動で確認してください。</string>
+    <!-- Bottom sheet title when encryption cannot be auto-verified -->
+    <string name="EncryptionVerifiedSheet__title_unavailable">このチャットの自動確認ができません</string>
+    <!-- Bottom sheet body when encryption cannot be auto-verified -->
+    <string name="EncryptionVerifiedSheet__body_unavailable">Signalが暗号化を自動で確認できるのは、相手の電話番号を通じて接続しているチャットのみです。ユーザーネームまたは共通のグループを通じてチャットが開始された場合は、前の画面の番号を相手と比較するか、相手の端末のコードをスキャンして、エンドツーエンドの暗号化を確認してください。</string>
 
     <!-- Title for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__title">Signal now auto-verifies end-to-end encryption</string>
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal can now auto-verify encryption</string>
     <!-- Body for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__body">When you verify a safety number, Signal will automatically confirm whether the connection is secure using a process called key transparency. You can still verify connections manually using a QR code or number.</string>
+    <string name="VerifyAutomaticallyEducationSheet__body">For contacts you’re connected to by phone number, Signal can automatically confirm whether the connection is secure using a process called key transparency. For added security, you can still verify connections manually using a QR code or safety number.</string>
     <!-- Button to learn more about automatic verification -->
-    <string name="VerifyAutomaticallyEducationSheet__learn_more">Learn more</string>
+    <string name="VerifyAutomaticallyEducationSheet__learn_more">詳しく見る</string>
     <!-- Button to go to verification page -->
-    <string name="VerifyAutomaticallyEducationSheet__verify">Verify</string>
+    <string name="VerifyAutomaticallyEducationSheet__continue">Continue</string>
+
+    <!-- Title for bottom sheet when self verification fails -->
+    <string name="SelfVerificationFailureSheet__title">お使いの端末では、キーの自動確認は現在ご利用いただけません。デバッグログを送信しますか？</string>
+    <!-- Body for bottom sheet when self verification fails -->
+    <string name="SelfVerificationFailureSheet__body">デバッグログは、問題の診断と修正に役立てられます。個人を特定する情報は含まれません。</string>
+    <!-- Button to decline submitting logs -->
+    <string name="SelfVerificationFailureSheet__no_thanks">今はしない</string>
+    <!-- Button to submit logs -->
+    <string name="SelfVerificationFailureSheet__submit">送信する</string>
+    <!-- Email subject line when submitting logs following a verification failure -->
+    <string name="SelfVerificationFailureSheet__email_subject">キーの自動確認失敗</string>
+  <!-- Removed by excludeNonTranslatables <string name="SelfVerificationFailureSheet__email_filter" translatable="false">AutomaticKeyVerificationFailure</string> -->
+    <!-- Link to learn more about debug logs -->
+    <string name="SelfVerificationFailureSheet__learn_more">詳しく見る</string>
 
     <!-- verity_scan_fragment -->
     <string name="verify_scan_fragment__scan_the_qr_code_on_your_contact">連絡先の端末のQRコードをスキャンしてください。</string>
@@ -4086,6 +4141,10 @@
     <string name="preferences_compact">小</string>
     <!-- Dialog message body explaining that we have to restart the app in order to apply the user\'s new language setting.  -->
     <string name="preferences_language_change_confirmation_message">新しい言語設定を適用するために、アプリが再起動します。</string>
+    <!-- Preference title for automatic key verification -->
+    <string name="preferences_automatic_key_verification">自動キー確認</string>
+    <!-- Preference summary for automatic key verification -->
+    <string name="preferences_automatic_key_verification_body">有効にすると、Signalは1対1のチャットの暗号化を自動的に確認します。</string>
 
 
     <string name="configurable_single_select__customize_option">オプションのカスタマイズ</string>
@@ -4188,17 +4247,6 @@
     <!-- Storage permission row description -->
     <string name="GrantPermissionsFragment__send_photos_videos_and_files">端末から写真、動画、ファイルを送信します。</string>
 
-    <!-- PermissionDeniedBottomSheet -->
-    <!-- Sheet describing step 1 on how to give permissions by opening settings -->
-    <string name="PermissionDeniedBottomSheet__1_tap_settings_below">1. 下にある「設定」をタップする</string>
-    <!-- Sheet describing step 2 on how to give permissions by checking the permissions button in settings where %s will be replaced with an image of a checked button -->
-    <string name="PermissionDeniedBottomSheet__2_allow_permission">2. %1$s 権限を許可する</string>
-    <!-- Sheet describing step 2 on how to give permissions by tapping permissions in their settings -->
-    <string name="PermissionDeniedBottomSheet__2_tap_permissions">2. 「権限」をタップする</string>
-    <!-- Sheet describing step 3 on how to give permissions for photos and videos in settings where %s will be replaced with an image of a checked button -->
-    <string name="PermissionDeniedBottomSheet__3_allow_permission">3. %1$s 「写真と動画」の権限を許可する</string>
-    <!-- Label for button at the bottom of the sheet which opens the system permission settings -->
-    <string name="PermissionDeniedBottomSheet__settings">設定</string>
 
     <!-- PaymentsSecuritySetupFragment -->
     <!-- Toolbar title -->
@@ -4643,9 +4691,6 @@
     <!-- transport_selection_list_item -->
     <string name="ConversationListFragment_loading">読み込んでいます…</string>
     <string name="CallNotificationBuilder_connecting">接続しています…</string>
-    <string name="Permissions_permission_required">アクセス許可が必要です</string>
-    <string name="Permissions_continue">続ける</string>
-    <string name="Permissions_not_now">今はしない</string>
     <string name="SQLCipherMigrationHelper_migrating_signal_database">Signalのデータベースを移行する</string>
     <string name="enter_backup_passphrase_dialog__backup_passphrase">バックアップ用パスフレーズ</string>
     <string name="backup_enable_dialog__backups_will_be_saved_to_external_storage_and_encrypted_with_the_passphrase_below_you_must_have_this_passphrase_in_order_to_restore_a_backup">バックアップは、外部ストレージにパスフレーズで暗号化して保存されます。バックアップを復元するには、このパスフレーズが必要です。</string>
@@ -5029,8 +5074,6 @@
     <!-- This is a title in a banner describing the conversation sender to receiver placeholders of the currently playing voice memo. -->
     <string name="VoiceNoteMediaItemFactory__s_to_s">%1$s から %2$s</string>
 
-    <!-- StorageUtil -->
-    <string name="StorageUtil__s_s">%1$s/%2$s</string>
     <string name="BlockedUsersActivity__s_has_been_blocked">「%1$s」はブロックされました。</string>
     <string name="BlockedUsersActivity__failed_to_block_s">「%1$s」のブロックに失敗しました</string>
     <string name="BlockedUsersActivity__s_has_been_unblocked">「%1$s」ブロックは解除されました。</string>
@@ -5656,6 +5699,8 @@
     <string name="HelpSettingsFragment__terms_amp_privacy_policy">使用条件とプライバシーポリシー</string>
     <string name="HelpFragment__copyright_signal_messenger">Copyright Signal Messenger</string>
     <string name="HelpFragment__licenced_under_the_agplv3">Licensed under the GNU AGPLv3</string>
+    <!-- Non-English translations should use "Signal is a nonprofit." instead, dropping the 501c3 reference. -->
+    <string name="HelpSettingsFragment__signal_is_a_501c3">Signalは非営利団体です</string>
 
     <!-- DataAndStorageSettingsFragment -->
     <string name="DataAndStorageSettingsFragment__media_quality">メディアの画質</string>
@@ -5786,6 +5831,8 @@
     <string name="ConversationSettingsFragment__permissions">アクセス許可</string>
     <string name="ConversationSettingsFragment__requests_and_invites">申請と招待</string>
     <string name="ConversationSettingsFragment__group_link">グループリンク</string>
+    <!-- Label for button that opens the group member label permissions screen. -->
+    <string name="ConversationSettingsFragment__group_member_label">メンバーラベル</string>
     <!-- Option in conversation settings to add a user as a contact -->
     <string name="ConversationSettingsFragment__add_as_a_contact">連絡先に追加</string>
     <string name="ConversationSettingsFragment__unmute">ミュート解除</string>
@@ -6034,7 +6081,7 @@
     <string name="SelectFeaturedBadgeFragment__failed_to_update_profile">プロフィールを更新できませんでした</string>
 
     <!-- Displayed on primary button in the bottom sheet as a call-to-action to launch into the donation flow -->
-    <string name="ViewBadgeBottomSheetDialogFragment__donate_now">今すぐ寄付する</string>
+    <string name="ViewBadgeBottomSheetDialogFragment__donate_now">寄付する</string>
     <!-- Title of a page in the bottom sheet. Placeholder is a user\'s short-name -->
     <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal">%1$s さんはSignalをサポートしています</string>
     <!-- Description of a page in the bottom sheet of a monthly badge. Placeholder is a user\'s short-name -->
@@ -6062,13 +6109,15 @@
     <string name="Subscription__expires_s">有効期限%1$s</string>
 
     <!-- Title of learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_different">Signalは他のアプリとは異なります。</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_different">Signalは、独立した非営利団体としてメッセージと通話のプライバシーを守ることに取り組んでいます。広告なし、トラッキングなし、監視なし。Signalのこの取り組みのために、ご支援をお願いします。</string>
     <!-- First small text blurb on learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__private_messaging">プライベートメッセージ。広告なし、トラッキングなし、監視なし。</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__private_messaging">No ads, no trackers, no surveillance. Donate today to support Signal.</string>
     <!-- Second small text blurb on learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_supported_by">Signalは寄付によって支えられています。これは、お客様のプライバシーが私たちの活動の最重要事項であることを意味します。Signalは皆様のために作られたものです。皆様のデータや利益のためではありません。</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__donate_and_get_badge">寄付をすると、プロフィールにバッジが表示（任意）されます</string>
     <!-- Third small text blurb on learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__if_you_can">Signalが誰にとっても楽しめて、信頼性と有用性があり続けるために、皆様の寄付をお願いします。</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__your_privacy_is_our_mission">皆さんのプライバシーを守ることが私たちの使命です</string>
+    <!-- Fourth small text blurb on learn more sheet. Non-English translations should use "Signal is a nonprofit." instead, dropping the 501c3 reference. -->
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_a_501c3">Signalは非営利団体です。</string>
 
     <string name="SubscribeThanksForYourSupportBottomSheetDialogFragment__thanks_for_your_support">ご支援をありがとうございます！</string>
     <!-- Subtext underneath the dialog title on the thanks sheet -->
@@ -7079,11 +7128,11 @@
 
     <!-- DonateToSignalFragment -->
     <!-- Title below avatar -->
-    <string name="DonateToSignalFragment__privacy_over_profit">利益よりもプライバシーを</string>
+    <string name="DonateToSignalFragment__privacy_over_profit">非営利が理念です</string>
     <!-- Continue button label -->
     <string name="DonateToSignalFragment__continue">続ける</string>
     <!-- Description below title -->
-    <string name="DonateToSignalFragment__private_messaging">あなたが資金提供するプライベートメッセージ。広告なし、トラッキングなし、不正アクセスなし。Signalをサポートするための寄付を今すぐお願いします。</string>
+    <string name="DonateToSignalFragment__private_messaging">メッセージのやりとりをプライベートに保つためにご寄付をお願いします。Signalが独立性を保ち、広告なしで運営するためには皆様のご協力が必要です。</string>
     <!-- Dialog title when a user tries to donate while they already have a pending donation. -->
     <string name="DonateToSignalFragment__you_have_a_donation_pending">1件の寄付が手続き中です</string>
     <!-- Dialog body when a user tries to donate while they already have a pending monthly donation. -->
@@ -7668,6 +7717,18 @@
     <!-- Text for a "toast" that pops up at the bottom of the user\'s screen after they respond "not now" to a prompt asking them to enable backups -->
     <string name="TurnOnSignalBackups__toast_not_now">「設定」からバックアップを有効にすることができます</string>
 
+    <!-- Title of a megaphone shown to prompt the user to upgrade to the new local backups type -->
+    <string name="UseNewOnDeviceBackups__title">新しい端末内バックアップを使用してください</string>
+    <!-- Body of a megaphone shown to prompt the user to upgrade to the new local backups type -->
+    <string name="UseNewOnDeviceBackups__body">端末内バックアップが以前より速く、データ使用量は少なくなりました。</string>
+    <!-- Button of a megaphone that will take the user to the upgrade flow -->
+    <string name="UseNewOnDeviceBackups__upgrade">アップグレードする</string>
+    <!-- Button of a megaphone that will snooze the reminder to upgrade to the new local backups type -->
+    <string name="UseNewOnDeviceBackups__not_now">今はしない</string>
+
+    <!-- Text describing how to restore a backup displayed on the on-device backups screen -->
+    <string name="OnDeviceBackupsScreen__to_restore_a_backup">"バックアップを復元するには、新しいSignalをインストールしてください。その後アプリを開き、「バックアップを復元する」をタップしてバックアップファイルの場所を指定します。"</string>
+
     <!-- Title of a megaphone shown to prompt the user to verify their recovery key -->
     <string name="VerifyBackupKey__title">リカバリーキーを確認してください</string>
     <!-- Body of a megaphone shown to prompt the user to verify their recovery key -->
@@ -7884,6 +7945,12 @@
     <!-- Backup redemption error sheet bullet point 2 -->
     <string name="BackupAlertBottomSheet__have_too_many_devices_using_the_same_subscription">同じサブスクリプションを使用している端末が多すぎる。</string>
 
+    <!-- OnDeviceBackupsFragment -->
+    <!-- Snackbar message shown after successfully updating the on-device backups recovery key. -->
+    <string name="OnDeviceBackupsFragment__backup_key_updated">バックアップキーがアップデートされました</string>
+    <!-- Toast message shown after selecting a folder to store on-device backups. Placeholder is the selected folder. -->
+    <string name="OnDeviceBackupsFragment__directory_selected">選択中のフォルダ：%1$s</string>
+
     <!-- BackupStatus -->
     <!-- Status title when user does not have enough free space to download their media. Placeholder is required disk space. -->
     <string name="BackupStatus__free_up_s_of_space_to_download_your_media">メディアを復元するために%1$sの空き容量を確保してください。</string>
@@ -7900,6 +7967,15 @@
     <!-- Status action label for resume restore from a paused state -->
     <string name="BackupStatus__resume">再開する</string>
 
+    <!-- Status subtitle for banner when we are creating a backup file -->
+    <string name="BackupStatus__status_creating_backup">バックアップを作成しています…</string>
+    <!-- Status title for banner when user is actively uploading backup data -->
+    <string name="BackupStatus__uploading_backup">バックアップをアップロードしています</string>
+    <!-- Status title for banner when user is temporarily unable to upload a backup -->
+    <string name="BackupStatus__upload_paused">バックアップを中断しました</string>
+    <!-- Status title for banner when user has finished creating a backup -->
+    <string name="BackupStatus__upload_complete">バックアップが完了しました</string>
+
     <!-- Status subtitle for banner when restoring media pauses for Wi-Fi -->
     <string name="BackupStatus__status_waiting_for_wifi">Wi-Fiの待機中…</string>
     <!-- Status subtitle for banner when restoring media pauses for internet in general -->
@@ -7908,6 +7984,10 @@
     <string name="BackupStatus__status_device_has_low_battery">端末のバッテリー残量が少なくなっています</string>
     <!-- Status subtitle for banner when restoring media. Placeholders are size already restored and total size to restore. e.g., 4.5MB of 100MB -->
     <string name="BackupStatus__status_size_of_size">%1$s/%2$s</string>
+    <!-- Label for a context menu item that, when pressed, will hide a banner so it will no longer be shown. -->
+    <string name="BackupStatus__hide">隠す</string>
+    <!-- Label for a context menu item that, when pressed, will cancel the ongoing backup. -->
+    <string name="BackupStatus__cancel_upload">バックアップをキャンセル</string>
 
     <!-- BackupStatusRow -->
     <!-- Content description for x icon at the end of the linear progress indicator -->
@@ -7949,6 +8029,15 @@
     <string name="ResumeRestoreCellular_resume_using_cellular_title">モバイルデータ通信で再開しますか？</string>
     <!-- Dialog message to prompt resuming media restore over cellular -->
     <string name="ResumeRestoreCellular_resume_using_cellular_message">モバイルデータ通信でメディアを復元すると、通信料が発生する可能性があります。Wi-Fiネットワークに接続すると自動的に復元が再開されます。</string>
+
+    <!-- Title of a dialog box prompting to confirm whether the user truly wants to cancel their backup. -->
+    <string name="CancelBackupDialog_title">バックアップをキャンセルしますか？</string>
+    <!-- Body of a dialog box prompting to confirm whether the user truly wants to cancel their backup. -->
+    <string name="CancelBackupDialog_body">キャンセルしても、バックアップは消去されません。バックアップの設定からいつでも再開できます。</string>
+    <!-- Button on a dialog box that confirming backup cancellation. When pressed, this button will confirm canceling the currently-running backup (future backups are unaffected). -->
+    <string name="CancelBackupDialog_cancel_action">バックアップをキャンセル</string>
+    <!-- Button on a dialog box that confirming backup cancellation. When pressed, this button will continue the backup rather than cancel it. -->
+    <string name="CancelBackupDialog_continue_action">バックアップを続行</string>
 
     <!-- BackupsTypeSettingsFragment -->
     <!-- Displayed as the user\'s payment method as a label in a preference row -->
@@ -8287,6 +8376,37 @@
     <!-- Button label to open storage management screen -->
     <string name="RemoteBackupsSettingsFragment__manage_storage">ストレージの管理</string>
 
+    <!-- ReadyToTransferBottomSheet -->
+    <!-- Title for a bottom sheet letting people know that they can transfer their back to their new device  -->
+    <string name="RemoteBackupsSettingsFragment__ready_to_transfer">移行の準備ができました</string>
+    <!-- Body for bottom sheet telling the user to scan a QR code to continue transferring their backup to a new device -->
+    <string name="RemoteBackupsSettingsFragment__use_this_device_to_scan_qr">移行させたい端末に表示されたQRコードを、この端末でスキャンしてください</string>
+    <!-- Button label to open QR scanner to scan a device and transfer a backup -->
+    <string name="RemoteBackupsSettingsFragment__scan_qr_code">QRコードをスキャン</string>
+
+    <!-- OnDeviceBackupsImprovementsScreen -->
+    <!-- Title displayed at the top of the screen explaining on-device backup improvements -->
+    <string name="OnDeviceBackupsImprovementsScreen__improvements_to_on_device_backups">端末内バックアップの改善について</string>
+    <!-- Subtitle describing that the backup will be upgraded to a new format with a new recovery key -->
+    <string name="OnDeviceBackupsImprovementsScreen__your_on_device_backup_will_be_upgraded">端末内バックアップは、新しい回復キーを使用した新しい形式にアップグレードされます</string>
+    <!-- Feature description explaining backups are faster and use less data -->
+    <string name="OnDeviceBackupsImprovementsScreen__backups_now_save_faster">保存速度が上がり、データ使用量が削減されました</string>
+    <!-- Feature description explaining backups will be saved as a folder with many files -->
+    <string name="OnDeviceBackupsImprovementsScreen__your_backup_will_be_saved_as_a_folder">複数のファイルに分けて、フォルダとして保存されます</string>
+    <!-- Feature description explaining backups remain end-to-end encrypted -->
+    <string name="OnDeviceBackupsImprovementsScreen__all_backups_remain_end_to_end_encrypted">すべてのバックアップは、引き続きエンドツーエンドで暗号化されます</string>
+    <!-- Button text to continue to the next step -->
+    <string name="OnDeviceBackupsImprovementsScreen__continue">続行</string>
+
+    <!-- OnDeviceBackupsSettingsScreen -->
+    <!-- Card text prompting user to update to a new recovery key for faster backups -->
+    <string name="OnDeviceBackupsSettingsScreen__update_to_a_new_recovery_key">バックアップの保存を高速化するために新しい回復キーに更新してください</string>
+    <!-- Button text to update to a new recovery key -->
+    <string name="OnDeviceBackupsSettingsScreen__update">更新</string>
+
+    <!-- UnifiedOnDeviceBackupsSettingsScreen -->
+    <string name="UnifiedOnDeviceBackupsSettingsScreen__view_backup_key">バックアップキーを表示する</string>
+
     <!-- DownloadYourBackupTodayDialog -->
     <!-- Dialog title -->
     <string name="DownloadYourBackupTodayDialog__download_your_backup_today">今日中にバックアップをダウンロードしてください</string>
@@ -8340,12 +8460,32 @@
     <!-- MessageBackupsKeyEducationScreen -->
     <!-- Screen headline -->
     <string name="MessageBackupsKeyEducationScreen__your_backup_key">回復キー</string>
+    <!-- Screen headline shown when upgrading on-device backups to a new recovery key. -->
+    <string name="MessageBackupsKeyEducationScreen__your_new_recovery_key">新しい回復キー</string>
+    <!-- Screen headline shown when the user already has an on-device recovery key set. -->
+    <string name="MessageBackupsKeyEducationScreen__your_recovery_key">回復キーとは</string>
     <!-- Screen body part 1 -->
     <string name="MessageBackupsKeyEducationScreen__your_backup_key_is_a">回復キーは、バックアップを復元するために必要な64文字のコードです。</string>
     <!-- Screen body part 2 -->
     <string name="MessageBackupsKeyEducationScreen__store_your_recovery">回復キーはパスワードマネージャーなどの安全な場所に保存し、誰とも共有しないでください。</string>
     <!-- Screen body part 3 -->
     <string name="MessageBackupsKeyEducationScreen__if_you_lose_it">紛失した場合、メッセージを復元できなくなります。</string>
+    <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 1). -->
+    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description">Your recovery key is a 64-character code that lets you restore all backup types.</string>
+    <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 2, bolded). -->
+    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description_bold">このキーは、端末内バックアップキーに置き換わります。</string>
+    <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 1). -->
+    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description">Your backup key is a 64-character code that lets you restore your backups when you re-install Signal.</string>
+    <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 2, bolded). -->
+    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description_bold">このキーは、端末内のバックアップキーと同じです。</string>
+    <!-- Label shown above a list of actions that the recovery key can be used for. -->
+    <string name="MessageBackupsKeyEducationScreen__use_this_key_to">このキーは以下の目的で使用します。</string>
+    <!-- Row label indicating that the recovery key can be used to restore an on-device backup. -->
+    <string name="MessageBackupsKeyEducationScreen__restore_on_device_backup">端末内のバックアップの復元</string>
+    <!-- Row label indicating that the recovery key can be used to restore a Signal Secure Backup. -->
+    <string name="MessageBackupsKeyEducationScreen__restore_a_signal_secure_backup">Signalセキュアバックアップの復元</string>
+    <!-- Row label indicating that the recovery key can be used to restore a Signal Secure Backup. -->
+    <string name="MessageBackupsKeyEducationScreen__restore_your_signal_secure_backup">Signalセキュアバックアップの復元</string>
     <!-- Action button label -->
     <string name="MessageBackupsKeyEducationScreen__view_recovery_key">回復キーを表示する</string>
 
@@ -8354,6 +8494,8 @@
     <string name="MessageBackupsKeyRecordScreen__record_your_backup_key">リカバリーキーを記録する</string>
     <!-- Screen subhead -->
     <string name="MessageBackupsKeyRecordScreen__this_key_is_required_to_recover">このキーは、アカウントとデータを復元する際に必要です。このキーを安全な場所に保管してください。紛失した場合、アカウントを復元できなくなります。</string>
+    <!-- Screen subhead shown when the recovery key is shared between Signal Secure Backups and on-device backups. -->
+    <string name="MessageBackupsKeyRecordScreen__this_key_is_the_same_as_your_on_device_backup_key">このキーは、端末内バックアップキーと同じです。アカウントとデータの回復に必要となります。</string>
     <!-- Copy to clipboard button label -->
     <string name="MessageBackupsKeyRecordScreen__copy_to_clipboard">クリップボードにコピー</string>
     <!-- Label for the button to save a recovery key to the device password manager. -->
@@ -8642,6 +8784,19 @@
     <!-- Old device Transfer account bottom sheet dialog body -->
     <string name="TransferAccount_continue_on_your_other_device_details">引き続き、他の端末でアカウントの移行をおこなってください。</string>
 
+    <!-- Prepare Device screen title for quick restore flow -->
+    <string name="PrepareDevice_title">端末の準備をしましょう</string>
+    <!-- Prepare Device screen body text explaining backup recommendation -->
+    <string name="PrepareDevice_body">移行する前に今すぐバックアップしてください。まだバックアップされていないメッセージがある可能性があります。</string>
+    <!-- Prepare Device screen last backup text format, %1$s is the date and %2$s is the time -->
+    <string name="PrepareDevice_last_backup">最終バックアップは%1$sの%2$sです。</string>
+    <!-- Prepare Device screen back up now button -->
+    <string name="PrepareDevice_back_up_now">いますぐバックアップする</string>
+    <!-- Prepare Device screen skip and continue button -->
+    <string name="PrepareDevice_skip_and_continue">スキップして続行</string>
+    <!-- A string describing the last time the user\'s backup was made. The placeholder represents a date-time. An example would be "Your last backup was made on July 18, 2025 at 9:00am." -->
+    <string name="PrepareDevice_last_backup_description">最後のバックアップは%1$sに作成されました。 </string>
+
     <!-- Restore Complete bottom sheet dialog title -->
     <string name="RestoreCompleteBottomSheet_restore_complete">他の端末で完了しました</string>
     <!-- Restore Complete bottom sheet dialog message -->
@@ -8851,15 +9006,15 @@
     <!-- Title asking user to help improve Signal -->
     <string name="CallQualitySheet__help_us_improve">改善にご協力ください</string>
     <!-- First part of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_prefix">Submitting will share your feedback along with</string>
+    <string name="CallQualitySheet__help_us_improve_description_prefix">提出すると、フィードバックと以下の情報が共有されます。</string>
     <!-- Clickable text to launch diagnostic fragment -->
-    <string name="CallQualitySheet__diagnostic_information_about_your_call">diagnostic information about your call</string>
+    <string name="CallQualitySheet__diagnostic_information_about_your_call">通話に関する診断情報</string>
     <!-- End of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_suffix">You can optionally share a debug log to help us improve call quality.</string>
+    <string name="CallQualitySheet__help_us_improve_description_suffix">デバッグログの共有（任意）は、通話品質の向上につながります。</string>
     <!-- Text explaining the debug log -->
-    <string name="CallQualitySheet__information_shared_with_us">Information shared with us contains low level app information and does not include the contents of your calls.</string>
+    <string name="CallQualitySheet__information_shared_with_us">私たちと共有されるのは最低限のアプリ情報であり、通話内容は含まれません。</string>
     <!-- Link text to view debug log -->
-    <string name="CallQualitySheet__view_debug_log">View debug log</string>
+    <string name="CallQualitySheet__view_debug_log">デバッグログを表示する</string>
     <!-- Toggle label for sharing debug log -->
     <string name="CallQualitySheet__share_debug_log">デバッグログを共有する</string>
     <!-- Privacy notice explaining what debug logs contain and why they are helpful -->
@@ -8929,6 +9084,22 @@
     <string name="PinnedMessage__couldnt_unpin_all">メッセージのピン留めを解除できませんでした</string>
     <!-- Dialog body when failing to pin a message -->
     <string name="PinnedMessage__check_connection">インターネット接続を確認して再度試してください。</string>
+
+    <!-- Group member label screen title. -->
+    <string name="GroupMemberLabel__title">メンバーラベル</string>
+    <!-- Group member label text field placeholder. -->
+    <string name="GroupMemberLabel__label_text_placeholder">役割を追加</string>
+    <!-- Group member label preview section header. -->
+    <string name="GroupMemberLabel__preview_section_header">プレビュー</string>
+    <!-- Group member label save button label. -->
+    <string name="GroupMemberLabel__save">保存</string>
+    <!-- Accessibility label for the button to open the group member label emoji picker. -->
+    <string name="GroupMemberLabel__accessibility_select_emoji">絵文字を選択</string>
+    <!-- Accessibility label for the group member label close screen button. -->
+    <string name="GroupMemberLabel__accessibility_close_screen">画面を閉じる</string>
+    <!-- Accessibility label for the group member label text field clear button. -->
+    <string name="GroupMemberLabel__accessibility_clear_label">ラベルをクリア</string>
+    <string name="GroupMemberLabel__description">Add a member label to describe yourself or your role in this group. Labels are only visible within this group.</string>
 
     <!-- EOF -->
 </resources>

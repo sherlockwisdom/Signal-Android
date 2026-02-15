@@ -58,7 +58,7 @@ import org.thoughtcrime.securesms.util.DateUtils;
 import org.thoughtcrime.securesms.util.Projection;
 import org.thoughtcrime.securesms.util.ProjectionList;
 import org.thoughtcrime.securesms.util.StickyHeaderDecoration;
-import org.thoughtcrime.securesms.util.ThemeUtil;
+import org.signal.core.ui.util.ThemeUtil;
 import org.thoughtcrime.securesms.util.ViewUtil;
 
 import java.util.Calendar;
@@ -369,9 +369,9 @@ public class ConversationAdapter
     }
 
     if (hasWallpaper && ThemeUtil.isDarkTheme(context)) {
-      viewHolder.setTextColor(ContextCompat.getColor(context, R.color.signal_colorNeutralInverse));
+      viewHolder.setTextColor(ContextCompat.getColor(context, org.signal.core.ui.R.color.signal_colorNeutralInverse));
     } else {
-      viewHolder.setTextColor(ContextCompat.getColor(context, R.color.signal_colorOnSurfaceVariant));
+      viewHolder.setTextColor(ContextCompat.getColor(context, org.signal.core.ui.R.color.signal_colorOnSurfaceVariant));
     }
   }
 

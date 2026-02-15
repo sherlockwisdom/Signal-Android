@@ -122,7 +122,6 @@
         <!-- ======================================= -->
         <activity
             android:name=".components.webrtc.v2.WebRtcCallActivity"
-            android:configChanges="screenSize|smallestScreenSize|screenLayout"
             android:excludeFromRecents="true"
             android:exported="false"
             android:launchMode="singleTask"
@@ -476,6 +475,15 @@
             android:windowSoftInputMode="stateAlwaysHidden|adjustNothing" />
 
         <activity
+            android:name="org.signal.mediasend.MediaSendActivity"
+            android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize|uiMode"
+            android:exported="false"
+            android:launchMode="singleTop"
+            android:screenOrientation="portrait"
+            android:theme="@style/Signal.DayNight.NoActionBar"
+            android:windowSoftInputMode="stateAlwaysHidden|adjustNothing" />
+
+        <activity
             android:name=".conversation.mutiselect.forward.MultiselectForwardActivity"
             android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize"
             android:exported="false"
@@ -589,7 +597,7 @@
             android:noHistory="true" />
 
         <activity
-            android:name=".registration.olddevice.TransferAccountActivity"
+            android:name=".registration.olddevice.QuickTransferOldDeviceActivity"
             android:configChanges="touchscreen|keyboard|keyboardHidden|orientation|screenLayout|screenSize"
             android:exported="false"
             android:theme="@style/Theme.Signal.DayNight.NoActionBar" />
@@ -1384,6 +1392,9 @@
             android:exported="false"
             android:foregroundServiceType="dataSync|microphone|camera" />
 
+        <service
+            android:name="com.google.android.datatransport.runtime.scheduling.jobscheduling.JobInfoSchedulerService"
+            tools:node="remove" />
 
         <!-- ======================================= -->
         <!-- Receivers                               -->
@@ -1435,7 +1446,7 @@
             android:exported="false" />
 
         <receiver
-            android:name=".payments.backup.phrase.ClearClipboardAlarmReceiver"
+            android:name="org.signal.core.util.ClearClipboardAlarmReceiver"
             android:exported="false" />
 
         <receiver

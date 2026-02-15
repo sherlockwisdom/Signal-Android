@@ -20,6 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.Layout
+import androidx.compose.ui.layout.SubcomposeLayout
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.Constraints
@@ -34,6 +35,18 @@ import org.thoughtcrime.securesms.events.CallParticipant
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.recipients.RecipientId
 
+/**
+ * Enum identifying each slot in the BlurrableContentLayer.
+ * Used as subcomposition keys to ensure each slot is only composed once.
+ */
+private enum class BlurrableContentSlot {
+  BARS,
+  GRID,
+  REACTIONS,
+  OVERFLOW,
+  AUDIO_INDICATOR
+}
+
 @Composable
 fun CallElementsLayout(
   callGridSlot: @Composable () -> Unit,
@@ -42,6 +55,7 @@ fun CallElementsLayout(
   raiseHandSlot: @Composable () -> Unit,
   callLinkBarSlot: @Composable () -> Unit,
   callOverflowSlot: @Composable () -> Unit,
+  audioIndicatorSlot: @Composable () -> Unit,
   bottomInset: Dp,
   bottomSheetWidth: Dp,
   localRenderState: WebRtcLocalRenderState,
@@ -69,28 +83,62 @@ fun CallElementsLayout(
     bottomSheetWidth.roundToPx()
   }
 
-  Box(modifier = modifier) {
-    BlurrableContentLayer(
-      isFocused = isFocused,
-      isPortrait = isPortrait,
-      bottomInsetPx = bottomInsetPx,
-      bottomSheetWidthPx = bottomSheetWidthPx,
-      barsSlot = { Bars() },
-      callGridSlot = callGridSlot,
-      reactionsSlot = reactionsSlot,
-      callOverflowSlot = callOverflowSlot
-    )
+  SubcomposeLayout(modifier = modifier) { constraints ->
+    val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
 
-    PipLayer(
-      pictureInPictureSlot = pictureInPictureSlot,
-      localRenderState = localRenderState,
-      bottomInsetPx = bottomInsetPx,
-      pipSizePx = pipSizePx,
-      bottomSheetWidthPx = bottomSheetWidthPx
-    )
+    // Holder to capture measurements from BlurrableContentLayer
+    var measuredBarsHeightPx = 0
+    var measuredBarsWidthPx = 0
+
+    // Subcompose and measure the blurrable layer first - it will measure all content internally
+    // and report back the bars dimensions via the onMeasured callback
+    val blurrableLayerPlaceable = subcompose("blurrable") {
+      BlurrableContentLayer(
+        isFocused = isFocused,
+        isPortrait = isPortrait,
+        bottomInsetPx = bottomInsetPx,
+        bottomSheetWidthPx = bottomSheetWidthPx,
+        barsSlot = { Bars() },
+        callGridSlot = callGridSlot,
+        reactionsSlot = reactionsSlot,
+        callOverflowSlot = callOverflowSlot,
+        audioIndicatorSlot = audioIndicatorSlot,
+        onMeasured = { barsHeight, barsWidth ->
+          measuredBarsHeightPx = barsHeight
+          measuredBarsWidthPx = barsWidth
+        }
+      )
+    }.map { it.measure(constraints) }
+
+    // Use the wider of bars or bottom sheet for space calculation
+    val centeredContentWidthPx = maxOf(measuredBarsWidthPx, bottomSheetWidthPx)
+
+    val pipLayerPlaceable = subcompose("pip") {
+      PipLayer(
+        pictureInPictureSlot = pictureInPictureSlot,
+        localRenderState = localRenderState,
+        bottomInsetPx = bottomInsetPx,
+        barsHeightPx = measuredBarsHeightPx,
+        pipSizePx = pipSizePx,
+        centeredContentWidthPx = centeredContentWidthPx
+      )
+    }.map { it.measure(constraints) }
+
+    layout(constraints.maxWidth, constraints.maxHeight) {
+      blurrableLayerPlaceable.forEach { it.place(0, 0) }
+      pipLayerPlaceable.forEach { it.place(0, 0) }
+    }
   }
 }
 
+/**
+ * A layer that contains content which can be blurred when the local participant video is focused.
+ * All slots are subcomposed here ONCE to avoid duplicate subcomposition that would cause
+ * IllegalArgumentException when slots contain SubcomposeLayout (like BoxWithConstraints).
+ *
+ * @param onMeasured Callback invoked during measurement with (barsHeight, barsWidth) to report
+ *                   dimensions needed by the parent layout for PipLayer positioning.
+ */
 @Composable
 private fun BlurrableContentLayer(
   isFocused: Boolean,
@@ -100,23 +148,25 @@ private fun BlurrableContentLayer(
   barsSlot: @Composable () -> Unit,
   callGridSlot: @Composable () -> Unit,
   reactionsSlot: @Composable () -> Unit,
-  callOverflowSlot: @Composable () -> Unit
+  callOverflowSlot: @Composable () -> Unit,
+  audioIndicatorSlot: @Composable () -> Unit,
+  onMeasured: (barsHeight: Int, barsWidth: Int) -> Unit
 ) {
   BlurContainer(
     isBlurred = isFocused,
     modifier = Modifier.fillMaxSize()
   ) {
-    Layout(
-      contents = listOf(barsSlot, callGridSlot, reactionsSlot, callOverflowSlot),
-      modifier = Modifier.fillMaxSize()
-    ) { measurables, constraints ->
+    SubcomposeLayout(modifier = Modifier.fillMaxSize()) { constraints ->
       val looseConstraints = constraints.copy(minWidth = 0, minHeight = 0)
-      val overflowPlaceables = measurables[3].map { it.measure(looseConstraints) }
+
+      val overflowPlaceables = subcompose(BlurrableContentSlot.OVERFLOW, callOverflowSlot)
+        .map { it.measure(looseConstraints) }
       val constrainedHeightOffset = if (isPortrait) overflowPlaceables.maxOfOrNull { it.height } ?: 0 else 0
-      val constrainedWidthOffset = if (isPortrait) { 0 } else overflowPlaceables.maxOfOrNull { it.width } ?: 0
+      val constrainedWidthOffset = if (isPortrait) 0 else overflowPlaceables.maxOfOrNull { it.width } ?: 0
 
       val nonOverflowConstraints = looseConstraints.offset(horizontal = -constrainedWidthOffset, vertical = -constrainedHeightOffset)
-      val gridPlaceables = measurables[1].map { it.measure(nonOverflowConstraints) }
+      val gridPlaceables = subcompose(BlurrableContentSlot.GRID, callGridSlot)
+        .map { it.measure(nonOverflowConstraints) }
 
       val barConstraints = if (bottomInsetPx > constrainedHeightOffset) {
         looseConstraints.offset(-constrainedWidthOffset, -bottomInsetPx)
@@ -128,11 +178,21 @@ private fun BlurrableContentLayer(
       val barsMaxWidth = minOf(barConstraints.maxWidth, bottomSheetWidthPx)
       val barsConstrainedToSheet = barConstraints.copy(maxWidth = barsMaxWidth)
 
-      val barsPlaceables = measurables[0].map { it.measure(barsConstrainedToSheet) }
+      val barsPlaceables = subcompose(BlurrableContentSlot.BARS, barsSlot)
+        .map { it.measure(barsConstrainedToSheet) }
 
-      val barsHeightOffset = barsPlaceables.sumOf { it.height }
-      val reactionsConstraints = barConstraints.offset(vertical = -barsHeightOffset)
-      val reactionsPlaceables = measurables[2].map { it.measure(reactionsConstraints) }
+      val barsHeightPx = barsPlaceables.sumOf { it.height }
+      val barsWidthPx = barsPlaceables.maxOfOrNull { it.width } ?: 0
+
+      // Report measurements to parent for PipLayer positioning
+      onMeasured(barsHeightPx, barsWidthPx)
+
+      val reactionsConstraints = barConstraints.offset(vertical = -barsHeightPx)
+      val reactionsPlaceables = subcompose(BlurrableContentSlot.REACTIONS, reactionsSlot)
+        .map { it.measure(reactionsConstraints) }
+
+      val audioIndicatorPlaceables = subcompose(BlurrableContentSlot.AUDIO_INDICATOR, audioIndicatorSlot)
+        .map { it.measure(looseConstraints) }
 
       layout(looseConstraints.maxWidth, looseConstraints.maxHeight) {
         overflowPlaceables.forEach {
@@ -155,6 +215,17 @@ private fun BlurrableContentLayer(
         reactionsPlaceables.forEach {
           it.place(0, 0)
         }
+
+        audioIndicatorPlaceables.forEach {
+          val gutterWidth = (looseConstraints.maxWidth - bottomSheetWidthPx) / 2
+          val fitsInGutter = gutterWidth >= it.width
+          val y = if (fitsInGutter) {
+            looseConstraints.maxHeight - it.height
+          } else {
+            looseConstraints.maxHeight - bottomInsetPx - barsHeightPx - it.height
+          }
+          it.place(0, y)
+        }
       }
     }
   }
@@ -165,8 +236,9 @@ private fun PipLayer(
   pictureInPictureSlot: @Composable () -> Unit,
   localRenderState: WebRtcLocalRenderState,
   bottomInsetPx: Int,
+  barsHeightPx: Int,
   pipSizePx: Size,
-  bottomSheetWidthPx: Int
+  centeredContentWidthPx: Int
 ) {
   Layout(
     content = pictureInPictureSlot,
@@ -177,8 +249,11 @@ private fun PipLayer(
     val pictureInPictureConstraints: Constraints = when (localRenderState) {
       WebRtcLocalRenderState.GONE, WebRtcLocalRenderState.SMALLER_RECTANGLE, WebRtcLocalRenderState.LARGE, WebRtcLocalRenderState.LARGE_NO_VIDEO, WebRtcLocalRenderState.FOCUSED -> constraints
       WebRtcLocalRenderState.SMALL_RECTANGLE, WebRtcLocalRenderState.EXPANDED -> {
-        val shouldOffset = bottomInsetPx > 0 && looseConstraints.maxWidth - pipSizePx.width - pipSizePx.width - bottomSheetWidthPx < 0
-        looseConstraints.offset(vertical = if (shouldOffset) -bottomInsetPx else 0)
+        // Check if there's enough space on either side of the centered content (bars/sheet)
+        val spaceOnEachSide = (looseConstraints.maxWidth - centeredContentWidthPx) / 2
+        val shouldOffset = centeredContentWidthPx > 0 && spaceOnEachSide < pipSizePx.width
+        val offsetAmount = bottomInsetPx + barsHeightPx
+        looseConstraints.offset(vertical = if (shouldOffset) -offsetAmount else 0)
       }
     }
 
@@ -214,10 +289,11 @@ private fun CallElementsLayoutPreview() {
           localParticipant = CallParticipant(
             recipient = Recipient(id = RecipientId.from(1L), isResolving = false, systemContactName = "Test")
           ),
+          localRenderState = localRenderState,
+          savedLocalParticipantLandscape = false,
           onClick = {},
           onFocusLocalParticipantClick = {},
-          onToggleCameraDirectionClick = {},
-          localRenderState = localRenderState
+          onToggleCameraDirectionClick = {}
         )
       },
       reactionsSlot = {
@@ -262,6 +338,21 @@ private fun CallElementsLayoutPreview() {
               }
             )
             .background(color = Color.Red)
+        )
+      },
+      audioIndicatorSlot = {
+        val mutedParticipant = CallParticipant(
+          recipient = Recipient(
+            id = RecipientId.from(2L),
+            isResolving = false,
+            systemContactName = "Muted Participant"
+          ),
+          audioLevel = null
+        )
+
+        ParticipantAudioIndicator(
+          participant = mutedParticipant,
+          selfPipMode = SelfPipMode.NOT_SELF_PIP
         )
       },
       bottomInset = 120.dp,

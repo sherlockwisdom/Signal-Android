@@ -305,11 +305,13 @@ object RemoteConfig {
         val newKey = key.removePrefix("android.libsignal.")
         when (value) {
           is String -> newKey to value
+
           // The server is currently synthesizing "true" / "false" values
           // for RemoteConfigs that are otherwise empty string values.
           // Libsignal expects that disabled values are simply absent from the
           // map, so we map true to "true" and otherwise omit disabled values.
           is Boolean -> if (value) newKey to "true" else null
+
           else -> {
             val type = value?.let { value::class.simpleName }
             Log.w(TAG, "[libsignal] Unexpected type for $newKey! Was a $type")
@@ -562,6 +564,15 @@ object RemoteConfig {
     hotSwappable = true
   )
 
+  /** The maximum number of pinned conversations a user can have. */
+  @JvmStatic
+  @get:JvmName("pinnedChatLimit")
+  val pinnedChatLimit: Int by remoteInt(
+    key = "global.pinnedChatLimit",
+    defaultValue = 4,
+    hotSwappable = true
+  )
+
   /** The maximum number of grapheme  */
   @JvmStatic
   val maxGroupNameGraphemeLength: Int by remoteValue(
@@ -786,7 +797,7 @@ object RemoteConfig {
 
   /** A comma-separated list of manufacturers that should *not* use CameraX.  */
   val cameraXModelBlocklist: String by remoteString(
-    key = "android.cameraXModelBlockList",
+    key = "android.cameraXModelBlockList.2",
     defaultValue = "",
     hotSwappable = true
   )
@@ -1194,7 +1205,7 @@ object RemoteConfig {
   @JvmStatic
   @get:JvmName("sendPinnedMessages")
   val sendPinnedMessages: Boolean by remoteBoolean(
-    key = "android.sendPinnedMessages",
+    key = "android.sendPinnedMessages.2",
     defaultValue = false,
     hotSwappable = true
   )
@@ -1227,13 +1238,32 @@ object RemoteConfig {
   )
 
   /**
-   * Whether or not to show any UI related to key transparency
+   * Whether or not the new UX for unified local backups is enabled
    */
   @JvmStatic
-  @get:JvmName("keyTransparency")
-  val keyTransparency: Boolean by remoteBoolean(
-    key = "android.keyTransparency",
-    active = false,
+  @get:JvmName("unifiedLocalBackups")
+  val unifiedLocalBackups: Boolean by remoteBoolean(
+    key = "android.unifiedLocalBackups",
+    defaultValue = false,
+    hotSwappable = true
+  )
+
+  /**
+   * Whether to receive and display group member labels.
+   */
+  val receiveMemberLabels: Boolean by remoteBoolean(
+    key = "android.receiveMemberLabels.2",
+    defaultValue = false,
+    hotSwappable = true
+  )
+
+  /**
+   * Whether to enable modifying group member labels.
+   */
+  @JvmStatic
+  @get:JvmName("sendMemberLabels")
+  val sendMemberLabels: Boolean by remoteBoolean(
+    key = "android.sendMemberLabels",
     defaultValue = false,
     hotSwappable = true
   )

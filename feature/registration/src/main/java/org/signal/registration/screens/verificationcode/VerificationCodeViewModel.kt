@@ -54,7 +54,7 @@ class VerificationCodeViewModel(
       is VerificationCodeScreenEvents.WrongNumber -> state.also { parentEventEmitter.navigateTo(RegistrationRoute.PhoneNumberEntry) }
       is VerificationCodeScreenEvents.ResendSms -> transformResendCode(state, NetworkController.VerificationCodeTransport.SMS)
       is VerificationCodeScreenEvents.CallMe -> transformResendCode(state, NetworkController.VerificationCodeTransport.VOICE)
-      is VerificationCodeScreenEvents.HavingTrouble -> TODO("having trouble flow")
+      is VerificationCodeScreenEvents.HavingTrouble -> throw NotImplementedError("having trouble flow") // TODO [registration] - Having trouble flow
       is VerificationCodeScreenEvents.ConsumeInnerOneTimeEvent -> state.copy(oneTimeEvent = null)
     }
   }
@@ -130,7 +130,7 @@ class VerificationCodeViewModel(
     }
 
     // Attempt to register
-    val registerResult = repository.registerAccount(e164 = state.e164, sessionId = sessionMetadata.id, skipDeviceTransfer = true)
+    val registerResult = repository.registerAccountWithSession(e164 = state.e164, sessionId = sessionMetadata.id, skipDeviceTransfer = true)
 
     return when (registerResult) {
       is NetworkController.RegistrationNetworkResult.Success -> {
@@ -148,7 +148,8 @@ class VerificationCodeViewModel(
       is NetworkController.RegistrationNetworkResult.Failure -> {
         when (registerResult.error) {
           is NetworkController.RegisterAccountError.SessionNotFoundOrNotVerified -> {
-            TODO()
+            // TODO [registration] Handle session not found or not verified case.
+            throw NotImplementedError("Handle session not found or not verified case.")
           }
           is NetworkController.RegisterAccountError.DeviceTransferPossible -> {
             Log.w(TAG, "[Register] Got told a device transfer is possible. We should never get into this state. Resetting.")
@@ -174,8 +175,9 @@ class VerificationCodeViewModel(
             state.copy(oneTimeEvent = OneTimeEvent.RegistrationError)
           }
           is NetworkController.RegisterAccountError.RegistrationRecoveryPasswordIncorrect -> {
-            Log.w(TAG, "[Register] Registration recovery password incorrect: ${registerResult.error.message}")
-            state.copy(oneTimeEvent = OneTimeEvent.RegistrationError)
+            Log.w(TAG, "[Register] Got told the registration recovery password incorrect. We don't use the RRP in this flow, and should never get this error. Resetting. Message: ${registerResult.error.message}")
+            parentEventEmitter(RegistrationFlowEvent.ResetState)
+            state
           }
         }
       }

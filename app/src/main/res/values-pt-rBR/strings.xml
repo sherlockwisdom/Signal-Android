@@ -313,8 +313,22 @@
     <string name="CameraXFragment_to_capture_videos">Para gravar vídeos com som:</string>
     <!-- Dialog description that explains the steps needed to give Signal camera permissions -->
     <string name="CameraXFragment_to_scan_qr_codes">Para escanear QR codes:</string>
+    <!-- Error message shown when we try to take a photo, but fail -->
+    <string name="CameraXFragment_photo_capture_failed">Falha ao capturar foto. Tente novamente.</string>
+    <!-- Error message shown when we try to take a photo, but fail when trying to process it (convert it into something the user can see). -->
+    <string name="CameraXFragment_photo_processing_failed">Falha ao processar a foto. Tente novamente.</string>
+    <!-- Accessibility label for the switch camera button -->
+    <string name="CameraXFragment_switch_camera">Alternar câmera</string>
+    <!-- Accessibility label for flash button when flash is off -->
+    <string name="CameraXFragment_flash_off">Flash desligado</string>
+    <!-- Accessibility label for flash button when flash is on -->
+    <string name="CameraXFragment_flash_on">Flash ligado</string>
+    <!-- Accessibility label for flash button when flash is set to auto -->
+    <string name="CameraXFragment_flash_auto">Flash automático</string>
+    <!-- Accessibility label for the send button in media selection -->
+    <string name="CameraXFragment_send">Enviar</string>
 
-    <!-- CameraContacts -->
+<!-- CameraContacts -->
     <string name="CameraContacts_recent_contacts">Contatos recentes</string>
     <string name="CameraContacts_signal_contacts">Contatos do Signal</string>
     <string name="CameraContacts_signal_groups">Grupos do Signal</string>
@@ -411,7 +425,7 @@
     <string name="ContactShareEditActivity_type_work">Trabalho</string>
     <string name="ContactShareEditActivity_type_missing">Outro</string>
     <string name="ContactShareEditActivity_invalid_contact">O contato selecionado é inválido</string>
-    <!-- Content descrption for name edit button on contact share edit activity -->
+    <!-- Content description for name edit button on contact share edit activity -->
     <string name="ContactShareEditActivity__edit_name">Editar nome</string>
     <!-- Content description for user avatar in edit activity -->
     <string name="ContactShareEditActivity__avatar">Avatar</string>
@@ -940,7 +954,7 @@
     <string name="BackupsPreferenceFragment__backup_time">Horário do backup</string>
     <string name="BackupsPreferenceFragment__verify_backup_passphrase">Verificar frase de recuperação de backup</string>
     <string name="BackupsPreferenceFragment__test_your_backup_passphrase">Teste sua frase de recuperação de backup e verifique se ela corresponde</string>
-    <string name="BackupsPreferenceFragment__turn_on">Ativar</string>
+    <string name="BackupsPreferenceFragment__turn_on">Ativar backups</string>
     <string name="BackupsPreferenceFragment__turn_off">Desativar</string>
     <string name="BackupsPreferenceFragment__to_restore_a_backup">"Para restaurar um backup, faça uma nova instalação do Signal. Abra o aplicativo e toque no \"Restaurar o backup\", depois localize um arquivo de backup. %1$s"</string>
     <string name="BackupsPreferenceFragment__learn_more">Saiba mais</string>
@@ -2704,9 +2718,9 @@
 
     <!-- CallQualityDiagnosticsScreen -->
     <!-- Title for the call quality diagnostics screen -->
-    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Diagnostic information</string>
+    <string name="CallQualityDiagnosticsScreen__diagnostic_information">Informações de diagnóstico</string>
     <!-- Content description for the close/back navigation button -->
-    <string name="CallQualityDiagnosticsScreen__close">Close</string>
+    <string name="CallQualityDiagnosticsScreen__close">Fechar</string>
 
     <!-- CallToastPopupWindow -->
     <string name="CallToastPopupWindow__swipe_to_view_screen_share">Deslize para ver o compartilhamento de tela</string>
@@ -2751,7 +2765,8 @@
     <string name="RegistrationActivity_i_understand">Entendi</string>
     <string name="RegistrationActivity_play_services_error">Erro no Play Services</string>
     <string name="RegistrationActivity_google_play_services_is_updating_or_unavailable">Google Play Services está sendo atualizado ou temporariamente indisponível. Por favor, tente novamente.</string>
-    <string name="RegistrationActivity_terms_and_privacy">Termos &amp; Política de Privacidade</string>
+    <!-- Non-English translations should use "Signal is a nonprofit" instead, dropping the 501c3 reference. -->
+    <string name="RegistrationActivity_terms_and_privacy">O Signal é uma organização sem fins lucrativos\n Termos e Política de Privacidade</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_and_media_in_order_to_connect_with_friends">O Signal precisa de acesso aos seus contatos e arquivos de mídia para você poder se conectar com outras pessoas e enviar mensagens. Você encontrará os seus contatos por meio da criptografia de ponta a ponta, de modo que os responsáveis pelo Signal jamais armazenarão ou sequer terão acesso à sua lista de contatos.</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_in_order_to_connect_with_friends">O Signal precisa acessar sua lista de contatos para você se conectar com outras pessoas. Você encontrará os seus contatos por meio da criptografia de ponta a ponta, de modo que os responsáveis pelo Signal jamais armazenarão ou sequer terão acesso à sua lista de contatos.</string>
     <string name="RegistrationActivity_rate_limited_to_service">Você fez muitas tentativas de registrar este número. Por favor, tente novamente mais tarde.</string>
@@ -3816,15 +3831,55 @@
     <string name="verify_display_fragment__loading">Carregando…</string>
     <string name="verify_display_fragment__mark_as_verified">Marcar como verificado</string>
     <string name="verify_display_fragment__clear_verification">Apagar verificação</string>
+    <!-- Header title for automatic key verification -->
+    <string name="verify_display_fragment__automatic">Verificação automática de chaves</string>
+    <!-- Button text to verify automatically    -->
+    <string name="verify_display_fragment__verify_automatic">Verificar automaticamente</string>
+    <!-- Loading text when verifying -->
+    <string name="verify_display_fragment__verifying">Verificando criptografia…</string>
+    <!-- Success text shown when encryption is verified -->
+    <string name="verify_display_fragment__encryption_verified">Criptografia verificada</string>
+    <!-- Text shown when verification fails -->
+    <string name="verify_display_fragment__encryption_unavailable">Verificação automática indisponível</string>
+    <!-- Caption text explaining more about automatic verification   -->
+    <string name="verify_display_fragment__auto_verify_not_available">A verificação automática não está disponível para todas as conversas.</string>
+  <!-- Removed by excludeNonTranslatables <string name="verify_display_fragment__link" translatable="false">https://support.signal.org/hc/articles/10223569377562</string> -->
+
+    <!-- Bottom sheet title when encryption is auto-verified -->
+    <string name="EncryptionVerifiedSheet__title_success">A criptografia foi verificada automaticamente para esta conversa</string>
+    <!-- Bottom sheet body when encryption is auto-verified -->
+    <string name="EncryptionVerifiedSheet__body_success">Para contatos com os quais você se conecta por número de telefone, o Signal pode confirmar automaticamente se a conexão é segura usando um processo chamado transparência de chave. Para maior segurança, verifique manualmente a criptografia de ponta a ponta comparando os números na tela anterior ou escaneando o código no dispositivo da outra pessoa. </string>
+    <!-- Bottom sheet title when encryption is no longer auto-verified -->
+    <string name="EncryptionVerifiedSheet__title_no_longer_unavailable">A verificação automática não está mais disponível para esta conversa</string>
+    <!-- Bottom sheet body when encryption is no longer auto-verified. Placeholder is the name of the person. -->
+    <string name="EncryptionVerifiedSheet__body_no_longer_unavailable">O Signal não consegue mais verificar automaticamente a criptografia desta conversa. Isso provavelmente ocorreu porque %1$s mudou de número de telefone. Verifique manualmente a criptografia de ponta a ponta comparando os números na tela anterior ou escaneando o código no dispositivo da outra pessoa. </string>
+    <!-- Bottom sheet title when encryption cannot be auto-verified -->
+    <string name="EncryptionVerifiedSheet__title_unavailable">A verificação automática não está disponível para esta conversa</string>
+    <!-- Bottom sheet body when encryption cannot be auto-verified -->
+    <string name="EncryptionVerifiedSheet__body_unavailable">O Signal só consegue verificar automaticamente a criptografia em conversas nas quais você se conectou a alguém por meio de um número de telefone. Se a conversa foi iniciada com um nome de usuário ou um grupo em comum, verifique a criptografia de ponta a ponta comparando os números na tela anterior ou escaneando o código no dispositivo da pessoa.</string>
 
     <!-- Title for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__title">Signal now auto-verifies end-to-end encryption</string>
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal can now auto-verify encryption</string>
     <!-- Body for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__body">When you verify a safety number, Signal will automatically confirm whether the connection is secure using a process called key transparency. You can still verify connections manually using a QR code or number.</string>
+    <string name="VerifyAutomaticallyEducationSheet__body">For contacts you’re connected to by phone number, Signal can automatically confirm whether the connection is secure using a process called key transparency. For added security, you can still verify connections manually using a QR code or safety number.</string>
     <!-- Button to learn more about automatic verification -->
-    <string name="VerifyAutomaticallyEducationSheet__learn_more">Learn more</string>
+    <string name="VerifyAutomaticallyEducationSheet__learn_more">Saiba mais</string>
     <!-- Button to go to verification page -->
-    <string name="VerifyAutomaticallyEducationSheet__verify">Verify</string>
+    <string name="VerifyAutomaticallyEducationSheet__continue">Continue</string>
+
+    <!-- Title for bottom sheet when self verification fails -->
+    <string name="SelfVerificationFailureSheet__title">A verificação automática de chaves está atualmente indisponível para o seu dispositivo. Enviar registro de depuração?</string>
+    <!-- Body for bottom sheet when self verification fails -->
+    <string name="SelfVerificationFailureSheet__body">Os registros de depuração nos ajudam a diagnosticar e corrigir o problema e não contêm informações de identificação.</string>
+    <!-- Button to decline submitting logs -->
+    <string name="SelfVerificationFailureSheet__no_thanks">Não</string>
+    <!-- Button to submit logs -->
+    <string name="SelfVerificationFailureSheet__submit">Enviar</string>
+    <!-- Email subject line when submitting logs following a verification failure -->
+    <string name="SelfVerificationFailureSheet__email_subject">Falha na verificação de chave automática</string>
+  <!-- Removed by excludeNonTranslatables <string name="SelfVerificationFailureSheet__email_filter" translatable="false">AutomaticKeyVerificationFailure</string> -->
+    <!-- Link to learn more about debug logs -->
+    <string name="SelfVerificationFailureSheet__learn_more">Saiba mais</string>
 
     <!-- verity_scan_fragment -->
     <string name="verify_scan_fragment__scan_the_qr_code_on_your_contact">Escanear o Código QR no aparelho da outra pessoa.</string>
@@ -4201,6 +4256,10 @@
     <string name="preferences_compact">Compacta</string>
     <!-- Dialog message body explaining that we have to restart the app in order to apply the user\'s new language setting.  -->
     <string name="preferences_language_change_confirmation_message">O app será reiniciado para aplicar a nova configuração de idioma.</string>
+    <!-- Preference title for automatic key verification -->
+    <string name="preferences_automatic_key_verification">Verificação automática de chaves</string>
+    <!-- Preference summary for automatic key verification -->
+    <string name="preferences_automatic_key_verification_body">Quando ativado, o Signal tentará verificar automaticamente a criptografia das conversas individuais.</string>
 
 
     <string name="configurable_single_select__customize_option">Opção para personalizar</string>
@@ -4303,17 +4362,6 @@
     <!-- Storage permission row description -->
     <string name="GrantPermissionsFragment__send_photos_videos_and_files">Envie fotos, vídeos e arquivos do seu dispositivo.</string>
 
-    <!-- PermissionDeniedBottomSheet -->
-    <!-- Sheet describing step 1 on how to give permissions by opening settings -->
-    <string name="PermissionDeniedBottomSheet__1_tap_settings_below">1. Toque em \"Configurações\" abaixo</string>
-    <!-- Sheet describing step 2 on how to give permissions by checking the permissions button in settings where %s will be replaced with an image of a checked button -->
-    <string name="PermissionDeniedBottomSheet__2_allow_permission">2. %1$s Permitir acesso</string>
-    <!-- Sheet describing step 2 on how to give permissions by tapping permissions in their settings -->
-    <string name="PermissionDeniedBottomSheet__2_tap_permissions">2. Toque em “Permissões”</string>
-    <!-- Sheet describing step 3 on how to give permissions for photos and videos in settings where %s will be replaced with an image of a checked button -->
-    <string name="PermissionDeniedBottomSheet__3_allow_permission">3. %1$s Permita o acesso a fotos e vídeos</string>
-    <!-- Label for button at the bottom of the sheet which opens the system permission settings -->
-    <string name="PermissionDeniedBottomSheet__settings">Configurações</string>
 
     <!-- PaymentsSecuritySetupFragment -->
     <!-- Toolbar title -->
@@ -4767,9 +4815,6 @@
     <!-- transport_selection_list_item -->
     <string name="ConversationListFragment_loading">Carregando…</string>
     <string name="CallNotificationBuilder_connecting">Conectando…</string>
-    <string name="Permissions_permission_required">Permissão necessária</string>
-    <string name="Permissions_continue">Continuar</string>
-    <string name="Permissions_not_now">Agora não</string>
     <string name="SQLCipherMigrationHelper_migrating_signal_database">Migrando a base de dados do Signal</string>
     <string name="enter_backup_passphrase_dialog__backup_passphrase">Frase de recuperação de backup</string>
     <string name="backup_enable_dialog__backups_will_be_saved_to_external_storage_and_encrypted_with_the_passphrase_below_you_must_have_this_passphrase_in_order_to_restore_a_backup">Os backups serão salvos no armazenamento externo e criptografados com a frase de recuperação abaixo. Você precisa desta frase de recuperação para restaurar um backup.</string>
@@ -5153,8 +5198,6 @@
     <!-- This is a title in a banner describing the conversation sender to receiver placeholders of the currently playing voice memo. -->
     <string name="VoiceNoteMediaItemFactory__s_to_s">%1$s para %2$s</string>
 
-    <!-- StorageUtil -->
-    <string name="StorageUtil__s_s">%1$s/%2$s</string>
     <string name="BlockedUsersActivity__s_has_been_blocked">Você bloqueou \"%1$s\".</string>
     <string name="BlockedUsersActivity__failed_to_block_s">Falha ao bloquear \"%1$s\"</string>
     <string name="BlockedUsersActivity__s_has_been_unblocked">Você desbloqueou \"%1$s\".</string>
@@ -5793,6 +5836,8 @@
     <string name="HelpSettingsFragment__terms_amp_privacy_policy">Termos e Política de Privacidade</string>
     <string name="HelpFragment__copyright_signal_messenger">Direitos autorais Signal Messenger</string>
     <string name="HelpFragment__licenced_under_the_agplv3">Licenciado nos termos da GNU AGPLv3</string>
+    <!-- Non-English translations should use "Signal is a nonprofit." instead, dropping the 501c3 reference. -->
+    <string name="HelpSettingsFragment__signal_is_a_501c3">O Signal é uma organização sem fins lucrativos</string>
 
     <!-- DataAndStorageSettingsFragment -->
     <string name="DataAndStorageSettingsFragment__media_quality">Qualidade das fotos</string>
@@ -5925,6 +5970,8 @@
     <string name="ConversationSettingsFragment__permissions">Permissões</string>
     <string name="ConversationSettingsFragment__requests_and_invites">Pedidos e convites</string>
     <string name="ConversationSettingsFragment__group_link">Link do grupo</string>
+    <!-- Label for button that opens the group member label permissions screen. -->
+    <string name="ConversationSettingsFragment__group_member_label">Rótulo de membro</string>
     <!-- Option in conversation settings to add a user as a contact -->
     <string name="ConversationSettingsFragment__add_as_a_contact">Adicionar como contato</string>
     <string name="ConversationSettingsFragment__unmute">Reativar notificações</string>
@@ -6180,7 +6227,7 @@
     <string name="SelectFeaturedBadgeFragment__failed_to_update_profile">Falha ao atualizar o perfil</string>
 
     <!-- Displayed on primary button in the bottom sheet as a call-to-action to launch into the donation flow -->
-    <string name="ViewBadgeBottomSheetDialogFragment__donate_now">Doe agora</string>
+    <string name="ViewBadgeBottomSheetDialogFragment__donate_now">Doar</string>
     <!-- Title of a page in the bottom sheet. Placeholder is a user\'s short-name -->
     <string name="ViewBadgeBottomSheetDialogFragment__s_supports_signal">%1$s apoia o Signal</string>
     <!-- Description of a page in the bottom sheet of a monthly badge. Placeholder is a user\'s short-name -->
@@ -6208,13 +6255,15 @@
     <string name="Subscription__expires_s">Expira em %1$s</string>
 
     <!-- Title of learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_different">O Signal é diferente.</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_different">Como uma organização independente sem fins lucrativos, o Signal tem um compromisso com mensagens e chamadas privadas. Sem anúncios, sem rastreamento, sem vigilância. Faça uma doação agora para apoiar o Signal.</string>
     <!-- First small text blurb on learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__private_messaging">Mensagens privadas. Sem anúncios, sem rastreamento, sem vigilância.</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__private_messaging">No ads, no trackers, no surveillance. Donate today to support Signal.</string>
     <!-- Second small text blurb on learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_supported_by">O Signal é apoiado por doações, ou seja, a sua privacidade está no centro de tudo que fazemos. O Signal foi criado para você, não para recolher seus dados ou para fins lucrativos.</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__donate_and_get_badge">Ao fazer uma doação, você ganha um selo opcional no seu perfil</string>
     <!-- Third small text blurb on learn more sheet -->
-    <string name="SubscribeLearnMoreBottomSheetDialogFragment__if_you_can">Se puder, faça uma doação hoje para manter o Signal divertido, confiável e disponível para todos.</string>
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__your_privacy_is_our_mission">Sua privacidade é nossa missão</string>
+    <!-- Fourth small text blurb on learn more sheet. Non-English translations should use "Signal is a nonprofit." instead, dropping the 501c3 reference. -->
+    <string name="SubscribeLearnMoreBottomSheetDialogFragment__signal_is_a_501c3">O Signal é uma organização sem fins lucrativos.</string>
 
     <string name="SubscribeThanksForYourSupportBottomSheetDialogFragment__thanks_for_your_support">Agradecemos por seu apoio!</string>
     <!-- Subtext underneath the dialog title on the thanks sheet -->
@@ -7244,11 +7293,11 @@
 
     <!-- DonateToSignalFragment -->
     <!-- Title below avatar -->
-    <string name="DonateToSignalFragment__privacy_over_profit">Privacidade acima do lucro</string>
+    <string name="DonateToSignalFragment__privacy_over_profit">Organização sem fins lucrativos (com orgulho)</string>
     <!-- Continue button label -->
     <string name="DonateToSignalFragment__continue">Continuar</string>
     <!-- Description below title -->
-    <string name="DonateToSignalFragment__private_messaging">Mensagens privadas, financiadas por você. Sem anúncios, sem rastreamento, sem vigilância. Faça uma doação agora para apoiar o Signal.</string>
+    <string name="DonateToSignalFragment__private_messaging">Faça uma doação para apoiar o envio de mensagens privadas. Mantenha o Signal independente e sem anúncios.</string>
     <!-- Dialog title when a user tries to donate while they already have a pending donation. -->
     <string name="DonateToSignalFragment__you_have_a_donation_pending">Você tem uma doação pendente</string>
     <!-- Dialog body when a user tries to donate while they already have a pending monthly donation. -->
@@ -7840,6 +7889,18 @@
     <!-- Text for a "toast" that pops up at the bottom of the user\'s screen after they respond "not now" to a prompt asking them to enable backups -->
     <string name="TurnOnSignalBackups__toast_not_now">Você pode habilitar os backups nas \"Configurações\"</string>
 
+    <!-- Title of a megaphone shown to prompt the user to upgrade to the new local backups type -->
+    <string name="UseNewOnDeviceBackups__title">Use novos backups no dispositivo</string>
+    <!-- Body of a megaphone shown to prompt the user to upgrade to the new local backups type -->
+    <string name="UseNewOnDeviceBackups__body">Os backups no dispositivo agora são salvos mais rapidamente e usam menos dados.</string>
+    <!-- Button of a megaphone that will take the user to the upgrade flow -->
+    <string name="UseNewOnDeviceBackups__upgrade">Atualizar</string>
+    <!-- Button of a megaphone that will snooze the reminder to upgrade to the new local backups type -->
+    <string name="UseNewOnDeviceBackups__not_now">Agora não</string>
+
+    <!-- Text describing how to restore a backup displayed on the on-device backups screen -->
+    <string name="OnDeviceBackupsScreen__to_restore_a_backup">"Para restaurar um backup, faça uma nova instalação do Signal. Abra o app e toque em \"Restaurar backup\". Em seguida, localize a pasta onde o backup está salvo."</string>
+
     <!-- Title of a megaphone shown to prompt the user to verify their recovery key -->
     <string name="VerifyBackupKey__title">Verifique sua chave de recuperação</string>
     <!-- Body of a megaphone shown to prompt the user to verify their recovery key -->
@@ -8059,6 +8120,12 @@
     <!-- Backup redemption error sheet bullet point 2 -->
     <string name="BackupAlertBottomSheet__have_too_many_devices_using_the_same_subscription">Muitos dispositivos usando a mesma assinatura.</string>
 
+    <!-- OnDeviceBackupsFragment -->
+    <!-- Snackbar message shown after successfully updating the on-device backups recovery key. -->
+    <string name="OnDeviceBackupsFragment__backup_key_updated">Chave de backup atualizada</string>
+    <!-- Toast message shown after selecting a folder to store on-device backups. Placeholder is the selected folder. -->
+    <string name="OnDeviceBackupsFragment__directory_selected">Diretório selecionado: %1$s</string>
+
     <!-- BackupStatus -->
     <!-- Status title when user does not have enough free space to download their media. Placeholder is required disk space. -->
     <string name="BackupStatus__free_up_s_of_space_to_download_your_media">Libere %1$s de espaço para restaurar seus arquivos de mídia.</string>
@@ -8075,6 +8142,15 @@
     <!-- Status action label for resume restore from a paused state -->
     <string name="BackupStatus__resume">Continuar</string>
 
+    <!-- Status subtitle for banner when we are creating a backup file -->
+    <string name="BackupStatus__status_creating_backup">Criando backup…</string>
+    <!-- Status title for banner when user is actively uploading backup data -->
+    <string name="BackupStatus__uploading_backup">Carregando backup</string>
+    <!-- Status title for banner when user is temporarily unable to upload a backup -->
+    <string name="BackupStatus__upload_paused">Backup pausado</string>
+    <!-- Status title for banner when user has finished creating a backup -->
+    <string name="BackupStatus__upload_complete">Backup concluído</string>
+
     <!-- Status subtitle for banner when restoring media pauses for Wi-Fi -->
     <string name="BackupStatus__status_waiting_for_wifi">Aguardando rede Wi-Fi…</string>
     <!-- Status subtitle for banner when restoring media pauses for internet in general -->
@@ -8083,6 +8159,10 @@
     <string name="BackupStatus__status_device_has_low_battery">O dispositivo com bateria fraca</string>
     <!-- Status subtitle for banner when restoring media. Placeholders are size already restored and total size to restore. e.g., 4.5MB of 100MB -->
     <string name="BackupStatus__status_size_of_size">%1$s de %2$s</string>
+    <!-- Label for a context menu item that, when pressed, will hide a banner so it will no longer be shown. -->
+    <string name="BackupStatus__hide">Ocultar</string>
+    <!-- Label for a context menu item that, when pressed, will cancel the ongoing backup. -->
+    <string name="BackupStatus__cancel_upload">Cancelar backup</string>
 
     <!-- BackupStatusRow -->
     <!-- Content description for x icon at the end of the linear progress indicator -->
@@ -8124,6 +8204,15 @@
     <string name="ResumeRestoreCellular_resume_using_cellular_title">Continuar usando dados do celular?</string>
     <!-- Dialog message to prompt resuming media restore over cellular -->
     <string name="ResumeRestoreCellular_resume_using_cellular_message">Restaurar sua mídia usando dados do celular pode resultar em cobranças de dados. Conecte-se a uma rede Wi-Fi para reiniciar automaticamente.</string>
+
+    <!-- Title of a dialog box prompting to confirm whether the user truly wants to cancel their backup. -->
+    <string name="CancelBackupDialog_title">Cancelar backup?</string>
+    <!-- Body of a dialog box prompting to confirm whether the user truly wants to cancel their backup. -->
+    <string name="CancelBackupDialog_body">Cancelar o backup não o excluirá. Você pode retomar seu backup a qualquer momento nas Configurações de Backup.</string>
+    <!-- Button on a dialog box that confirming backup cancellation. When pressed, this button will confirm canceling the currently-running backup (future backups are unaffected). -->
+    <string name="CancelBackupDialog_cancel_action">Cancelar backup</string>
+    <!-- Button on a dialog box that confirming backup cancellation. When pressed, this button will continue the backup rather than cancel it. -->
+    <string name="CancelBackupDialog_continue_action">Continuar o backup</string>
 
     <!-- BackupsTypeSettingsFragment -->
     <!-- Displayed as the user\'s payment method as a label in a preference row -->
@@ -8469,6 +8558,37 @@
     <!-- Button label to open storage management screen -->
     <string name="RemoteBackupsSettingsFragment__manage_storage">Gerenciar armazenamento</string>
 
+    <!-- ReadyToTransferBottomSheet -->
+    <!-- Title for a bottom sheet letting people know that they can transfer their back to their new device  -->
+    <string name="RemoteBackupsSettingsFragment__ready_to_transfer">Pronto para transferir</string>
+    <!-- Body for bottom sheet telling the user to scan a QR code to continue transferring their backup to a new device -->
+    <string name="RemoteBackupsSettingsFragment__use_this_device_to_scan_qr">Use este dispositivo para escanear o código QR no dispositivo para o qual deseja transferir. </string>
+    <!-- Button label to open QR scanner to scan a device and transfer a backup -->
+    <string name="RemoteBackupsSettingsFragment__scan_qr_code">Escanear o código QR</string>
+
+    <!-- OnDeviceBackupsImprovementsScreen -->
+    <!-- Title displayed at the top of the screen explaining on-device backup improvements -->
+    <string name="OnDeviceBackupsImprovementsScreen__improvements_to_on_device_backups">Melhorias nos backups no dispositivo</string>
+    <!-- Subtitle describing that the backup will be upgraded to a new format with a new recovery key -->
+    <string name="OnDeviceBackupsImprovementsScreen__your_on_device_backup_will_be_upgraded">Seu backup no dispositivo será atualizado para um novo formato usando uma nova chave de recuperação</string>
+    <!-- Feature description explaining backups are faster and use less data -->
+    <string name="OnDeviceBackupsImprovementsScreen__backups_now_save_faster">Os backups agora são salvos mais rapidamente e usam menos dados</string>
+    <!-- Feature description explaining backups will be saved as a folder with many files -->
+    <string name="OnDeviceBackupsImprovementsScreen__your_backup_will_be_saved_as_a_folder">Seu backup será salvo como uma pasta contendo vários arquivos</string>
+    <!-- Feature description explaining backups remain end-to-end encrypted -->
+    <string name="OnDeviceBackupsImprovementsScreen__all_backups_remain_end_to_end_encrypted">Todos os backups são criptografados de ponta a ponta</string>
+    <!-- Button text to continue to the next step -->
+    <string name="OnDeviceBackupsImprovementsScreen__continue">Continuar</string>
+
+    <!-- OnDeviceBackupsSettingsScreen -->
+    <!-- Card text prompting user to update to a new recovery key for faster backups -->
+    <string name="OnDeviceBackupsSettingsScreen__update_to_a_new_recovery_key">Atualize para uma nova chave de recuperação para backups mais rápidos</string>
+    <!-- Button text to update to a new recovery key -->
+    <string name="OnDeviceBackupsSettingsScreen__update">Atualizar</string>
+
+    <!-- UnifiedOnDeviceBackupsSettingsScreen -->
+    <string name="UnifiedOnDeviceBackupsSettingsScreen__view_backup_key">Ver chave de backup</string>
+
     <!-- DownloadYourBackupTodayDialog -->
     <!-- Dialog title -->
     <string name="DownloadYourBackupTodayDialog__download_your_backup_today">Baixe seus dados de backup hoje</string>
@@ -8522,12 +8642,32 @@
     <!-- MessageBackupsKeyEducationScreen -->
     <!-- Screen headline -->
     <string name="MessageBackupsKeyEducationScreen__your_backup_key">Chave de recuperação</string>
+    <!-- Screen headline shown when upgrading on-device backups to a new recovery key. -->
+    <string name="MessageBackupsKeyEducationScreen__your_new_recovery_key">Sua nova chave de recuperação</string>
+    <!-- Screen headline shown when the user already has an on-device recovery key set. -->
+    <string name="MessageBackupsKeyEducationScreen__your_recovery_key">Sua chave de recuperação</string>
     <!-- Screen body part 1 -->
     <string name="MessageBackupsKeyEducationScreen__your_backup_key_is_a">Sua chave de recuperação é um código de 64 caracteres que você precisará para restaurar seu backup.</string>
     <!-- Screen body part 2 -->
     <string name="MessageBackupsKeyEducationScreen__store_your_recovery">Guarde sua chave de recuperação em algum lugar seguro, como um gerenciador de senhas, e não a compartilhe com ninguém.</string>
     <!-- Screen body part 3 -->
     <string name="MessageBackupsKeyEducationScreen__if_you_lose_it">Se você perder a chave, não poderá recuperar suas mensagens.</string>
+    <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 1). -->
+    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description">Your recovery key is a 64-character code that lets you restore all backup types.</string>
+    <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 2, bolded). -->
+    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description_bold">Esta chave substituirá a chave do seu backup no dispositivo.</string>
+    <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 1). -->
+    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description">Your backup key is a 64-character code that lets you restore your backups when you re-install Signal.</string>
+    <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 2, bolded). -->
+    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description_bold">Essa é a mesma chave de backup que você tem no dispositivo.</string>
+    <!-- Label shown above a list of actions that the recovery key can be used for. -->
+    <string name="MessageBackupsKeyEducationScreen__use_this_key_to">Use esta chave para:</string>
+    <!-- Row label indicating that the recovery key can be used to restore an on-device backup. -->
+    <string name="MessageBackupsKeyEducationScreen__restore_on_device_backup">Restaure o backup do seu dispositivo</string>
+    <!-- Row label indicating that the recovery key can be used to restore a Signal Secure Backup. -->
+    <string name="MessageBackupsKeyEducationScreen__restore_a_signal_secure_backup">Restaurar um backup seguro do Signal</string>
+    <!-- Row label indicating that the recovery key can be used to restore a Signal Secure Backup. -->
+    <string name="MessageBackupsKeyEducationScreen__restore_your_signal_secure_backup">Restaurar backups seguros do Signal</string>
     <!-- Action button label -->
     <string name="MessageBackupsKeyEducationScreen__view_recovery_key">Ver chave de recuperação</string>
 
@@ -8536,6 +8676,8 @@
     <string name="MessageBackupsKeyRecordScreen__record_your_backup_key">Grave sua chave de recuperação</string>
     <!-- Screen subhead -->
     <string name="MessageBackupsKeyRecordScreen__this_key_is_required_to_recover">Essa chave é necessária para restaurar sua conta e seus dados. Certifique-se de guardá-la em um local seguro. Sem essa chave, não será possível recuperar sua conta. </string>
+    <!-- Screen subhead shown when the recovery key is shared between Signal Secure Backups and on-device backups. -->
+    <string name="MessageBackupsKeyRecordScreen__this_key_is_the_same_as_your_on_device_backup_key">Essa é a mesma chave de backup que você tem no dispositivo. Essa chave é necessária para restaurar sua conta e seus dados.</string>
     <!-- Copy to clipboard button label -->
     <string name="MessageBackupsKeyRecordScreen__copy_to_clipboard">Copiar para a área de transferência</string>
     <!-- Label for the button to save a recovery key to the device password manager. -->
@@ -8826,6 +8968,19 @@
     <!-- Old device Transfer account bottom sheet dialog body -->
     <string name="TransferAccount_continue_on_your_other_device_details">Continue transferindo sua conta em outro dispositivo.</string>
 
+    <!-- Prepare Device screen title for quick restore flow -->
+    <string name="PrepareDevice_title">Preparando seu dispositivo</string>
+    <!-- Prepare Device screen body text explaining backup recommendation -->
+    <string name="PrepareDevice_body">Faça um backup agora antes de transferir. Você pode ter recebido mensagens que ainda não foram copiadas para o backup.</string>
+    <!-- Prepare Device screen last backup text format, %1$s is the date and %2$s is the time -->
+    <string name="PrepareDevice_last_backup">Seu último backup foi feito em %1$s à(s) %2$s.</string>
+    <!-- Prepare Device screen back up now button -->
+    <string name="PrepareDevice_back_up_now">Fazer backup agora</string>
+    <!-- Prepare Device screen skip and continue button -->
+    <string name="PrepareDevice_skip_and_continue">Pular e continuar</string>
+    <!-- A string describing the last time the user\'s backup was made. The placeholder represents a date-time. An example would be "Your last backup was made on July 18, 2025 at 9:00am." -->
+    <string name="PrepareDevice_last_backup_description">Seu último backup foi feito em %1$s. </string>
+
     <!-- Restore Complete bottom sheet dialog title -->
     <string name="RestoreCompleteBottomSheet_restore_complete">Concluir no seu outro dispositivo</string>
     <!-- Restore Complete bottom sheet dialog message -->
@@ -9038,15 +9193,15 @@
     <!-- Title asking user to help improve Signal -->
     <string name="CallQualitySheet__help_us_improve">Ajude-nos a melhorar</string>
     <!-- First part of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_prefix">Submitting will share your feedback along with</string>
+    <string name="CallQualitySheet__help_us_improve_description_prefix">Ao enviar, você compartilhará seu feedback juntamente com</string>
     <!-- Clickable text to launch diagnostic fragment -->
-    <string name="CallQualitySheet__diagnostic_information_about_your_call">diagnostic information about your call</string>
+    <string name="CallQualitySheet__diagnostic_information_about_your_call">as informações de diagnóstico sobre sua chamada</string>
     <!-- End of description explaining diagnostics help improve call quality -->
-    <string name="CallQualitySheet__help_us_improve_description_suffix">You can optionally share a debug log to help us improve call quality.</string>
+    <string name="CallQualitySheet__help_us_improve_description_suffix">Você pode compartilhar, se quiser, um registro de depuração para nos ajudar a melhorar a qualidade da chamada. </string>
     <!-- Text explaining the debug log -->
-    <string name="CallQualitySheet__information_shared_with_us">Information shared with us contains low level app information and does not include the contents of your calls.</string>
+    <string name="CallQualitySheet__information_shared_with_us">As informações compartilhadas conosco contêm informações básicas do aplicativo e não incluem o conteúdo de suas chamadas.</string>
     <!-- Link text to view debug log -->
-    <string name="CallQualitySheet__view_debug_log">View debug log</string>
+    <string name="CallQualitySheet__view_debug_log">Ver registro de depuração</string>
     <!-- Toggle label for sharing debug log -->
     <string name="CallQualitySheet__share_debug_log">Compartilhar registro de depuração</string>
     <!-- Privacy notice explaining what debug logs contain and why they are helpful -->
@@ -9116,6 +9271,22 @@
     <string name="PinnedMessage__couldnt_unpin_all">Não foi possível desafixar mensagens</string>
     <!-- Dialog body when failing to pin a message -->
     <string name="PinnedMessage__check_connection">Verifique a sua conexão e tente novamente.</string>
+
+    <!-- Group member label screen title. -->
+    <string name="GroupMemberLabel__title">Rótulo de membro</string>
+    <!-- Group member label text field placeholder. -->
+    <string name="GroupMemberLabel__label_text_placeholder">Adicione sua função</string>
+    <!-- Group member label preview section header. -->
+    <string name="GroupMemberLabel__preview_section_header">Pré-visualização</string>
+    <!-- Group member label save button label. -->
+    <string name="GroupMemberLabel__save">Salvar</string>
+    <!-- Accessibility label for the button to open the group member label emoji picker. -->
+    <string name="GroupMemberLabel__accessibility_select_emoji">Selecione o emoji</string>
+    <!-- Accessibility label for the group member label close screen button. -->
+    <string name="GroupMemberLabel__accessibility_close_screen">Fechar tela</string>
+    <!-- Accessibility label for the group member label text field clear button. -->
+    <string name="GroupMemberLabel__accessibility_clear_label">Limpar rótulo</string>
+    <string name="GroupMemberLabel__description">Add a member label to describe yourself or your role in this group. Labels are only visible within this group.</string>
 
     <!-- EOF -->
 </resources>

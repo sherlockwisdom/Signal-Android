@@ -52,18 +52,19 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.launch
 import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.ComposeDialogFragment
 import org.signal.core.ui.compose.DayNightPreviews
 import org.signal.core.ui.compose.Dividers
 import org.signal.core.ui.compose.Previews
 import org.signal.core.ui.compose.Rows
 import org.signal.core.ui.compose.Scaffolds
+import org.signal.core.ui.compose.SignalIcons
 import org.signal.core.ui.compose.copied.androidx.compose.DragAndDropEvent
 import org.signal.core.ui.compose.copied.androidx.compose.DraggableItem
 import org.signal.core.ui.compose.copied.androidx.compose.dragContainer
 import org.signal.core.ui.compose.copied.androidx.compose.rememberDragDropState
 import org.signal.core.util.logging.Log
 import org.thoughtcrime.securesms.R
-import org.thoughtcrime.securesms.compose.ComposeDialogFragment
 import org.thoughtcrime.securesms.polls.Poll
 import org.thoughtcrime.securesms.util.RemoteConfig
 import org.thoughtcrime.securesms.util.ViewUtil
@@ -107,7 +108,7 @@ class CreatePollFragment : ComposeDialogFragment() {
       onNavigationClick = {
         dismissAllowingStateLoss()
       },
-      navigationIcon = ImageVector.vectorResource(R.drawable.symbol_x_24),
+      navigationIcon = SignalIcons.X.imageVector,
       navigationContentDescription = stringResource(R.string.Material3SearchToolbar__close)
     ) { paddingValues ->
       CreatePollScreen(

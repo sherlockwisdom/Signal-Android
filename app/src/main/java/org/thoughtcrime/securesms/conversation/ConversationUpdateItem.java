@@ -54,8 +54,8 @@ import org.thoughtcrime.securesms.util.MessageRecordUtil;
 import org.thoughtcrime.securesms.util.Projection;
 import org.thoughtcrime.securesms.util.ProjectionList;
 import org.thoughtcrime.securesms.util.SpanUtil;
-import org.thoughtcrime.securesms.util.ThemeUtil;
-import org.thoughtcrime.securesms.util.Util;
+import org.signal.core.ui.util.ThemeUtil;
+import org.signal.core.util.Util;
 import org.thoughtcrime.securesms.util.CommunicationActions;
 import org.thoughtcrime.securesms.util.ViewUtil;
 import org.thoughtcrime.securesms.util.livedata.LiveDataUtil;
@@ -796,8 +796,8 @@ public final class ConversationUpdateItem extends FrameLayout
 
   private void presentActionButton(boolean hasWallpaper, boolean isBoostRequest) {
     if (isBoostRequest) {
-      actionButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.signal_colorSecondaryContainer)));
-      actionButton.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(getContext(), R.color.signal_colorOnSecondaryContainer)));
+      actionButton.setBackgroundTintList(ColorStateList.valueOf(ContextCompat.getColor(getContext(), org.signal.core.ui.R.color.signal_colorSecondaryContainer)));
+      actionButton.setTextColor(ColorStateList.valueOf(ContextCompat.getColor(getContext(), org.signal.core.ui.R.color.signal_colorOnSecondaryContainer)));
     } else if (hasWallpaper) {
       actionButton.setBackgroundTintList(AppCompatResources.getColorStateList(getContext(), R.color.conversation_update_item_button_background_wallpaper));
       actionButton.setTextColor(AppCompatResources.getColorStateList(getContext(), R.color.conversation_update_item_button_text_color_wallpaper));
