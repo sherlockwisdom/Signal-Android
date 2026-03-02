@@ -5,6 +5,7 @@
 
 package org.signal.registration.screens.phonenumber
 
+import org.signal.registration.NetworkController
 import org.signal.registration.NetworkController.SessionMetadata
 import org.signal.registration.PreExistingRegistrationData
 import kotlin.time.Duration
@@ -12,13 +13,16 @@ import kotlin.time.Duration
 data class PhoneNumberEntryState(
   val regionCode: String = "US",
   val countryCode: String = "1",
+  val countryName: String = "United States",
+  val countryEmoji: String = "\uD83C\uDDFA\uD83C\uDDF8",
   val nationalNumber: String = "",
   val formattedNumber: String = "",
   val sessionE164: String? = null,
   val sessionMetadata: SessionMetadata? = null,
-  val showFullScreenSpinner: Boolean = false,
+  val showSpinner: Boolean = false,
   val oneTimeEvent: OneTimeEvent? = null,
-  val preExistingRegistrationData: PreExistingRegistrationData? = null
+  val preExistingRegistrationData: PreExistingRegistrationData? = null,
+  val restoredSvrCredentials: List<NetworkController.SvrCredentials> = emptyList()
 ) {
   sealed interface OneTimeEvent {
     data object NetworkError : OneTimeEvent

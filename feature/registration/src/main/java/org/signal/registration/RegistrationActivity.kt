@@ -6,7 +6,6 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContract
-import androidx.activity.viewModels
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
@@ -23,6 +22,7 @@ class RegistrationActivity : ComponentActivity() {
 
   private val repository: RegistrationRepository by lazy {
     RegistrationRepository(
+      context = this.application,
       networkController = RegistrationDependencies.get().networkController,
       storageController = RegistrationDependencies.get().storageController
     )

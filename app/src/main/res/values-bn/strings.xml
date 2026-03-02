@@ -328,7 +328,7 @@
     <!-- Accessibility label for the send button in media selection -->
     <string name="CameraXFragment_send">পাঠান</string>
 
-<!-- CameraContacts -->
+    <!-- CameraContacts -->
     <string name="CameraContacts_recent_contacts">সাম্প্রতিক যোগাযোগ</string>
     <string name="CameraContacts_signal_contacts">Signal পরিচিতিসমূহ</string>
     <string name="CameraContacts_signal_groups">Signal গ্রুপসমূহ</string>
@@ -448,8 +448,14 @@
     <!-- Footer shown at the end of long body messages to download more of it -->
     <string name="ConversationItem_download_more"> আরো ডাউনলোড করুন</string>
     <string name="ConversationItem_pending"> মুলতুবী</string>
-    <string name="ConversationItem_this_message_was_deleted">এই বার্তাটি মুছে ফেলা হয়েছে।</string>
-    <string name="ConversationItem_you_deleted_this_message">আপনি এই বার্তাটি মুছে ফেলেছেন।</string>
+    <string name="ConversationItem_this_message_was_deleted">This message was deleted</string>
+    <!-- Conversation message shown when someone deletes their own message. Placeholder is the name of the person. -->
+    <string name="ConversationItem_s_deleted_this_message">%1$s deleted this message</string>
+    <string name="ConversationItem_you_deleted_this_message">You deleted this message</string>
+    <!-- First part of a conversation message when a message has been deleted by an admin. -->
+    <string name="ConversationItem_admin">প্রশাসক</string>
+    <!-- Second part of a conversation message when a message has been deleted by an admin. -->
+    <string name="ConversationItem_deleted_this_message">deleted this message</string>
     <!-- Dialog error message shown when user can\'t download a message from someone else due to a permanent failure (e.g., unable to decrypt), placeholder is other\'s name -->
     <string name="ConversationItem_cant_download_message_s_will_need_to_send_it_again">মেসেজ ডাউনলোড করা যাচ্ছে না। %1$s-কে এটি আবার পাঠাতে হবে।</string>
     <!-- Dialog error message shown when user can\'t download an image message from someone else due to a permanent failure (e.g., unable to decrypt), placeholder is other\'s name -->
@@ -616,6 +622,20 @@
     <string name="ConversationFragment_deleting_messages">বার্তা সমূহ মোছা হচ্ছে…</string>
     <string name="ConversationFragment_delete_for_me">আমার জন্য মুছে ফেলুন</string>
     <string name="ConversationFragment_delete_for_everyone">প্রত্যেকের জন্য মুছে ফেলুন</string>
+    <!-- Title of dialog confirming whether to delete the message -->
+    <plurals name="ConversationFragment_delete_selected_title">
+        <item quantity="one">নির্বাচিত বার্তাটি মুছে ফেলবেন?</item>
+        <item quantity="other">নির্বাচিত বার্তাগুলো মুছে ফেলবেন?</item>
+    </plurals>
+    <!-- Body of dialog confirming whether to delete the message -->
+    <plurals name="ConversationFragment_delete_selected_body">
+        <item quantity="one">আপনি কার জন্য ম্যাসেজটি মুছে ফেলতে চান?</item>
+        <item quantity="other">আপনি কার জন্য ম্যাসেজগুলো মুছে ফেলতে চান?</item>
+    </plurals>
+    <!-- Confirmation button to delete the message -->
+    <string name="ConversationFragment_delete_for_everyone_title">Delete for everyone?</string>
+    <!-- Body of dialog explaining what happens during deletion -->
+    <string name="ConversationFragment_delete_for_everyone_body">As an admin, group members will see that you deleted these messages.</string>
     <!-- Dialog button for deleting one or more note-to-self messages only on this device, leaving that same message intact on other devices. -->
     <string name="ConversationFragment_delete_on_this_device">এই ডিভাইস থেকে মুছে ফেলুন</string>
     <!-- Dialog button for deleting one or more note-to-self messages that will be sync\'d to other devices -->
@@ -2578,6 +2598,8 @@
     <string name="WebRtcCallView__s_remotely_muted_s">%1$s %2$s-কে মিউট করেছেন।</string>
     <!-- Alert message indicating that the local user joined a call on a second device and muted this one from the other one. -->
     <string name="WebRtcCallView__you_muted_yourself">আপনি অন্য একটি ডিভাইস থেকে নিজেকে মিউট করে রেখেছেন।</string>
+    <!-- Toast message shown when user is auto-muted because they are joining a large group call. -->
+    <string name="WebRtcCallView__youve_been_muted_large_group">এই কলে অনেক অংশগ্রহণকারী থাকার কারণে আপনাকে মিউট করা হয়েছে।</string>
 
     <!-- Error message when the developer added a button in the wrong place. -->
     <string name="WebRtcAudioOutputToggleButton_fragment_activity_error">একটি UI ত্রুটি দেখা দিয়েছে। অনুগ্রহ করে ডেভেলপারদের কাছে এই ত্রুটির ব্যাপারে রিপোর্ট করুন।</string>
@@ -2678,6 +2700,8 @@
     <string name="AboutSheet__you">আপনি</string>
     <!-- Displays the name of a contact. The first placeholder is the name the user has assigned to that contact, the second name is the name the contact assigned to themselves -->
     <string name="AboutSheet__user_set_display_name_and_profile_name">%1$s (%2$s)</string>
+    <!-- Placeholder text in the group member label row when the user has no label set. -->
+    <string name="AboutSheet__add_group_member_label">একটি সদস্য লেবেল যোগ করুন</string>
 
     <!-- Title of the screen showing which groups they have in common with another user. -->
     <plurals name="GroupsInCommon__n_groups_in_common_title">
@@ -2765,8 +2789,6 @@
     <string name="RegistrationActivity_i_understand">আমি বুঝতে পেরেছি</string>
     <string name="RegistrationActivity_play_services_error">প্লে সার্ভিস সমস্যা</string>
     <string name="RegistrationActivity_google_play_services_is_updating_or_unavailable">গুগল প্লে পরিষেবাদি আপডেট করছে বা অস্থায়ীভাবে অনুপলব্ধ। অনুগ্রহপূর্বক আবার চেষ্টা করুন।</string>
-    <!-- Non-English translations should use "Signal is a nonprofit" instead, dropping the 501c3 reference. -->
-    <string name="RegistrationActivity_terms_and_privacy">Signal একটি অলাভজনক প্রতিষ্ঠান\nশর্তাবলী এবং গোপনীয়তার নীতিমালা</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_and_media_in_order_to_connect_with_friends">আপনাকে বন্ধুদের সাথে সংযোগ করতে এবং বার্তা পাঠাতে সাহায্য করার জন্য সিগন্যালের পরিচিতি এবং মিডিয়ার অনুমতির প্রয়োজন হয়। আপনার পরিচিতিগুলি সিগন্যালের ব্যক্তিগত পরিচিতি আবিষ্কার ব্যবহার করে আপলোড করা হয়, যার মানে সেগুলি এন্ড-টু-এন্ড এনক্রিপ্ট করা এবং সিগন্যাল পরিষেবাতে কখনই দৃশ্যমান নয়৷</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_in_order_to_connect_with_friends">আপনাকে বন্ধুদের সাথে সংযোগ করতে সাহায্য করার জন্য সিগন্যালের পরিচিতির অনুমতির প্রয়োজন হয়। আপনার পরিচিতিগুলি সিগন্যালের ব্যক্তিগত পরিচিতি আবিষ্কার ব্যবহার করে আপলোড করা হয়, যার মানে সেগুলি এন্ড-টু-এন্ড এনক্রিপ্ট করা এবং সিগন্যাল পরিষেবাতে কখনই দৃশ্যমান নয়।</string>
     <string name="RegistrationActivity_rate_limited_to_service">আপনি এই নম্বরটি নিবন্ধন করার জন্য অনেকবার চেষ্টা করেছেন। দয়া করে পরে আবার চেষ্টা করুন।</string>
@@ -2799,8 +2821,6 @@
     <!-- Dialog button to cancel the pending action and return to the previous state. -->
     <string name="RegistrationActivity_cancel">বাতিল করুন</string>
     <string name="RegistrationActivity_next">পরবর্তী</string>
-    <string name="RegistrationActivity_continue">চলতে থাকুন</string>
-    <string name="RegistrationActivity_take_privacy_with_you_be_yourself_in_every_message">আপনার গোপনীয়তা বজায় রাখুন।\n প্রতিটি বার্তায় নিজস্ব থাকুন।</string>
     <!-- Title of registration screen when asking for the users phone number -->
     <string name="RegistrationActivity_phone_number">ফোন নম্বর</string>
     <!-- Subtitle of registration screen when asking for the users phone number -->
@@ -3031,8 +3051,14 @@
     <string name="ThreadRecord_view_once_photo">একবার দেখার যোগ্য ছবি</string>
     <string name="ThreadRecord_view_once_video">একবার দেখার যোগ্য ভিডিও</string>
     <string name="ThreadRecord_view_once_media">একবার দেখা যাবে এমন মিডিয়া</string>
-    <string name="ThreadRecord_this_message_was_deleted">এই বার্তাটি মুছে ফেলা হয়েছে।</string>
-    <string name="ThreadRecord_you_deleted_this_message">আপনি এই বার্তাটি মুছে ফেলেছেন।</string>
+    <!-- Thread preview when someone has deleted their own message -->
+    <string name="ThreadRecord_this_message_was_deleted">This message was deleted</string>
+    <!-- Thread preview when someone has deleted their own message. Placeholder is the name of the person. -->
+    <string name="ThreadRecord_s_deleted_this_message">%1$s deleted this message</string>
+    <!-- Thread preview when you deleted a message -->
+    <string name="ThreadRecord_you_deleted_this_message">You deleted this message</string>
+    <!-- Thread preview when an admin has deleted a message -->
+    <string name="ThreadRecord_admin_deleted_this_message">Admin %1$s deleted this message</string>
     <!-- Displayed in the notification when the user sends a request to activate payments -->
     <string name="ThreadRecord_you_sent_request">পেমেন্ট সক্রিয় করার জন্য আপনি একটি অনুরোধ পাঠিয়েছেন</string>
     <!-- Displayed in the notification when the recipient wants to activate payments -->
@@ -3181,7 +3207,22 @@
     <string name="MessageDisplayHelper_message_encrypted_for_non_existing_session">অ-বিদ্যমান সেশনের জন্য বার্তা এনক্রিপ্ট করা হয়েছে</string>
 
     <!-- MuteDialog -->
+    <!-- Title for a dialog where a user chooses how long they\'d like to mute notifications for -->
     <string name="MuteDialog_mute_notifications">নোটিফিকেশন মিউট করুন</string>
+    <!-- Dialog option that, when pressed, will open a time picker to let the user choose how long they\'d like to mute notifications for -->
+    <string name="MuteDialog__mute_until">Mute until…</string>
+
+    <!-- MuteUntilTimePickerBottomSheet -->
+    <!-- Title for a dialog where a user chooses how long they\'d like to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__dialog_title">Mute notifications until…</string>
+    <!-- Label for a data selector where the user chooses how long they\'d like to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__select_date_title">তারিখ নির্বাচন করুন</string>
+    <!-- Label for a time selector where the user chooses how long they\'d like to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__select_time_title">সময় নির্বাচন করুন</string>
+    <!-- Label for a button that, when pressed, will confirm the user\'s choice on how long to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__mute_notifications">নোটিফিকেশন মিউট করুন</string>
+    <!-- Subtitle in a dialog that describes the timezone the user is picking times in. The first placeholder is a UTC offset, and the second placeholder is a user-friendly name for the timezone, e.g. "All times in (GMT-05:00) Eastern Standard Time" -->
+    <string name="MuteUntilTimePickerBottomSheet__timezone_disclaimer">সব সময় (%1$s) %2$s</string>
 
     <!-- KeyCachingService -->
     <string name="KeyCachingService_signal_passphrase_cached">খোলার জন্য স্পর্শ করুন।</string>
@@ -3859,13 +3900,13 @@
     <string name="EncryptionVerifiedSheet__body_unavailable">Signal কেবলমাত্র সেইসব চ্যাটের এনক্রিপশন স্বয়ংক্রিয়ভাবে যাচাই করতে পারে যাদের সাথে আপনি ফোন নম্বরের মাধ্যমে সংযুক্ত আছেন। যদি চ্যাটটি একটি ব্যবহারকারীর নাম বা একটি সাধারণ গ্ৰুপ দিয়ে শুরু হয়ে থাকে, তাহলে আগের স্ক্রিনে থাকা নম্বর তুলনা করে বা তাদের ডিভাইসে কোড স্ক্যান করে এন্ড-টু-এন্ড এনক্রিপশন যাচাই করুন।</string>
 
     <!-- Title for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__title">Signal can now auto-verify encryption</string>
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal এখন এনক্রিপশন স্বয়ংক্রিয়ভাবে যাচাই করতে পারে</string>
     <!-- Body for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__body">For contacts you’re connected to by phone number, Signal can automatically confirm whether the connection is secure using a process called key transparency. For added security, you can still verify connections manually using a QR code or safety number.</string>
+    <string name="VerifyAutomaticallyEducationSheet__body">ফোন নম্বরের মাধ্যমে আপনি যেসব কন্টাক্টের সাথে সংযুক্ত আছেন, তাদের জন্য Signal স্বয়ংক্রিয়ভাবে \'কি\' ট্রান্সপারেন্সি নামক একটি প্রক্রিয়া ব্যবহার করে সংযোগটি সুরক্ষিত কিনা তা নিশ্চিত করতে পারে। বাড়তি নিরাপত্তার জন্য, আপনি এখনো একটি QR কোড বা নিরাপত্তা নম্বর ব্যবহার করে সংযোগগুলো ম্যানুয়ালি যাচাই করতে পারবেন।</string>
     <!-- Button to learn more about automatic verification -->
     <string name="VerifyAutomaticallyEducationSheet__learn_more">আরো জানুন</string>
     <!-- Button to go to verification page -->
-    <string name="VerifyAutomaticallyEducationSheet__continue">Continue</string>
+    <string name="VerifyAutomaticallyEducationSheet__continue">চলুন</string>
 
     <!-- Title for bottom sheet when self verification fails -->
     <string name="SelfVerificationFailureSheet__title">আপনার ডিভাইসের জন্য বর্তমানে স্বয়ংক্রিয় \'কি\' যাচাইকরণ পাওয়া যাচ্ছে না। ডিবাগ লগ জমা দেবেন?</string>
@@ -4336,32 +4377,6 @@
     <!-- Alert dialog button to update now -->
     <string name="PaymentsHomeFragment__update_now">আপডেট করুন</string>
 
-    <!-- GrantPermissionsFragment -->
-    <!-- Displayed as a text-only action button at the bottom start of the screen -->
-    <string name="GrantPermissionsFragment__not_now">এখন না</string>
-    <!-- Displayed as an action button at the bottom end of the screen -->
-    <string name="GrantPermissionsFragment__next">পরবর্তী</string>
-    <!-- Displayed as a title at the top of the screen -->
-    <string name="GrantPermissionsFragment__allow_permissions">অনুমতি দিন</string>
-    <!-- Displayed as a subtitle at the top of the screen -->
-    <string name="GrantPermissionsFragment__to_help_you_message_people_you_know">আপনার পরিচিত ব্যক্তিদের মেসেজ করতে সাহায্য করার জন্য, Signal এই অনুমতিগুলোর জন্য অনুরোধ করবে। </string>
-    <!-- Notifications permission row title -->
-    <string name="GrantPermissionsFragment__notifications">নোটিফিকেশন</string>
-    <!-- Notifications permission row description -->
-    <string name="GrantPermissionsFragment__get_notified_when">নতুন মেসেজ এলে নোটিফিকেশন পান।</string>
-    <!-- Contacts permission row title -->
-    <string name="GrantPermissionsFragment__contacts">পরিচিতিসমূহ</string>
-    <!-- Contacts permission row description -->
-    <string name="GrantPermissionsFragment__find_people_you_know">আপনার পরিচিত ব্যক্তিদের খুঁজে বের করুন। আপনার কন্টাক্টগুলো এনক্রিপ্ট অবস্থায় আছে এবং সেগুলো সিগন্যাল সার্ভিসে দৃশ্যমান নয়।</string>
-    <!-- Phone calls permission row title -->
-    <string name="GrantPermissionsFragment__phone_calls">ফোন কল</string>
-    <!-- Phone calls permission row description -->
-    <string name="GrantPermissionsFragment__make_registering_easier">নিবন্ধন সহজ করুন এবং কল করার কিছু বাড়তি ফিচার সক্রিয় করুন।</string>
-    <!-- Storage permission row title -->
-    <string name="GrantPermissionsFragment__storage">স্টোরেজ</string>
-    <!-- Storage permission row description -->
-    <string name="GrantPermissionsFragment__send_photos_videos_and_files">আপনার ডিভাইস থেকে ছবি, ভিডিও ও ফাইল পাঠান।</string>
-
 
     <!-- PaymentsSecuritySetupFragment -->
     <!-- Toolbar title -->
@@ -4823,8 +4838,6 @@
     <string name="backup_enable_dialog__i_have_written_down_this_passphrase">আমি এই পাসফ্রেজ লিখে রেখেছি। এটি ছাড়া, আমি একটি ব্যাকঅাপ পুনরুদ্ধার করতে পারব না।</string>
     <string name="registration_activity__restore_backup">ব্যাকঅাপ পুনরুদ্ধার</string>
     <string name="registration_activity__transfer_or_restore_account">অ্যাকাউন্ট স্থানান্তর করুন বা পুনরুদ্ধার করুন</string>
-    <!-- Screen title for restoring or transfering account -->
-    <string name="registration_activity__restore_or_transfer">পুনর্বহাল বা ট্রান্সফার করুন</string>
     <string name="registration_activity__transfer_account">অ্যাকাউন্ট স্থানান্তর করুন</string>
     <string name="registration_activity__skip">বাদ দিয়ে যান</string>
     <!-- Text label button to skip restoring -->
@@ -4937,13 +4950,6 @@
     <string name="RegistrationActivity_you_have_made_too_many_attempts_please_try_again_later">আপনি অনেক বেশী প্রচেষ্টা চালিয়েছেন। দয়াকরে পরবর্তীতে আবার চেষ্টা করুন।</string>
     <string name="RegistrationActivity_error_connecting_to_service">পরিষেবাতে সংযোগ করার সময় ত্রুটি</string>
     <string name="preferences_chats__backups">ব্যাকআপ সমূহ</string>
-
-    <!-- Button label to indicate that a feature is in beta mode -->
-    <string name="Beta__beta_title">বিটা</string>
-    <!-- Content description for info icon -->
-    <string name="Beta__info">তথ্য</string>
-    <!-- Text in header describing that the feature is a beta feature and prone to frequent changes -->
-    <string name="Beta__this_is_beta">এটি একটি বিটা ফিচার এবং সময়ের সাথে সাথে এটি উন্নত করা হবে।</string>
 
     <!-- Title text shown when Signal is locked and needs to be unlocked -->
     <string name="prompt_passphrase_activity__unlock_signal">Signal আনলক করুন</string>
@@ -5170,6 +5176,8 @@
     <!-- Button text to approve a user that has requested to join a group -->
     <string name="GroupRecipientListItem_approve_description">অনুমোদন</string>
     <string name="GroupRecipientListItem_deny_description">প্রত্যাখ্যান</string>
+    <!-- Placeholder shown in the group member list when the user has not yet set a member label. -->
+    <string name="GroupRecipientListItem__add_member_label">সদস্য লেবেল যোগ করুন</string>
 
 
     <!-- GroupsLearnMoreBottomSheetDialogFragment -->
@@ -7384,8 +7392,8 @@
     <string name="BankTransferDetailsFragment__iban_country_code_is_not_supported">IBAN কান্ট্রি কোডটি সমর্থিত নয়</string>
     <!-- Error label for IBAN field when number is invalid -->
     <string name="BankTransferDetailsFragment__invalid_iban">অকার্যকর IBAN</string>
-    <!-- Error label for name field when name is not at least two characters long -->
-    <string name="BankTransferDetailsFragment__minimum_2_characters">অন্তত 2 ক্যারেক্টার</string>
+    <!-- Error label for name field when name is not at least three characters long (Stripe API enforced minimum) -->
+    <string name="BankTransferDetailsFragment__minimum_3_characters">Minimum 3 characters</string>
     <!-- Error label for email field when email is not valid -->
     <string name="BankTransferDetailsFragment__invalid_email_address">অকার্যকর ইমেইল ঠিকানা</string>
 
@@ -7878,8 +7886,6 @@
 
     <!-- Title of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups -->
     <string name="TurnOnSignalBackups__title">Signal নিরাপদ ব্যাকআপ সচল করুন</string>
-    <!-- Title of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups. Special string for the beta period. -->
-    <string name="TurnOnSignalBackups__title_beta">Signal নিরাপদ ব্যাকআপ ব্যবহার করে দেখুন</string>
     <!-- Body of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups -->
     <string name="TurnOnSignalBackups__body">আপনি যখন একটি নতুন ফোন পাবেন বা Signal পুনরায় ইনস্টল করবেন তখন আর কোনো মেসেজ মিস করবেন না।</string>
     <!-- Button of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups that will take the user to the flow to enable backups -->
@@ -8653,11 +8659,11 @@
     <!-- Screen body part 3 -->
     <string name="MessageBackupsKeyEducationScreen__if_you_lose_it">এটি হারিয়ে ফেললে, আপনি আপনার মেসেজ পুনরুদ্ধার করতে পারবেন না।</string>
     <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 1). -->
-    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description">Your recovery key is a 64-character code that lets you restore all backup types.</string>
+    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description">আপনার পুনরুদ্ধার \'কি\' হলো একটি 64-ক্যারেক্টারের কোড যা আপনাকে সব ধরনের ব্যাকআপ পুনর্বহাল করতে সাহায্য করে।</string>
     <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 2, bolded). -->
     <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description_bold">এই \'কি\'-টি আপনার ডিভাইসের ব্যাকআপের \'কি\'-টিকে প্রতিস্থাপন করবে।</string>
     <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 1). -->
-    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description">Your backup key is a 64-character code that lets you restore your backups when you re-install Signal.</string>
+    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description">আপনার ব্যাকআপ \'কি\' একটি 64-ক্যারেক্টারের কোড যা আপনাকে Signal পুনরায় ইনস্টল করার সময় আপনার ব্যাকআপ পুনর্বহাল করতে সাহায্য করে।</string>
     <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 2, bolded). -->
     <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description_bold">এটি আপনার ডিভাইসের ব্যাকআপ \'কি\'-এর মতোই।</string>
     <!-- Label shown above a list of actions that the recovery key can be used for. -->
@@ -8841,11 +8847,13 @@
     <!-- Screen subtitle for selecting which restore method to use during registration -->
     <string name="SelectRestoreMethodFragment__get_your_signal_account">এই ডিভাইসে আপনার Signal অ্যাকাউন্ট এবং মেসেজের ইতিহাস নিন।</string>
     <!-- Option title for restoring via signal secure backups -->
-    <string name="SelectRestoreMethodFragment__from_signal_backups">Signal নিরাপদ ব্যাকআপ থেকে</string>
+    <string name="SelectRestoreMethodFragment__restore_signal_backup">Signal ব্যাকআপ পুনর্বহাল করুন</string>
     <!-- Option subtitle for restoring via signal secure backups -->
-    <string name="SelectRestoreMethodFragment__your_free_or_paid_signal_backup_plan">ফ্রি বা পেমেন্টের ভিত্তিতে থাকা ব্যাকআপ প্ল্যান</string>
-    <!-- Option title for restoring via a local backup folder -->
-    <string name="SelectRestoreMethodFragment__from_a_backup_folder">একটি ব্যাকআপ ফোল্ডার থেকে</string>
+    <string name="SelectRestoreMethodFragment__restore_your_text_messages_and_media_from">Restore your text messages and media from your Signal backup plan.</string>
+    <!-- Option title for restoring via a local backup file or folder -->
+    <string name="SelectRestoreMethodFragment__restore_on_device_backup">Restore on-device backup</string>
+    <!-- Option subtitle fdor restoring via a local backup file or folder -->
+    <string name="SelectRestoreMethodFragment__restore_your_messages_from">Restore your messages from a backup you saved on your device.</string>
     <!-- Option title for restoring via a local backup file -->
     <string name="SelectRestoreMethodFragment__from_a_backup_file">একটি ব্যাকআপ ফাইল থেকে</string>
     <!-- Option subtitle for restoring via a local backup -->
@@ -8919,6 +8927,87 @@
     <!-- Email subject when contacting support on a permanent backup import failure -->
     <string name="EnterBackupKey_permanent_failure_support_email">Signal Android ব্যাকআপ পুনর্বহালের স্থায়ী ব্যর্থতা</string>
   <!-- Removed by excludeNonTranslatables <string name="EnterBackupKey_permanent_failure_support_email_filter" translatable="false">Android SignalBackups Import Permanent Failure</string> -->
+
+    <!-- EnterLocalBackupKeyScreen: Screen title for entering recovery key for local backup restore -->
+    <string name="EnterLocalBackupKeyScreen__enter_your_recovery_key">আপনার পুনরুদ্ধার \'কি\' লিখুন</string>
+    <!-- EnterLocalBackupKeyScreen: Screen subtitle explaining what the recovery key is -->
+    <string name="EnterLocalBackupKeyScreen__your_recovery_key_is_a_64_character_code">আপনার পুনরুদ্ধার \'কি\' একটি 64-ক্যারেক্টারের কোড যা আপনার অ্যাকাউন্ট ও ডেটা পুনর্বহাল করার সময় প্রয়োজন হবে।</string>
+    <!-- EnterLocalBackupKeyScreen: Button text when user does not have a backup key -->
+    <string name="EnterLocalBackupKeyScreen__no_backup_key">কোনো ব্যাকআপ \'কি\' নেই?</string>
+    <!-- EnterLocalBackupKeyScreen: Button to proceed to next step -->
+    <string name="EnterLocalBackupKeyScreen__next">পরবর্তী</string>
+
+    <!-- RestoreLocalBackupDialog: Error message when the selected archive fails to load -->
+    <string name="RestoreLocalBackupDialog__failed_to_load_archive">Failed to load archive. Please select a different directory.</string>
+    <!-- RestoreLocalBackupDialog: Dismiss button for dialog -->
+    <string name="RestoreLocalBackupDialog__ok">ঠিক আছে</string>
+
+    <!-- RestoreLocalBackupActivity: Toast message when backup restore fails -->
+    <string name="RestoreLocalBackupActivity__backup_restore_failed">Backup restore failed</string>
+    <!-- RestoreLocalBackupActivity: Screen title shown during restore -->
+    <string name="RestoreLocalBackupActivity__restoring_backup">Restoring backup</string>
+    <!-- RestoreLocalBackupActivity: Screen subtitle explaining restore duration -->
+    <string name="RestoreLocalBackupActivity__depending_on_the_size">Depending on the size of your backup, this could take a few minutes.</string>
+    <!-- RestoreLocalBackupActivity: Status text while restoring messages -->
+    <string name="RestoreLocalBackupActivity__restoring_messages">মেসেজ পুনরুদ্ধার করা হচ্ছে…</string>
+    <!-- RestoreLocalBackupActivity: Status text while finalizing restore -->
+    <string name="RestoreLocalBackupActivity__finalizing">Finalizing…</string>
+    <!-- RestoreLocalBackupActivity: Status text when restore is complete -->
+    <string name="RestoreLocalBackupActivity__restore_complete">পুনরুদ্ধার সম্পূর্ণ</string>
+    <!-- RestoreLocalBackupActivity: Status text when restore fails -->
+    <string name="RestoreLocalBackupActivity__restore_failed">পুনর্বহাল সফল হয়নি</string>
+    <!-- RestoreLocalBackupActivity: Progress text showing bytes read of total with percentage, e.g. "1.2 MB of 5.0 MB (24%)" -->
+    <string name="RestoreLocalBackupActivity__s_of_s_d_percent">%2$s এর %1$s (%3$d%%)</string>
+
+    <!-- SelectInstructionsSheet: Title for the select backup folder instruction sheet -->
+    <string name="SelectInstructionsSheet__select_your_backup_folder">Select your backup folder</string>
+    <!-- SelectInstructionsSheet: Instruction to tap the select this folder button -->
+    <string name="SelectInstructionsSheet__tap_select_this_folder">Tap \"Select this folder\"</string>
+    <!-- SelectInstructionsSheet: Instruction not to select individual files -->
+    <string name="SelectInstructionsSheet__do_not_select_individual_files">Do not select individual files</string>
+    <!-- SelectInstructionsSheet: Title for the select backup file instruction sheet -->
+    <string name="SelectInstructionsSheet__select_your_backup_file">Select your backup file</string>
+    <!-- SelectInstructionsSheet: Instruction to tap the backup file saved to device -->
+    <string name="SelectInstructionsSheet__tap_on_the_backup_file">Tap on the backup file you saved to your device</string>
+    <!-- SelectInstructionsSheet: Subtitle explaining how to access backup after tapping continue -->
+    <string name="SelectInstructionsSheet__after_tapping_continue">After tapping \"Continue,\" here\'s how to access your backup:</string>
+    <!-- SelectInstructionsSheet: Instruction to select the top-level backup folder -->
+    <string name="SelectInstructionsSheet__select_the_top_level_folder">Select the top-level folder where your backup is stored</string>
+    <!-- SelectInstructionsSheet: Continue button text -->
+    <string name="SelectInstructionsSheet__continue_button">চলতে থাকুন</string>
+
+    <!-- SelectLocalBackupScreen: Screen title for restoring on-device backup -->
+    <string name="SelectLocalBackupScreen__restore_on_device_backup">Restore on-device backup</string>
+    <!-- SelectLocalBackupScreen: Screen subtitle explaining the restore process -->
+    <string name="SelectLocalBackupScreen__restore_your_messages_from_the_backup_folder">Restore your messages from the backup folder you saved on your device. If you don\'t restore now, you won\'t be able to restore later.</string>
+    <!-- SelectLocalBackupScreen: Button to initiate backup restoration -->
+    <string name="SelectLocalBackupScreen__restore_backup">ব্যাকঅাপ পুনরুদ্ধার</string>
+    <!-- SelectLocalBackupScreen: Button to choose an earlier backup when current is latest -->
+    <string name="SelectLocalBackupScreen__choose_an_earlier_backup">Choose an earlier backup</string>
+    <!-- SelectLocalBackupScreen: Button to choose a different backup -->
+    <string name="SelectLocalBackupScreen__choose_a_different_backup">Choose a different backup</string>
+    <!-- SelectLocalBackupScreen: Label for latest backup card -->
+    <string name="SelectLocalBackupScreen__your_latest_backup">Your latest backup:</string>
+    <!-- SelectLocalBackupScreen: Label for non-latest backup card -->
+    <string name="SelectLocalBackupScreen__your_backup">Your backup:</string>
+
+    <!-- SelectLocalBackupSheet: Title for backup selection bottom sheet -->
+    <string name="SelectLocalBackupSheet__choose_a_backup_to_restore">Choose a backup to restore</string>
+    <!-- SelectLocalBackupSheet: Subtitle warning about choosing an older backup -->
+    <string name="SelectLocalBackupSheet__choosing_an_older_backup">Choosing an older backup may result in lost messages or media.</string>
+    <!-- SelectLocalBackupSheet: Continue button text -->
+    <string name="SelectLocalBackupSheet__continue_button">চলতে থাকুন</string>
+
+    <!-- SelectLocalBackupTypeScreen: Screen title for selecting backup type -->
+    <string name="SelectLocalBackupTypeScreen__restore_on_device_backup">Restore on-device backup</string>
+    <!-- SelectLocalBackupTypeScreen: Screen subtitle explaining restore options -->
+    <string name="SelectLocalBackupTypeScreen__restore_your_messages_from_the_backup">আপনার ডিভাইসে আপনার সংরক্ষিত ব্যাকআপ থেকে মেসেজগুলো পুনর্বহাল করুন। আপনি এখন পুনর্বহাল না করলে, আপনি পরে পুনর্বহাল করতে পারবেন না।</string>
+    <!-- SelectLocalBackupTypeScreen: Button for users who saved backup as single file -->
+    <string name="SelectLocalBackupTypeScreen__i_saved_my_backup_as_a_single_file">I saved my backup as a single file</string>
+    <!-- SelectLocalBackupTypeScreen: Card title for choosing backup folder -->
+    <string name="SelectLocalBackupTypeScreen__choose_backup_folder">Choose backup folder</string>
+    <!-- SelectLocalBackupTypeScreen: Card description for choosing backup folder -->
+    <string name="SelectLocalBackupTypeScreen__select_the_folder_on_your_device">Select the folder on your device where your backup is stored</string>
 
     <!-- Email subject when contacting support on a create backup failure -->
     <string name="BackupAlertBottomSheet_network_failure_support_email">Signal Android ব্যাকআপ এক্সপোর্টে নেটওয়ার্কে ত্রুটি দেখা দিয়েছে</string>
@@ -9275,18 +9364,34 @@
     <!-- Group member label screen title. -->
     <string name="GroupMemberLabel__title">সদস্য লেবেল</string>
     <!-- Group member label text field placeholder. -->
-    <string name="GroupMemberLabel__label_text_placeholder">আপনার ভূমিকা যোগ করুন</string>
+    <string name="GroupMemberLabel__label_text_placeholder">আপনার লেবেল যোগ করুন</string>
     <!-- Group member label preview section header. -->
     <string name="GroupMemberLabel__preview_section_header">পূর্বরূপ</string>
+    <!-- Sample message shown in the group member label message preview. -->
+    <string name="GroupMemberLabel__preview_sample_message">হ্যালো!</string>
     <!-- Group member label save button label. -->
     <string name="GroupMemberLabel__save">সেভ করুন</string>
+    <!-- Description explaining the group member labels feature. -->
+    <string name="GroupMemberLabel__description">এই গ্রুপে নিজেকে বা আপনার ভূমিকা বর্ণনা করার জন্য একটি সদস্য লেবেল যোগ করুন। লেবেল শুধুমাত্র এই গ্রুপের মধ্যেই দৃশ্যমান।</string>
+    <!-- Error message shown when the group member label fails to save due to a network error. -->
+    <string name="GroupMemberLabel__error_cant_save_no_network">Couldn\'t save label. Check your network and try again.</string>
+    <!-- Error message shown when trying to edit a member label without adequate permission. -->
+    <string name="GroupMemberLabel__error_no_edit_permission">Only admins can add member labels in this group.</string>
     <!-- Accessibility label for the button to open the group member label emoji picker. -->
     <string name="GroupMemberLabel__accessibility_select_emoji">ইমোজি বেছে নিন</string>
     <!-- Accessibility label for the group member label close screen button. -->
     <string name="GroupMemberLabel__accessibility_close_screen">স্ক্রিন বন্ধ করুন</string>
     <!-- Accessibility label for the group member label text field clear button. -->
     <string name="GroupMemberLabel__accessibility_clear_label">লেবেল মুছুন</string>
-    <string name="GroupMemberLabel__description">Add a member label to describe yourself or your role in this group. Labels are only visible within this group.</string>
+
+    <!-- Title for the member labels education sheet. -->
+    <string name="MemberLabelsEducation__title">সদস্য লেবেল</string>
+    <!-- Body for the member labels education sheet. -->
+    <string name="MemberLabelsEducation__body">এই গ্রুপে নিজেকে বা আপনার ভূমিকা বর্ণনা করার জন্য একটি সদস্য লেবেল নির্ধারণ করুন। সদস্য লেবেল শুধুমাত্র এই গ্রুপের মধ্যেই দৃশ্যমান।</string>
+    <!-- Button to set a new member label. -->
+    <string name="MemberLabelsEducation__set_label">একটি সদস্য লেবেল নির্ধারণ করুন</string>
+    <!-- Button to edit an existing member label. -->
+    <string name="MemberLabelsEducation__edit_label">আপনার লেবেল এডিট করুন</string>
 
     <!-- EOF -->
 </resources>

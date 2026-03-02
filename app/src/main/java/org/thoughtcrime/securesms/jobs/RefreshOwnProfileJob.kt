@@ -1,267 +1,236 @@
-package org.thoughtcrime.securesms.jobs;
+package org.thoughtcrime.securesms.jobs
 
-import android.text.TextUtils;
-
-import androidx.annotation.NonNull;
-import androidx.annotation.Nullable;
-
-import org.signal.core.util.Base64;
-import org.signal.core.util.logging.Log;
-import org.signal.libsignal.usernames.BaseUsernameException;
-import org.signal.libsignal.usernames.Username;
-import org.signal.libsignal.zkgroup.VerificationFailedException;
-import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential;
-import org.signal.libsignal.zkgroup.profiles.ProfileKey;
-import org.thoughtcrime.securesms.badges.BadgeRepository;
-import org.thoughtcrime.securesms.badges.Badges;
-import org.thoughtcrime.securesms.badges.models.Badge;
-import org.thoughtcrime.securesms.components.settings.app.subscription.InAppPaymentsRepository;
-import org.thoughtcrime.securesms.crypto.ProfileKeyUtil;
-import org.thoughtcrime.securesms.database.RecipientTable;
-import org.thoughtcrime.securesms.database.SignalDatabase;
-import org.thoughtcrime.securesms.database.model.InAppPaymentSubscriberRecord;
-import org.thoughtcrime.securesms.dependencies.AppDependencies;
-import org.thoughtcrime.securesms.jobmanager.Job;
-import org.thoughtcrime.securesms.jobmanager.impl.NetworkConstraint;
-import org.thoughtcrime.securesms.keyvalue.SignalStore;
-import org.thoughtcrime.securesms.net.SignalNetwork;
-import org.thoughtcrime.securesms.profiles.ProfileName;
-import org.thoughtcrime.securesms.profiles.manage.UsernameRepository;
-import org.thoughtcrime.securesms.recipients.Recipient;
-import org.thoughtcrime.securesms.util.ProfileUtil;
-import org.thoughtcrime.securesms.util.TextSecurePreferences;
-import org.signal.core.util.Util;
-import org.whispersystems.signalservice.api.NetworkResultUtil;
-import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException;
-import org.whispersystems.signalservice.api.crypto.ProfileCipher;
-import org.whispersystems.signalservice.api.profiles.ProfileAndCredential;
-import org.whispersystems.signalservice.api.profiles.SignalServiceProfile;
-import org.whispersystems.signalservice.api.push.UsernameLinkComponents;
-import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException;
-import org.whispersystems.signalservice.api.subscriptions.ActiveSubscription;
-import org.whispersystems.signalservice.api.util.ExpiringProfileCredentialUtil;
-import org.whispersystems.signalservice.internal.ServiceResponse;
-import org.whispersystems.signalservice.internal.push.WhoAmIResponse;
-
-import java.io.IOException;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.Set;
-import java.util.stream.Collectors;
-
+import android.text.TextUtils
+import org.signal.core.util.Base64
+import org.signal.core.util.Util
+import org.signal.core.util.logging.Log
+import org.signal.libsignal.net.RequestResult
+import org.signal.libsignal.usernames.BaseUsernameException
+import org.signal.libsignal.usernames.Username
+import org.signal.libsignal.zkgroup.profiles.ExpiringProfileKeyCredential
+import org.signal.libsignal.zkgroup.profiles.ProfileKey
+import org.thoughtcrime.securesms.badges.BadgeRepository
+import org.thoughtcrime.securesms.badges.Badges
+import org.thoughtcrime.securesms.badges.models.Badge
+import org.thoughtcrime.securesms.components.settings.app.subscription.InAppPaymentsRepository
+import org.thoughtcrime.securesms.crypto.ProfileKeyUtil
+import org.thoughtcrime.securesms.database.RecipientTable.PhoneNumberSharingState
+import org.thoughtcrime.securesms.database.SignalDatabase
+import org.thoughtcrime.securesms.database.model.InAppPaymentSubscriberRecord
+import org.thoughtcrime.securesms.dependencies.AppDependencies
+import org.thoughtcrime.securesms.jobmanager.Job
+import org.thoughtcrime.securesms.jobmanager.impl.NetworkConstraint
+import org.thoughtcrime.securesms.keyvalue.SignalStore
+import org.thoughtcrime.securesms.net.SignalNetwork
+import org.thoughtcrime.securesms.profiles.ProfileName
+import org.thoughtcrime.securesms.profiles.manage.UsernameRepository
+import org.thoughtcrime.securesms.recipients.Recipient
+import org.thoughtcrime.securesms.util.ProfileUtil
+import org.thoughtcrime.securesms.util.TextSecurePreferences
+import org.whispersystems.signalservice.api.crypto.InvalidCiphertextException
+import org.whispersystems.signalservice.api.crypto.ProfileCipher
+import org.whispersystems.signalservice.api.profiles.ProfileAndCredential
+import org.whispersystems.signalservice.api.profiles.SignalServiceProfile
+import org.whispersystems.signalservice.api.push.exceptions.PushNetworkException
+import org.whispersystems.signalservice.api.util.ExpiringProfileCredentialUtil
+import java.io.IOException
 
 /**
- * Refreshes the profile of the local user. Different from {@link RetrieveProfileJob} in that we
+ * Refreshes the profile of the local user. Different from [RetrieveProfileJob] in that we
  * have to sometimes look at/set different data stores, and we will *always* do the fetch regardless
  * of caching.
  */
-public class RefreshOwnProfileJob extends BaseJob {
+class RefreshOwnProfileJob private constructor(parameters: Parameters) : BaseJob(parameters) {
 
-  public static final String KEY = "RefreshOwnProfileJob";
+  companion object {
+    const val KEY: String = "RefreshOwnProfileJob"
 
-  private static final String TAG = Log.tag(RefreshOwnProfileJob.class);
+    private val TAG = Log.tag(RefreshOwnProfileJob::class.java)
 
-  private static final String SUBSCRIPTION_QUEUE = ProfileUploadJob.QUEUE + "_Subscription";
-  private static final String BOOST_QUEUE        = ProfileUploadJob.QUEUE + "_Boost";
+    private val SUBSCRIPTION_QUEUE = ProfileUploadJob.QUEUE + "_Subscription"
+    private val BOOST_QUEUE = ProfileUploadJob.QUEUE + "_Boost"
 
-  public RefreshOwnProfileJob() {
-    this(ProfileUploadJob.QUEUE);
-  }
-
-  private RefreshOwnProfileJob(@NonNull String queue) {
-    this(new Parameters.Builder()
-             .addConstraint(NetworkConstraint.KEY)
-             .setQueue(queue)
-             .setMaxInstancesForFactory(1)
-             .setMaxAttempts(10)
-             .build());
-  }
-
-  public static @NonNull RefreshOwnProfileJob forSubscription() {
-    return new RefreshOwnProfileJob(SUBSCRIPTION_QUEUE);
-  }
-
-  public static @NonNull RefreshOwnProfileJob forBoost() {
-    return new RefreshOwnProfileJob(BOOST_QUEUE);
-  }
-
-
-  private RefreshOwnProfileJob(@NonNull Parameters parameters) {
-    super(parameters);
-  }
-
-  @Override
-  public @Nullable byte[] serialize() {
-    return null;
-  }
-
-  @Override
-  public @NonNull String getFactoryKey() {
-    return KEY;
-  }
-
-  @Override
-  protected void onRun() throws Exception {
-    if (!SignalStore.account().isRegistered() || TextUtils.isEmpty(SignalStore.account().getE164())) {
-      Log.w(TAG, "Not yet registered!");
-      return;
+    fun forSubscription(): RefreshOwnProfileJob {
+      return RefreshOwnProfileJob(SUBSCRIPTION_QUEUE)
     }
 
-    if ((SignalStore.svr().hasPin() || SignalStore.account().restoredAccountEntropyPool()) && !SignalStore.svr().hasOptedOut() && SignalStore.storageService().getLastSyncTime() == 0) {
-      Log.i(TAG, "Registered with PIN or AEP but haven't completed storage sync yet.");
-      return;
+    fun forBoost(): RefreshOwnProfileJob {
+      return RefreshOwnProfileJob(BOOST_QUEUE)
+    }
+  }
+
+  constructor() : this(ProfileUploadJob.QUEUE)
+
+  private constructor(queue: String) : this(
+    Parameters.Builder()
+      .addConstraint(NetworkConstraint.KEY)
+      .setQueue(queue)
+      .setMaxInstancesForFactory(1)
+      .setMaxAttempts(10)
+      .build()
+  )
+
+  override fun serialize(): ByteArray? {
+    return null
+  }
+
+  override fun getFactoryKey(): String {
+    return KEY
+  }
+
+  @Throws(Exception::class)
+  override fun onRun() {
+    if (!SignalStore.account.isRegistered || SignalStore.account.e164.isNullOrEmpty()) {
+      Log.w(TAG, "Not yet registered!")
+      return
     }
 
-    if (!SignalStore.registration().hasUploadedProfile() && SignalStore.account().isPrimaryDevice()) {
-      Log.i(TAG, "Registered but haven't uploaded profile yet.");
-      return;
+    if ((SignalStore.svr.hasPin() || SignalStore.account.restoredAccountEntropyPool) && !SignalStore.svr.hasOptedOut() && SignalStore.storageService.lastSyncTime == 0L) {
+      Log.i(TAG, "Registered with PIN or AEP but haven't completed storage sync yet.")
+      return
     }
 
-    Recipient self = Recipient.self();
+    if (!SignalStore.registration.hasUploadedProfile && SignalStore.account.isPrimaryDevice) {
+      Log.i(TAG, "Registered but haven't uploaded profile yet.")
+      return
+    }
 
-    ProfileAndCredential profileAndCredential;
+    val self = Recipient.self()
+
+    val profileAndCredential: ProfileAndCredential
     try {
-      profileAndCredential = ProfileUtil.retrieveProfileSync(context, self, getRequestType(self), false);
-    } catch (IllegalStateException e) {
-      Log.w(TAG, "Unexpected exception result from profile fetch. Skipping.");
-      return;
+      profileAndCredential = ProfileUtil.retrieveProfileSync(context, self, getRequestType(self), false)
+    } catch (e: IllegalStateException) {
+      Log.w(TAG, "Unexpected exception result from profile fetch. Skipping.")
+      return
     }
 
-
-    SignalServiceProfile profile              = profileAndCredential.getProfile();
+    val profile = profileAndCredential.getProfile()
 
     if (Util.isEmpty(profile.getName()) &&
-        Util.isEmpty(profile.getAvatar()) &&
-        Util.isEmpty(profile.getAbout()) &&
-        Util.isEmpty(profile.getAboutEmoji()))
-    {
-      Log.w(TAG, "The profile we retrieved was empty! Ignoring it.");
+      Util.isEmpty(profile.getAvatar()) &&
+      Util.isEmpty(profile.getAbout()) &&
+      Util.isEmpty(profile.getAboutEmoji())
+    ) {
+      Log.w(TAG, "The profile we retrieved was empty! Ignoring it.")
 
-      if (!self.getProfileName().isEmpty()) {
-        Log.w(TAG, "We have a name locally. Scheduling a profile upload.");
-        AppDependencies.getJobManager().add(new ProfileUploadJob());
+      if (!self.profileName.isEmpty()) {
+        Log.w(TAG, "We have a name locally. Scheduling a profile upload.")
+        AppDependencies.jobManager.add(ProfileUploadJob())
       } else {
-        Log.w(TAG, "We don't have a name locally, either!");
+        Log.w(TAG, "We don't have a name locally, either!")
       }
 
-      return;
+      return
     }
 
-    setProfileName(profile.getName());
-    setProfileAbout(profile.getAbout(), profile.getAboutEmoji());
-    setProfileAvatar(profile.getAvatar());
-    setProfileCapabilities(profile.getCapabilities());
-    setProfileBadges(profile.getBadges());
-    ensureUnidentifiedAccessCorrect(profile.getUnidentifiedAccess(), profile.isUnrestrictedUnidentifiedAccess());
-    ensurePhoneNumberSharingIsCorrect(profile.getPhoneNumberSharing());
+    setProfileName(profile.getName())
+    setProfileAbout(profile.getAbout(), profile.getAboutEmoji())
+    setProfileAvatar(profile.getAvatar())
+    setProfileCapabilities(profile.getCapabilities())
+    setProfileBadges(profile.getBadges())
+    ensureUnidentifiedAccessCorrect(profile.getUnidentifiedAccess(), profile.isUnrestrictedUnidentifiedAccess())
+    ensurePhoneNumberSharingIsCorrect(profile.getPhoneNumberSharing())
 
     profileAndCredential.getExpiringProfileKeyCredential()
-                        .ifPresent(expiringProfileKeyCredential -> setExpiringProfileKeyCredential(self, ProfileKeyUtil.getSelfProfileKey(), expiringProfileKeyCredential));
+      .ifPresent { setExpiringProfileKeyCredential(self, ProfileKeyUtil.getSelfProfileKey(), it) }
 
-    SignalStore.registration().setHasDownloadedProfile(true);
+    SignalStore.registration.hasDownloadedProfile = true
 
-    StoryOnboardingDownloadJob.Companion.enqueueIfNeeded();
+    StoryOnboardingDownloadJob.enqueueIfNeeded()
 
-    checkUsernameIsInSync();
+    checkUsernameIsInSync()
   }
 
-  private void setExpiringProfileKeyCredential(@NonNull Recipient recipient,
-                                               @NonNull ProfileKey recipientProfileKey,
-                                               @NonNull ExpiringProfileKeyCredential credential)
-  {
-    RecipientTable recipientTable = SignalDatabase.recipients();
-    recipientTable.setProfileKeyCredential(recipient.getId(), recipientProfileKey, credential);
+  override fun onShouldRetry(e: Exception): Boolean {
+    return e is PushNetworkException
   }
 
-  private static SignalServiceProfile.RequestType getRequestType(@NonNull Recipient recipient) {
-    return ExpiringProfileCredentialUtil.isValid(recipient.getExpiringProfileKeyCredential()) ? SignalServiceProfile.RequestType.PROFILE
-                                                                                              : SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL;
+  override fun onFailure() = Unit
+
+  private fun setExpiringProfileKeyCredential(
+    recipient: Recipient,
+    recipientProfileKey: ProfileKey,
+    credential: ExpiringProfileKeyCredential
+  ) {
+    SignalDatabase.recipients.setProfileKeyCredential(recipient.id, recipientProfileKey, credential)
   }
 
-  @Override
-  protected boolean onShouldRetry(@NonNull Exception e) {
-    return e instanceof PushNetworkException;
-  }
-
-  @Override
-  public void onFailure() { }
-
-  private void setProfileName(@Nullable String encryptedName) {
+  private fun setProfileName(encryptedName: String?) {
     try {
-      ProfileKey  profileKey    = ProfileKeyUtil.getSelfProfileKey();
-      String      plaintextName = ProfileUtil.decryptString(profileKey, encryptedName);
-      ProfileName profileName   = ProfileName.fromSerialized(plaintextName);
+      val profileKey = ProfileKeyUtil.getSelfProfileKey()
+      val plaintextName = ProfileUtil.decryptString(profileKey, encryptedName)
+      val profileName = ProfileName.fromSerialized(plaintextName)
 
       if (!profileName.isEmpty()) {
-        Log.d(TAG, "Saving non-empty name.");
-        SignalDatabase.recipients().setProfileName(Recipient.self().getId(), profileName);
+        Log.d(TAG, "Saving non-empty name.")
+        SignalDatabase.recipients.setProfileName(Recipient.self().id, profileName)
       } else {
-        Log.w(TAG, "Ignoring empty name.");
+        Log.w(TAG, "Ignoring empty name.")
       }
-
-    } catch (InvalidCiphertextException | IOException e) {
-      Log.w(TAG, e);
+    } catch (e: InvalidCiphertextException) {
+      Log.w(TAG, e)
+    } catch (e: IOException) {
+      Log.w(TAG, e)
     }
   }
 
-  private void setProfileAbout(@Nullable String encryptedAbout, @Nullable String encryptedEmoji) {
+  private fun setProfileAbout(encryptedAbout: String?, encryptedEmoji: String?) {
     try {
-      ProfileKey  profileKey     = ProfileKeyUtil.getSelfProfileKey();
-      String      plaintextAbout = ProfileUtil.decryptString(profileKey, encryptedAbout);
-      String      plaintextEmoji = ProfileUtil.decryptString(profileKey, encryptedEmoji);
+      val profileKey = ProfileKeyUtil.getSelfProfileKey()
+      val plaintextAbout = ProfileUtil.decryptString(profileKey, encryptedAbout)
+      val plaintextEmoji = ProfileUtil.decryptString(profileKey, encryptedEmoji)
 
-      Log.d(TAG, "Saving " + (!Util.isEmpty(plaintextAbout) ? "non-" : "") + "empty about.");
-      Log.d(TAG, "Saving " + (!Util.isEmpty(plaintextEmoji) ? "non-" : "") + "empty emoji.");
+      Log.d(TAG, "Saving " + (if (!Util.isEmpty(plaintextAbout)) "non-" else "") + "empty about.")
+      Log.d(TAG, "Saving " + (if (!Util.isEmpty(plaintextEmoji)) "non-" else "") + "empty emoji.")
 
-      SignalDatabase.recipients().setAbout(Recipient.self().getId(), plaintextAbout, plaintextEmoji);
-    } catch (InvalidCiphertextException | IOException e) {
-      Log.w(TAG, e);
+      SignalDatabase.recipients.setAbout(Recipient.self().id, plaintextAbout, plaintextEmoji)
+    } catch (e: InvalidCiphertextException) {
+      Log.w(TAG, e)
+    } catch (e: IOException) {
+      Log.w(TAG, e)
     }
   }
 
-  private static void setProfileAvatar(@Nullable String avatar) {
-    Log.d(TAG, "Saving " + (!Util.isEmpty(avatar) ? "non-" : "") + "empty avatar.");
-    AppDependencies.getJobManager().add(new RetrieveProfileAvatarJob(Recipient.self(), avatar));
+  private fun setProfileAvatar(avatar: String?) {
+    Log.d(TAG, "Saving " + (if (!Util.isEmpty(avatar)) "non-" else "") + "empty avatar.")
+    AppDependencies.jobManager.add(RetrieveProfileAvatarJob(Recipient.self(), avatar))
   }
 
-  private void setProfileCapabilities(@Nullable SignalServiceProfile.Capabilities capabilities) {
+  private fun setProfileCapabilities(capabilities: SignalServiceProfile.Capabilities?) {
     if (capabilities == null) {
-      return;
+      return
     }
 
-    Recipient selfSnapshot = Recipient.self();
-
-    SignalDatabase.recipients().setCapabilities(Recipient.self().getId(), capabilities);
+    SignalDatabase.recipients.setCapabilities(Recipient.self().id, capabilities)
   }
 
-  private void ensureUnidentifiedAccessCorrect(@Nullable String unidentifiedAccessVerifier, boolean universalUnidentifiedAccess) {
+  private fun ensureUnidentifiedAccessCorrect(unidentifiedAccessVerifier: String?, universalUnidentifiedAccess: Boolean) {
     if (unidentifiedAccessVerifier == null) {
-      Log.w(TAG, "No unidentified access is set remotely! Refreshing attributes.");
-      AppDependencies.getJobManager().add(new RefreshAttributesJob());
-      return;
+      Log.w(TAG, "No unidentified access is set remotely! Refreshing attributes.")
+      AppDependencies.jobManager.add(RefreshAttributesJob())
+      return
     }
 
     if (TextSecurePreferences.isUniversalUnidentifiedAccess(context) != universalUnidentifiedAccess) {
-      Log.w(TAG, "The universal access flag doesn't match our local value (local: " + TextSecurePreferences.isUniversalUnidentifiedAccess(context) + ", remote: " + universalUnidentifiedAccess + ")! Refreshing attributes.");
-      AppDependencies.getJobManager().add(new RefreshAttributesJob());
-      return;
+      Log.w(TAG, "The universal access flag doesn't match our local value (local: " + TextSecurePreferences.isUniversalUnidentifiedAccess(context) + ", remote: " + universalUnidentifiedAccess + ")! Refreshing attributes.")
+      AppDependencies.jobManager.add(RefreshAttributesJob())
+      return
     }
 
-    ProfileKey    profileKey = ProfileKeyUtil.getSelfProfileKey();
-    ProfileCipher cipher     = new ProfileCipher(profileKey);
+    val profileKey = ProfileKeyUtil.getSelfProfileKey()
+    val cipher = ProfileCipher(profileKey)
 
-    boolean verified;
-    try {
-      verified = cipher.verifyUnidentifiedAccess(Base64.decode(unidentifiedAccessVerifier));
-    } catch (IOException e) {
-      Log.w(TAG, "Failed to decode unidentified access!", e);
-      verified = false;
+    val verified = try {
+      cipher.verifyUnidentifiedAccess(Base64.decode(unidentifiedAccessVerifier))
+    } catch (e: IOException) {
+      Log.w(TAG, "Failed to decode unidentified access!", e)
+      false
     }
 
     if (!verified) {
-      Log.w(TAG, "Unidentified access failed to verify! Refreshing attributes.");
-      AppDependencies.getJobManager().add(new RefreshAttributesJob());
+      Log.w(TAG, "Unidentified access failed to verify! Refreshing attributes.")
+      AppDependencies.jobManager.add(RefreshAttributesJob())
     }
   }
 
@@ -269,239 +238,249 @@ public class RefreshOwnProfileJob extends BaseJob {
    * Checks to make sure that our phone number sharing setting matches what's on our profile. If there's a mismatch, we first sync with storage service
    * (to limit race conditions between devices) and then upload our profile.
    */
-  private void ensurePhoneNumberSharingIsCorrect(@Nullable String phoneNumberSharingCiphertext) {
+  private fun ensurePhoneNumberSharingIsCorrect(phoneNumberSharingCiphertext: String?) {
     if (phoneNumberSharingCiphertext == null) {
-      Log.w(TAG, "No phone number sharing is set remotely! Syncing with storage service, then uploading our profile.");
-      syncWithStorageServiceThenUploadProfile();
-      return;
+      Log.w(TAG, "No phone number sharing is set remotely! Syncing with storage service, then uploading our profile.")
+      syncWithStorageServiceThenUploadProfile()
+      return
     }
 
-    ProfileKey    profileKey = ProfileKeyUtil.getSelfProfileKey();
-    ProfileCipher cipher     = new ProfileCipher(profileKey);
+    val profileKey = ProfileKeyUtil.getSelfProfileKey()
+    val cipher = ProfileCipher(profileKey)
 
     try {
-      RecipientTable.PhoneNumberSharingState remotePhoneNumberSharing = cipher.decryptBoolean(Base64.decode(phoneNumberSharingCiphertext))
-                                                                              .map(value -> value ? RecipientTable.PhoneNumberSharingState.ENABLED : RecipientTable.PhoneNumberSharingState.DISABLED)
-                                                                              .orElse(RecipientTable.PhoneNumberSharingState.UNKNOWN);
+      val remotePhoneNumberSharing = cipher.decryptBoolean(Base64.decode(phoneNumberSharingCiphertext))
+        .map { value -> if (value) PhoneNumberSharingState.ENABLED else PhoneNumberSharingState.DISABLED }
+        .orElse(PhoneNumberSharingState.UNKNOWN)
 
-      if (remotePhoneNumberSharing == RecipientTable.PhoneNumberSharingState.UNKNOWN || remotePhoneNumberSharing.getEnabled() != SignalStore.phoneNumberPrivacy().isPhoneNumberSharingEnabled()) {
-        Log.w(TAG, "Phone number sharing setting did not match! Syncing with storage service, then uploading our profile.");
-        syncWithStorageServiceThenUploadProfile();
+      if (remotePhoneNumberSharing == PhoneNumberSharingState.UNKNOWN || remotePhoneNumberSharing.enabled != SignalStore.phoneNumberPrivacy.isPhoneNumberSharingEnabled()) {
+        Log.w(TAG, "Phone number sharing setting did not match! Syncing with storage service, then uploading our profile.")
+        syncWithStorageServiceThenUploadProfile()
       }
-    } catch (IOException e) {
-      Log.w(TAG, "Failed to decode phone number sharing! Syncing with storage service, then uploading our profile.", e);
-      syncWithStorageServiceThenUploadProfile();
-    } catch (InvalidCiphertextException e) {
-      Log.w(TAG, "Failed to decrypt phone number sharing! Syncing with storage service, then uploading our profile.", e);
-      syncWithStorageServiceThenUploadProfile();
+    } catch (e: IOException) {
+      Log.w(TAG, "Failed to decode phone number sharing! Syncing with storage service, then uploading our profile.", e)
+      syncWithStorageServiceThenUploadProfile()
+    } catch (e: InvalidCiphertextException) {
+      Log.w(TAG, "Failed to decrypt phone number sharing! Syncing with storage service, then uploading our profile.", e)
+      syncWithStorageServiceThenUploadProfile()
     }
   }
 
-  private void syncWithStorageServiceThenUploadProfile() {
-    AppDependencies.getJobManager()
-                   .startChain(StorageSyncJob.forRemoteChange())
-                   .then(new ProfileUploadJob())
-                   .enqueue();
+  private fun syncWithStorageServiceThenUploadProfile() {
+    AppDependencies.jobManager
+      .startChain(StorageSyncJob.forRemoteChange())
+      .then(ProfileUploadJob())
+      .enqueue()
   }
 
-  private static void checkUsernameIsInSync() {
-    boolean validated = false;
-
-    try {
-      String localUsername = SignalStore.account().getUsername();
-
-      WhoAmIResponse whoAmIResponse     = AppDependencies.getSignalServiceAccountManager().getWhoAmI();
-      String         remoteUsernameHash = whoAmIResponse.getUsernameHash();
-      String         localUsernameHash  = localUsername != null ? Base64.encodeUrlSafeWithoutPadding(new Username(localUsername).getHash()) : null;
-
-      if (TextUtils.isEmpty(localUsernameHash) && TextUtils.isEmpty(remoteUsernameHash)) {
-        Log.d(TAG, "Local and remote username hash are both empty. Considering validated.");
-        UsernameRepository.onUsernameConsistencyValidated();
-      } else if (!Objects.equals(localUsernameHash, remoteUsernameHash)) {
-        Log.w(TAG, "Local username hash does not match server username hash. Local hash: " + (TextUtils.isEmpty(localUsername) ? "empty" : "present") + ", Remote hash: " + (TextUtils.isEmpty(remoteUsernameHash) ? "empty" : "present"));
-        UsernameRepository.onUsernameMismatchDetected();
-        return;
-      } else {
-        Log.d(TAG, "Username validated.");
-      }
-    } catch (IOException e) {
-      Log.w(TAG, "Failed perform synchronization check during username phase.", e);
-    } catch (BaseUsernameException e) {
-      Log.w(TAG, "Our local username data is invalid!", e);
-      UsernameRepository.onUsernameMismatchDetected();
-      return;
-    }
-
-    try {
-      UsernameLinkComponents localUsernameLink = SignalStore.account().getUsernameLink();
-
-      if (localUsernameLink != null) {
-        byte[]                remoteEncryptedUsername = NetworkResultUtil.toBasicLegacy(SignalNetwork.username().getEncryptedUsernameFromLinkServerId(localUsernameLink.getServerId()));
-        Username.UsernameLink combinedLink            = new Username.UsernameLink(localUsernameLink.getEntropy(), remoteEncryptedUsername);
-        Username              remoteUsername          = Username.fromLink(combinedLink);
-
-        if (!remoteUsername.getUsername().equals(SignalStore.account().getUsername())) {
-          Log.w(TAG, "The remote username decrypted ok, but the decrypted username did not match our local username!");
-          UsernameRepository.onUsernameLinkMismatchDetected();
-        } else {
-          Log.d(TAG, "Username link validated.");
-        }
-
-        validated = true;
-      }
-    } catch (IOException e) {
-      Log.w(TAG, "Failed perform synchronization check during the username link phase.", e);
-    } catch (BaseUsernameException e) {
-      Log.w(TAG, "Failed to decrypt username link using the remote encrypted username and our local entropy!", e);
-      UsernameRepository.onUsernameLinkMismatchDetected();
-    }
-
-    if (validated) {
-      UsernameRepository.onUsernameConsistencyValidated();
-    }
-  }
-
-  private void setProfileBadges(@Nullable List<SignalServiceProfile.Badge> badges) throws IOException {
+  @Throws(IOException::class)
+  private fun setProfileBadges(badges: List<SignalServiceProfile.Badge>?) {
     if (badges == null) {
-      return;
+      return
     }
 
-    Set<String> localDonorBadgeIds  = Recipient.self()
-                                               .getBadges()
-                                               .stream()
-                                               .filter(badge -> badge.getCategory() == Badge.Category.Donor)
-                                               .map(Badge::getId)
-                                               .collect(Collectors.toSet());
+    val localDonorBadgeIds = Recipient.self()
+      .badges
+      .filter { it.category == Badge.Category.Donor }
+      .map { it.id }
+      .toSet()
 
-    Set<String> remoteDonorBadgeIds = badges.stream()
-                                            .filter(badge -> Objects.equals(badge.getCategory(), Badge.Category.Donor.getCode()))
-                                            .map(SignalServiceProfile.Badge::getId)
-                                            .collect(Collectors.toSet());
+    val remoteDonorBadgeIds = badges
+      .filter { it.getCategory() == Badge.Category.Donor.code }
+      .map { it.getId() }
+      .toSet()
 
-    boolean remoteHasSubscriptionBadges = remoteDonorBadgeIds.stream().anyMatch(RefreshOwnProfileJob::isSubscription);
-    boolean localHasSubscriptionBadges  = localDonorBadgeIds.stream().anyMatch(RefreshOwnProfileJob::isSubscription);
-    boolean remoteHasBoostBadges        = remoteDonorBadgeIds.stream().anyMatch(RefreshOwnProfileJob::isBoost);
-    boolean localHasBoostBadges         = localDonorBadgeIds.stream().anyMatch(RefreshOwnProfileJob::isBoost);
-    boolean remoteHasGiftBadges         = remoteDonorBadgeIds.stream().anyMatch(RefreshOwnProfileJob::isGift);
-    boolean localHasGiftBadges          = localDonorBadgeIds.stream().anyMatch(RefreshOwnProfileJob::isGift);
+    val remoteHasSubscriptionBadges = remoteDonorBadgeIds.any { isSubscription(it) }
+    val localHasSubscriptionBadges = localDonorBadgeIds.any { isSubscription(it) }
+    val remoteHasBoostBadges = remoteDonorBadgeIds.any { isBoost(it) }
+    val localHasBoostBadges = localDonorBadgeIds.any { isBoost(it) }
+    val remoteHasGiftBadges = remoteDonorBadgeIds.any { isGift(it) }
+    val localHasGiftBadges = localDonorBadgeIds.any { isGift(it) }
 
     if (!remoteHasSubscriptionBadges && localHasSubscriptionBadges) {
-      Badge mostRecentExpiration = Recipient.self()
-                                            .getBadges()
-                                            .stream()
-                                            .filter(badge -> badge.getCategory() == Badge.Category.Donor)
-                                            .filter(badge -> isSubscription(badge.getId()))
-                                            .max(Comparator.comparingLong(Badge::getExpirationTimestamp))
-                                            .get();
+      val mostRecentExpiration = Recipient.self()
+        .badges
+        .filter { it.category == Badge.Category.Donor }
+        .filter { isSubscription(it.id) }
+        .maxByOrNull { it.expirationTimestamp }
+        ?: throw NoSuchElementException("No value present")
 
-      Log.d(TAG, "Marking subscription badge as expired, should notify next time the conversation list is open.", true);
-      SignalStore.inAppPayments().setExpiredBadge(mostRecentExpiration);
+      Log.d(TAG, "Marking subscription badge as expired, should notify next time the conversation list is open.", true)
+      SignalStore.inAppPayments.setExpiredBadge(mostRecentExpiration)
 
       if (!InAppPaymentsRepository.isUserManuallyCancelled(InAppPaymentSubscriberRecord.Type.DONATION)) {
-        Log.d(TAG, "Detected an unexpected subscription expiry.", true);
-        InAppPaymentSubscriberRecord subscriber = InAppPaymentsRepository.getSubscriber(InAppPaymentSubscriberRecord.Type.DONATION);
+        Log.d(TAG, "Detected an unexpected subscription expiry.", true)
+        val subscriber = InAppPaymentsRepository.getSubscriber(InAppPaymentSubscriberRecord.Type.DONATION)
 
-        boolean isDueToPaymentFailure = false;
+        var isDueToPaymentFailure = false
         if (subscriber != null) {
-          ServiceResponse<ActiveSubscription> response = AppDependencies.getDonationsService()
-                                                                        .getSubscription(subscriber.getSubscriberId());
+          val response = AppDependencies.donationsService
+            .getSubscription(subscriber.subscriberId)
 
           if (response.getResult().isPresent()) {
-            ActiveSubscription activeSubscription = response.getResult().get();
+            val activeSubscription = response.getResult().get()
             if (activeSubscription.isFailedPayment()) {
-              Log.d(TAG, "Unexpected expiry due to payment failure.", true);
-              isDueToPaymentFailure = true;
+              Log.d(TAG, "Unexpected expiry due to payment failure.", true)
+              isDueToPaymentFailure = true
             }
 
             if (activeSubscription.getChargeFailure() != null) {
-              Log.d(TAG, "Active payment contains a charge failure: " + activeSubscription.getChargeFailure().getCode(), true);
+              Log.d(TAG, "Active payment contains a charge failure: " + activeSubscription.getChargeFailure().getCode(), true)
             }
           }
 
-          InAppPaymentsRepository.setShouldCancelSubscriptionBeforeNextSubscribeAttempt(subscriber, true);
+          InAppPaymentsRepository.setShouldCancelSubscriptionBeforeNextSubscribeAttempt(subscriber, true)
         }
 
         if (!isDueToPaymentFailure) {
-          Log.d(TAG, "Unexpected expiry due to inactivity.", true);
+          Log.d(TAG, "Unexpected expiry due to inactivity.", true)
         }
 
-        MultiDeviceSubscriptionSyncRequestJob.enqueue();
+        MultiDeviceSubscriptionSyncRequestJob.enqueue()
       }
     } else if (!remoteHasBoostBadges && localHasBoostBadges) {
-      Badge mostRecentExpiration = Recipient.self()
-                                            .getBadges()
-                                            .stream()
-                                            .filter(badge -> badge.getCategory() == Badge.Category.Donor)
-                                            .filter(badge -> isBoost(badge.getId()))
-                                            .max(Comparator.comparingLong(Badge::getExpirationTimestamp))
-                                            .get();
+      val mostRecentExpiration = Recipient.self()
+        .badges
+        .filter { it.category == Badge.Category.Donor }
+        .filter { isBoost(it.id) }
+        .maxByOrNull { it.expirationTimestamp }
+        ?: throw NoSuchElementException("No value present")
 
-      Log.d(TAG, "Marking boost badge as expired, should notify next time the conversation list is open.", true);
-      SignalStore.inAppPayments().setExpiredBadge(mostRecentExpiration);
+      Log.d(TAG, "Marking boost badge as expired, should notify next time the conversation list is open.", true)
+      SignalStore.inAppPayments.setExpiredBadge(mostRecentExpiration)
     } else {
-      Badge badge = SignalStore.inAppPayments().getExpiredBadge();
+      val badge = SignalStore.inAppPayments.getExpiredBadge()
 
       if (badge != null && badge.isSubscription() && remoteHasSubscriptionBadges) {
-        Log.d(TAG, "Remote has subscription badges. Clearing local expired subscription badge.", true);
-        SignalStore.inAppPayments().setExpiredBadge(null);
+        Log.d(TAG, "Remote has subscription badges. Clearing local expired subscription badge.", true)
+        SignalStore.inAppPayments.setExpiredBadge(null)
       } else if (badge != null && badge.isBoost() && remoteHasBoostBadges) {
-        Log.d(TAG, "Remote has boost badges. Clearing local expired boost badge.", true);
-        SignalStore.inAppPayments().setExpiredBadge(null);
+        Log.d(TAG, "Remote has boost badges. Clearing local expired boost badge.", true)
+        SignalStore.inAppPayments.setExpiredBadge(null)
       }
     }
 
     if (!remoteHasGiftBadges && localHasGiftBadges) {
-      Badge mostRecentExpiration = Recipient.self()
-                                            .getBadges()
-                                            .stream()
-                                            .filter(badge -> badge.getCategory() == Badge.Category.Donor)
-                                            .filter(badge -> isGift(badge.getId()))
-                                            .max(Comparator.comparingLong(Badge::getExpirationTimestamp))
-                                            .get();
+      val mostRecentExpiration = Recipient.self()
+        .badges
+        .filter { it.category == Badge.Category.Donor }
+        .filter { isGift(it.id) }
+        .maxByOrNull { it.expirationTimestamp }
+        ?: throw NoSuchElementException("No value present")
 
-      Log.d(TAG, "Marking gift badge as expired, should notify next time the manage donations screen is open.", true);
-      SignalStore.inAppPayments().setExpiredGiftBadge(mostRecentExpiration);
+      Log.d(TAG, "Marking gift badge as expired, should notify next time the manage donations screen is open.", true)
+      SignalStore.inAppPayments.setExpiredGiftBadge(mostRecentExpiration)
     } else if (remoteHasGiftBadges) {
-      Log.d(TAG, "We have remote gift badges. Clearing local expired gift badge.", true);
-      SignalStore.inAppPayments().setExpiredGiftBadge(null);
+      Log.d(TAG, "We have remote gift badges. Clearing local expired gift badge.", true)
+      SignalStore.inAppPayments.setExpiredGiftBadge(null)
     }
 
-    boolean userHasVisibleBadges   = badges.stream().anyMatch(SignalServiceProfile.Badge::isVisible);
-    boolean userHasInvisibleBadges = badges.stream().anyMatch(b -> !b.isVisible());
+    val userHasVisibleBadges = badges.any { it.isVisible() }
+    val userHasInvisibleBadges = badges.any { !it.isVisible() }
 
-    List<Badge> appBadges = badges.stream().map(Badges::fromServiceBadge).collect(Collectors.toList());
+    val appBadges = badges.map { Badges.fromServiceBadge(it) }
 
     if (userHasVisibleBadges && userHasInvisibleBadges) {
-      boolean displayBadgesOnProfile = SignalStore.inAppPayments().getDisplayBadgesOnProfile();
-      Log.d(TAG, "Detected mixed visibility of badges. Telling the server to mark them all " +
-                 (displayBadgesOnProfile ? "" : "not") +
-                 " visible.", true);
+      val displayBadgesOnProfile = SignalStore.inAppPayments.getDisplayBadgesOnProfile()
+      Log.d(
+        TAG,
+        "Detected mixed visibility of badges. Telling the server to mark them all ${if (displayBadgesOnProfile) "" else "not"} visible.",
+        true
+      )
 
-      BadgeRepository badgeRepository = new BadgeRepository(context);
-      List<Badge> updatedBadges = badgeRepository.setVisibilityForAllBadgesSync(displayBadgesOnProfile, appBadges);
-      SignalDatabase.recipients().setBadges(Recipient.self().getId(), updatedBadges);
+      val badgeRepository = BadgeRepository(context)
+      val updatedBadges = badgeRepository.setVisibilityForAllBadgesSync(displayBadgesOnProfile, appBadges)
+      SignalDatabase.recipients.setBadges(Recipient.self().id, updatedBadges)
     } else {
-      SignalDatabase.recipients().setBadges(Recipient.self().getId(), appBadges);
+      SignalDatabase.recipients.setBadges(Recipient.self().id, appBadges)
     }
   }
 
-  private static boolean isSubscription(String badgeId) {
-    return !isBoost(badgeId) && !isGift(badgeId);
+  private fun checkUsernameIsInSync() {
+    try {
+      val localUsername = SignalStore.account.username
+
+      val whoAmIResponse = AppDependencies.signalServiceAccountManager.getWhoAmI()
+      val remoteUsernameHash = whoAmIResponse.usernameHash
+      val localUsernameHash = if (localUsername != null) Base64.encodeUrlSafeWithoutPadding(Username(localUsername).getHash()) else null
+
+      if (TextUtils.isEmpty(localUsernameHash) && TextUtils.isEmpty(remoteUsernameHash)) {
+        Log.d(TAG, "Local and remote username hash are both empty. Considering validated.")
+        UsernameRepository.onUsernameConsistencyValidated()
+      } else if (localUsernameHash != remoteUsernameHash) {
+        Log.w(
+          TAG,
+          "Local username hash does not match server username hash. Local hash: " + (if (TextUtils.isEmpty(localUsername)) "empty" else "present") + ", Remote hash: " + (if (TextUtils.isEmpty(remoteUsernameHash)) "empty" else "present")
+        )
+        UsernameRepository.onUsernameMismatchDetected()
+        return
+      } else {
+        Log.d(TAG, "Username validated.")
+      }
+    } catch (e: IOException) {
+      Log.w(TAG, "Failed perform synchronization check during username phase.", e)
+    } catch (e: BaseUsernameException) {
+      Log.w(TAG, "Our local username data is invalid!", e)
+      UsernameRepository.onUsernameMismatchDetected()
+      return
+    }
+
+    val localUsernameLink = SignalStore.account.usernameLink ?: return
+
+    when (val usernameFetchResult = SignalNetwork.username.getDecryptedUsernameFromLinkServerIdAndEntropy(localUsernameLink.serverId, localUsernameLink.entropy)) {
+      is RequestResult.Success -> {
+        val remoteUsername = usernameFetchResult.result
+
+        if (remoteUsername == null) {
+          Log.w(TAG, "Local username link was not found on remote. Marking as mismatched.")
+          UsernameRepository.onUsernameLinkMismatchDetected()
+          return
+        }
+
+        if (remoteUsername.getUsername() != SignalStore.account.username) {
+          Log.w(TAG, "The remote username decrypted ok, but the decrypted username did not match our local username!")
+          UsernameRepository.onUsernameLinkMismatchDetected()
+          return
+        }
+
+        Log.d(TAG, "Username link validated.")
+        UsernameRepository.onUsernameConsistencyValidated()
+      }
+      is RequestResult.NonSuccess -> {
+        Log.w(TAG, "Failed to decrypt username link using our local link data. ${usernameFetchResult.error}")
+        UsernameRepository.onUsernameLinkMismatchDetected()
+      }
+      is RequestResult.RetryableNetworkError -> {
+        Log.w(TAG, "Failed perform synchronization check during the username link phase, skipping.", usernameFetchResult.networkError)
+      }
+      is RequestResult.ApplicationError -> {
+        throw usernameFetchResult.cause
+      }
+    }
   }
 
-  private static boolean isBoost(String badgeId) {
-    return Objects.equals(badgeId, Badge.BOOST_BADGE_ID);
+  private fun getRequestType(recipient: Recipient): SignalServiceProfile.RequestType {
+    return if (ExpiringProfileCredentialUtil.isValid(recipient.expiringProfileKeyCredential))
+      SignalServiceProfile.RequestType.PROFILE
+    else
+      SignalServiceProfile.RequestType.PROFILE_AND_CREDENTIAL
   }
 
-  private static boolean isGift(String badgeId) {
-    return Objects.equals(badgeId, Badge.GIFT_BADGE_ID);
+  private fun isSubscription(badgeId: String?): Boolean {
+    return !isBoost(badgeId) && !isGift(badgeId)
   }
 
-  public static final class Factory implements Job.Factory<RefreshOwnProfileJob> {
+  private fun isBoost(badgeId: String?): Boolean {
+    return badgeId == Badge.BOOST_BADGE_ID
+  }
 
-    @Override
-    public @NonNull RefreshOwnProfileJob create(@NonNull Parameters parameters, @Nullable byte[] serializedData) {
-      return new RefreshOwnProfileJob(parameters);
+  private fun isGift(badgeId: String?): Boolean {
+    return badgeId == Badge.GIFT_BADGE_ID
+  }
+
+  class Factory : Job.Factory<RefreshOwnProfileJob> {
+    override fun create(parameters: Parameters, serializedData: ByteArray?): RefreshOwnProfileJob {
+      return RefreshOwnProfileJob(parameters)
     }
   }
 }

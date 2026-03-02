@@ -562,7 +562,7 @@ class EnterPhoneNumberFragment : LoggingFragment(R.layout.fragment_registration_
       EnterPhoneNumberMode.RESTART_AFTER_COLLECTION -> startNormalRegistration()
 
       EnterPhoneNumberMode.COLLECT_FOR_MANUAL_SIGNAL_BACKUPS_RESTORE -> findNavController().safeNavigate(EnterPhoneNumberFragmentDirections.goToEnterBackupKey())
-      EnterPhoneNumberMode.COLLECT_FOR_LOCAL_V2_SIGNAL_BACKUPS_RESTORE -> findNavController().safeNavigate(EnterPhoneNumberFragmentDirections.goToInternalNewLocalBackupRestore())
+      EnterPhoneNumberMode.COLLECT_FOR_LOCAL_V2_SIGNAL_BACKUPS_RESTORE -> findNavController().safeNavigate(EnterPhoneNumberFragmentDirections.goToRestoreLocalBackupFragment())
     }
   }
 
@@ -600,6 +600,7 @@ class EnterPhoneNumberFragment : LoggingFragment(R.layout.fragment_registration_
   private fun updateEnabledControls(showProgress: Boolean, isReRegister: Boolean) {
     binding.countryCode.isEnabled = !showProgress
     binding.number.isEnabled = !showProgress
+    countryPickerView.isEnabled = !showProgress
     binding.cancelButton.visible = !showProgress && isReRegister
   }
 

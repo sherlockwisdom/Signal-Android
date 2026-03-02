@@ -342,6 +342,7 @@ public final class ContactSelectionListFragment extends LoggingFragment {
                         .map(r -> new ContactSearchKey.RecipientSearchKey(r, false))
                         .collect(java.util.stream.Collectors.toSet()),
         selectionLimit,
+        isMulti,
         new ContactSearchAdapter.DisplayOptions(
             isMulti,
             ContactSearchAdapter.DisplaySecondaryInformation.ALWAYS,
@@ -558,6 +559,7 @@ public final class ContactSelectionListFragment extends LoggingFragment {
   public void onDataRefreshed() {
     this.resetPositionOnCommit = true;
     swipeRefresh.setRefreshing(false);
+    contactSearchMediator.refresh();
   }
 
   public boolean hasQueryFilter() {
@@ -574,6 +576,7 @@ public final class ContactSelectionListFragment extends LoggingFragment {
 
   public void reset() {
     contactSearchMediator.clearSelection();
+    contactSearchMediator.refresh();
     fastScroller.setVisibility(View.GONE);
     headerActionView.setVisibility(View.GONE);
   }

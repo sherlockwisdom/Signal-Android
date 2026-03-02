@@ -4,15 +4,25 @@ import android.app.Application
 import android.content.SharedPreferences
 import android.preference.PreferenceManager
 import kotlinx.coroutines.runBlocking
+import okio.ByteString
 import org.signal.core.models.ServiceId.ACI
 import org.signal.core.util.Util
 import org.signal.libsignal.protocol.IdentityKeyPair
 import org.signal.libsignal.protocol.SignalProtocolAddress
+import org.signal.storageservice.storage.protos.groups.AccessControl
+import org.signal.storageservice.storage.protos.groups.Member
+import org.signal.storageservice.storage.protos.groups.local.DecryptedGroup
+import org.signal.storageservice.storage.protos.groups.local.DecryptedMember
+import org.signal.storageservice.storage.protos.groups.local.DecryptedTimer
+import org.signal.storageservice.storage.protos.groups.local.EnabledState
 import org.thoughtcrime.securesms.crypto.MasterSecretUtil
+import org.thoughtcrime.securesms.crypto.PreKeyUtil
 import org.thoughtcrime.securesms.crypto.ProfileKeyUtil
 import org.thoughtcrime.securesms.database.SignalDatabase
 import org.thoughtcrime.securesms.database.model.databaseprotos.RestoreDecisionState
 import org.thoughtcrime.securesms.dependencies.AppDependencies
+import org.thoughtcrime.securesms.groups.GroupId
+import org.thoughtcrime.securesms.keyvalue.CertificateType
 import org.thoughtcrime.securesms.keyvalue.SignalStore
 import org.thoughtcrime.securesms.keyvalue.Skipped
 import org.thoughtcrime.securesms.net.DeviceTransferBlockingInterceptor
@@ -28,11 +38,12 @@ import org.thoughtcrime.securesms.util.TextSecurePreferences
 import org.whispersystems.signalservice.api.profiles.SignalServiceProfile
 import org.whispersystems.signalservice.api.push.SignalServiceAddress
 import java.util.UUID
+import kotlin.time.Duration.Companion.days
+import kotlin.time.Duration.Companion.milliseconds
 
 object TestUsers {
 
-  private var generatedOthers: Int = 0
-  private val TEST_E164 = "+15555550101"
+  private var generatedOthers: Int = 1
 
   fun setupSelf(): Recipient {
     val application: Application = AppDependencies.application
@@ -50,19 +61,19 @@ object TestUsers {
     runBlocking {
       val registrationData = RegistrationData(
         code = "123123",
-        e164 = TEST_E164,
+        e164 = Harness.SELF_E164,
         password = Util.getSecret(18),
         registrationId = RegistrationRepository.getRegistrationId(),
-        profileKey = RegistrationRepository.getProfileKey(TEST_E164),
+        profileKey = RegistrationRepository.getProfileKey(Harness.SELF_E164),
         fcmToken = null,
         pniRegistrationId = RegistrationRepository.getPniRegistrationId(),
         recoveryPassword = "asdfasdfasdfasdf"
       )
       val remoteResult = AccountRegistrationResult(
-        uuid = UUID.randomUUID().toString(),
+        uuid = Harness.SELF_ACI.toString(),
         pni = UUID.randomUUID().toString(),
         storageCapable = false,
-        number = TEST_E164,
+        number = Harness.SELF_E164,
         masterKey = null,
         pin = null,
         aciPreKeyCollection = RegistrationRepository.generateSignedAndLastResortPreKeys(SignalStore.account.aciIdentityKey, SignalStore.account.aciPreKeys),
@@ -78,6 +89,31 @@ object TestUsers {
     RegistrationUtil.maybeMarkRegistrationComplete()
     SignalDatabase.recipients.setProfileName(Recipient.self().id, ProfileName.fromParts("Tester", "McTesterson"))
     TextSecurePreferences.setPromptedOptimizeDoze(application, true)
+    TextSecurePreferences.setRatingEnabled(application, false)
+
+    PreKeyUtil.generateAndStoreSignedPreKey(AppDependencies.protocolStore.aci(), SignalStore.account.aciPreKeys)
+    PreKeyUtil.generateAndStoreOneTimeEcPreKeys(AppDependencies.protocolStore.aci(), SignalStore.account.aciPreKeys)
+    PreKeyUtil.generateAndStoreOneTimeKyberPreKeys(AppDependencies.protocolStore.aci(), SignalStore.account.aciPreKeys)
+
+    val aliceSenderCertificate = Harness.createCertificateFor(
+      uuid = Harness.SELF_ACI.rawUuid,
+      e164 = Harness.SELF_E164,
+      deviceId = 1,
+      identityKey = SignalStore.account.aciIdentityKey.publicKey.publicKey,
+      expires = System.currentTimeMillis().milliseconds + 30.days
+    )
+
+    val aliceSenderCertificate2 = Harness.createCertificateFor(
+      uuid = Harness.SELF_ACI.rawUuid,
+      e164 = null,
+      deviceId = 1,
+      identityKey = SignalStore.account.aciIdentityKey.publicKey.publicKey,
+      expires = System.currentTimeMillis().milliseconds + 30.days
+    )
+
+    SignalStore.certificate.setUnidentifiedAccessCertificate(CertificateType.ACI_AND_E164, aliceSenderCertificate.serialized)
+    SignalStore.certificate.setUnidentifiedAccessCertificate(CertificateType.ACI_ONLY, aliceSenderCertificate2.serialized)
+
     return Recipient.self()
   }
 
@@ -110,5 +146,74 @@ object TestUsers {
     }
 
     return others
+  }
+
+  fun setupTestClients(othersCount: Int): List<RecipientId> {
+    val others = mutableListOf<RecipientId>()
+    synchronized(this) {
+      for (i in 0 until othersCount) {
+        val otherClient = Harness.otherClients[i]
+
+        val recipientId = RecipientId.from(SignalServiceAddress(otherClient.serviceId, otherClient.e164))
+        SignalDatabase.recipients.setProfileName(recipientId, ProfileName.fromParts("Buddy", "#$i"))
+        SignalDatabase.recipients.setProfileKeyIfAbsent(recipientId, otherClient.profileKey)
+        SignalDatabase.recipients.setCapabilities(recipientId, SignalServiceProfile.Capabilities(true, true))
+        SignalDatabase.recipients.setProfileSharing(recipientId, true)
+        SignalDatabase.recipients.markRegistered(recipientId, otherClient.serviceId)
+        AppDependencies.protocolStore.aci().saveIdentity(SignalProtocolAddress(otherClient.serviceId.toString(), 1), otherClient.identityKeyPair.publicKey)
+
+        others += recipientId
+      }
+
+      generatedOthers += othersCount
+    }
+
+    return others
+  }
+
+  fun setupGroup(): GroupId.V2 {
+    val members = setupTestClients(5)
+    val self = Recipient.self()
+
+    val fullMembers = buildList {
+      add(member(aci = self.requireAci()))
+      addAll(members.map { member(aci = Recipient.resolved(it).requireAci()) })
+    }
+
+    val group = DecryptedGroup(
+      title = "Title",
+      avatar = "",
+      disappearingMessagesTimer = DecryptedTimer(),
+      accessControl = AccessControl(),
+      revision = 1,
+      members = fullMembers,
+      pendingMembers = emptyList(),
+      requestingMembers = emptyList(),
+      inviteLinkPassword = ByteString.EMPTY,
+      description = "Description",
+      isAnnouncementGroup = EnabledState.DISABLED,
+      bannedMembers = emptyList(),
+      isPlaceholderGroup = false
+    )
+
+    val groupId = SignalDatabase.groups.create(
+      groupMasterKey = Harness.groupMasterKey,
+      groupState = group,
+      groupSendEndorsements = null
+    )
+
+    SignalDatabase.recipients.setProfileSharing(Recipient.externalGroupExact(groupId!!).id, true)
+
+    return groupId
+  }
+
+  private fun member(aci: ACI, role: Member.Role = Member.Role.DEFAULT, joinedAt: Int = 0, labelEmoji: String = "", labelString: String = ""): DecryptedMember {
+    return DecryptedMember(
+      role = role,
+      aciBytes = aci.toByteString(),
+      joinedAtRevision = joinedAt,
+      labelEmoji = labelEmoji,
+      labelString = labelString
+    )
   }
 }

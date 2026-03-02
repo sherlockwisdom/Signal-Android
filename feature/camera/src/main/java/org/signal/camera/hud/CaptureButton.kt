@@ -22,12 +22,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.geometry.Size
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.StrokeCap
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.Preview
@@ -202,13 +202,19 @@ fun CaptureButton(
 
                 // Handle zoom during recording
                 if (longPressTriggered) {
+                  val deadzoneBottom = size.height * (1f - DEADZONE_REDUCTION_PERCENT / 2f)
                   val isAboveDeadzone = currentPointer.position.y < deadzoneTop
+                  val isBelowDeadzone = currentPointer.position.y > deadzoneBottom
                   if (isAboveDeadzone) {
                     val deltaY = (deadzoneTop - currentPointer.position.y).coerceAtLeast(0f)
                     val zoomPercent = (deltaY / maxRange).coerceIn(0f, 1f)
-                    // Apply decelerate interpolation like CameraButtonView
                     val interpolatedZoom = decelerateInterpolation(zoomPercent)
                     onZoomChange(interpolatedZoom)
+                  } else if (isBelowDeadzone) {
+                    val deltaY = (currentPointer.position.y - deadzoneBottom).coerceAtLeast(0f)
+                    val zoomPercent = (deltaY / maxRange).coerceIn(0f, 1f)
+                    val interpolatedZoom = decelerateInterpolation(zoomPercent)
+                    onZoomChange(-interpolatedZoom)
                   }
                 }
 

@@ -116,9 +116,19 @@ class AttachmentDownloadJob private constructor(
           }
         }
 
-        AttachmentTable.TRANSFER_PROGRESS_STARTED,
+        AttachmentTable.TRANSFER_PROGRESS_STARTED -> {
+          Log.i(TAG, "${databaseAttachment.attachmentId} is in started state, enqueueing force download in case existing job is constraint-blocked")
+          val downloadJob = AttachmentDownloadJob(
+            messageId = databaseAttachment.mmsId,
+            attachmentId = databaseAttachment.attachmentId,
+            forceDownload = true
+          )
+          AppDependencies.jobManager.add(downloadJob)
+          downloadJob.id
+        }
+
         AttachmentTable.TRANSFER_PROGRESS_PERMANENT_FAILURE -> {
-          Log.d(TAG, "${databaseAttachment.attachmentId} is downloading or permanently failed, transferState: $transferState")
+          Log.d(TAG, "${databaseAttachment.attachmentId} is permanently failed, transferState: $transferState")
           null
         }
 
@@ -137,6 +147,7 @@ class AttachmentDownloadJob private constructor(
       .maybeApplyNotInCallConstraint(forceDownload)
       .setLifespan(TimeUnit.DAYS.toMillis(1))
       .setMaxAttempts(Parameters.UNLIMITED)
+      .setQueuePriority(if (forceDownload) Parameters.PRIORITY_HIGH else Parameters.PRIORITY_DEFAULT)
       .build(),
     messageId,
     attachmentId,

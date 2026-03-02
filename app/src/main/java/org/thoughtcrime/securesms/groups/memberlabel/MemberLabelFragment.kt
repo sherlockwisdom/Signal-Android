@@ -6,16 +6,23 @@
 package org.thoughtcrime.securesms.groups.memberlabel
 
 import androidx.activity.compose.LocalOnBackPressedDispatcherOwner
+import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.imePadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardActions
 import androidx.compose.foundation.text.KeyboardOptions
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextFieldDefaults
 import androidx.compose.runtime.Composable
@@ -33,19 +40,22 @@ import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.core.os.bundleOf
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
-import androidx.navigation.fragment.navArgs
 import org.signal.core.ui.compose.AllDevicePreviews
 import org.signal.core.ui.compose.Buttons
+import org.signal.core.ui.compose.CircularProgressWrapper
 import org.signal.core.ui.compose.ClearableTextField
 import org.signal.core.ui.compose.ComposeFragment
 import org.signal.core.ui.compose.Previews
 import org.signal.core.ui.compose.Scaffolds
 import org.signal.core.ui.compose.SignalIcons
 import org.signal.core.util.isNotNullOrBlank
+import org.signal.core.util.requireParcelableCompat
 import org.thoughtcrime.securesms.R
 import org.thoughtcrime.securesms.groups.GroupId
 import org.thoughtcrime.securesms.groups.memberlabel.MemberLabelUiState.SaveState
+import org.thoughtcrime.securesms.profiles.ProfileName
 import org.thoughtcrime.securesms.reactions.any.ReactWithAnyEmojiBottomSheetDialogFragment
 import org.thoughtcrime.securesms.recipients.Recipient
 import org.thoughtcrime.securesms.util.viewModel
@@ -56,12 +66,22 @@ import org.thoughtcrime.securesms.util.viewModel
 class MemberLabelFragment : ComposeFragment(), ReactWithAnyEmojiBottomSheetDialogFragment.Callback {
   companion object {
     private const val EMOJI_PICKER_DIALOG_TAG = "emoji_picker_dialog"
+    private const val ARG_GROUP_ID = "group_id"
+
+    fun newInstance(groupId: GroupId.V2): MemberLabelFragment {
+      return MemberLabelFragment().apply {
+        arguments = bundleOf(ARG_GROUP_ID to groupId)
+      }
+    }
   }
 
-  private val args: MemberLabelFragmentArgs by navArgs()
+  private val groupId: GroupId.V2 by lazy {
+    requireArguments().requireParcelableCompat(ARG_GROUP_ID, GroupId.V2::class.java)
+  }
+
   private val viewModel: MemberLabelViewModel by viewModel {
     MemberLabelViewModel(
-      groupId = (args.groupId as GroupId).requireV2(),
+      groupId = groupId,
       recipientId = Recipient.self().id
     )
   }
@@ -70,9 +90,10 @@ class MemberLabelFragment : ComposeFragment(), ReactWithAnyEmojiBottomSheetDialo
   override fun FragmentContent() {
     val uiState by viewModel.uiState.collectAsStateWithLifecycle()
     val backPressedDispatcher = LocalOnBackPressedDispatcherOwner.current?.onBackPressedDispatcher
+    val snackbarHostState = remember { SnackbarHostState() }
 
     val callbacks = remember {
-      object : UiCallbacks {
+      object : MemberLabelUiCallbacks {
         override fun onClosePressed() {
           backPressedDispatcher?.onBackPressed()
         }
@@ -85,16 +106,34 @@ class MemberLabelFragment : ComposeFragment(), ReactWithAnyEmojiBottomSheetDialo
       }
     }
 
+    val networkErrorMessage = stringResource(R.string.GroupMemberLabel__error_cant_save_no_network)
+    val noPermissionErrorMessage = stringResource(R.string.GroupMemberLabel__error_no_edit_permission)
+
     LaunchedEffect(uiState.saveState) {
-      if (uiState.saveState is SaveState.Success) {
-        backPressedDispatcher?.onBackPressed()
-        viewModel.onSaveStateConsumed()
+      when (uiState.saveState) {
+        is SaveState.Success -> {
+          backPressedDispatcher?.onBackPressed()
+          viewModel.onSaveStateConsumed()
+        }
+
+        is SaveState.NetworkError -> {
+          snackbarHostState.showSnackbar(networkErrorMessage)
+          viewModel.onSaveStateConsumed()
+        }
+
+        is SaveState.InsufficientRights -> {
+          snackbarHostState.showSnackbar(noPermissionErrorMessage)
+          viewModel.onSaveStateConsumed()
+        }
+
+        is SaveState.InProgress, null -> Unit
       }
     }
 
     MemberLabelScreenUi(
       state = uiState,
-      callbacks = callbacks
+      callbacks = callbacks,
+      snackbarHostState = snackbarHostState
     )
   }
 
@@ -110,13 +149,15 @@ class MemberLabelFragment : ComposeFragment(), ReactWithAnyEmojiBottomSheetDialo
 @Composable
 private fun MemberLabelScreenUi(
   state: MemberLabelUiState,
-  callbacks: UiCallbacks
+  callbacks: MemberLabelUiCallbacks,
+  snackbarHostState: SnackbarHostState = remember { SnackbarHostState() }
 ) {
   Scaffolds.Settings(
     title = stringResource(R.string.GroupMemberLabel__title),
     onNavigationClick = callbacks::onClosePressed,
     navigationIcon = SignalIcons.X.imageVector,
-    navigationContentDescription = stringResource(R.string.GroupMemberLabel__accessibility_close_screen)
+    navigationContentDescription = stringResource(R.string.GroupMemberLabel__accessibility_close_screen),
+    snackbarHost = { SnackbarHost(snackbarHostState) }
   ) { paddingValues ->
 
     val focusRequester = remember { FocusRequester() }
@@ -126,40 +167,65 @@ private fun MemberLabelScreenUi(
       keyboardController?.show()
     }
 
-    Column(
+    Box(
       modifier = Modifier
         .padding(paddingValues)
+        .consumeWindowInsets(paddingValues)
         .fillMaxSize()
+        .imePadding()
     ) {
-      Text(
-        text = stringResource(R.string.GroupMemberLabel__description),
-        style = MaterialTheme.typography.bodyMedium,
-        color = MaterialTheme.colorScheme.onSurfaceVariant,
-        modifier = Modifier.padding(start = 24.dp, end = 24.dp, top = 8.dp, bottom = 24.dp)
-      )
-
-      LabelTextField(
-        labelEmoji = state.labelEmoji,
-        labelText = state.labelText,
-        remainingCharacters = state.remainingCharacters,
-        onLabelTextChange = callbacks::onLabelTextChanged,
-        onEmojiChange = callbacks::onSetEmojiClicked,
-        onClear = callbacks::onClearLabelClicked,
-        onSave = callbacks::onSaveClicked,
+      Column(
         modifier = Modifier
           .padding(horizontal = 24.dp)
-          .focusRequester(focusRequester)
-      )
+          .fillMaxWidth()
+          .verticalScroll(rememberScrollState())
+      ) {
+        Text(
+          text = stringResource(R.string.GroupMemberLabel__description),
+          style = MaterialTheme.typography.bodyMedium,
+          color = MaterialTheme.colorScheme.onSurfaceVariant,
+          modifier = Modifier.padding(top = 8.dp, bottom = 24.dp)
+        )
 
-      Spacer(modifier = Modifier.weight(1f))
+        LabelTextField(
+          labelEmoji = state.labelEmoji,
+          labelText = state.labelText,
+          remainingCharacters = state.remainingCharacters,
+          onLabelTextChange = callbacks::onLabelTextChanged,
+          onEmojiChange = callbacks::onSetEmojiClicked,
+          onClear = callbacks::onClearLabelClicked,
+          onSave = callbacks::onSaveClicked,
+          modifier = Modifier.focusRequester(focusRequester)
+        )
 
-      SaveButton(
-        enabled = state.isSaveEnabled,
-        onClick = callbacks::onSaveClicked,
+        Text(
+          text = stringResource(R.string.GroupMemberLabel__preview_section_header),
+          style = MaterialTheme.typography.titleSmall,
+          modifier = Modifier.padding(top = 24.dp, bottom = 12.dp)
+        )
+
+        if (state.recipient != null) {
+          MessageBubblePreview(
+            sender = state.recipient,
+            senderNameColor = state.senderNameColor,
+            labelEmoji = state.labelEmoji,
+            labelText = state.sanitizedLabelText,
+            messageText = stringResource(R.string.GroupMemberLabel__preview_sample_message)
+          )
+        }
+      }
+
+      CircularProgressWrapper(
+        isLoading = state.saveState is SaveState.InProgress,
         modifier = Modifier
-          .align(Alignment.End)
-          .padding(24.dp)
-      )
+          .align(Alignment.BottomEnd)
+          .padding(end = 24.dp, bottom = 16.dp)
+      ) {
+        SaveButton(
+          enabled = state.isSaveEnabled,
+          onClick = callbacks::onSaveClicked
+        )
+      }
     }
   }
 }
@@ -245,7 +311,7 @@ private fun SaveButton(
   }
 }
 
-private interface UiCallbacks {
+private interface MemberLabelUiCallbacks {
   fun onClosePressed()
   fun onLabelEmojiChanged(emoji: String)
   fun onLabelTextChanged(text: String)
@@ -253,7 +319,7 @@ private interface UiCallbacks {
   fun onClearLabelClicked()
   fun onSaveClicked()
 
-  object Empty : UiCallbacks {
+  object Empty : MemberLabelUiCallbacks {
     override fun onClosePressed() = Unit
     override fun onLabelEmojiChanged(emoji: String) = Unit
     override fun onLabelTextChanged(text: String) = Unit
@@ -269,10 +335,13 @@ private fun MemberLabelScreenPreview() {
   Previews.Preview {
     MemberLabelScreenUi(
       state = MemberLabelUiState(
+        recipient = Recipient(
+          profileName = ProfileName.fromParts("Kahless", "The Unforgettable")
+        ),
         labelEmoji = "⛑️",
         labelText = "Vet Coordinator"
       ),
-      callbacks = UiCallbacks.Empty
+      callbacks = MemberLabelUiCallbacks.Empty
     )
   }
 }

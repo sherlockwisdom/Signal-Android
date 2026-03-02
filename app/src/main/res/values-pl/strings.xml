@@ -332,7 +332,7 @@
     <!-- Accessibility label for the send button in media selection -->
     <string name="CameraXFragment_send">Udostępnij</string>
 
-<!-- CameraContacts -->
+    <!-- CameraContacts -->
     <string name="CameraContacts_recent_contacts">Ostatnie kontakty</string>
     <string name="CameraContacts_signal_contacts">Kontakty Signal</string>
     <string name="CameraContacts_signal_groups">Grupy Signal</string>
@@ -454,8 +454,14 @@
     <!-- Footer shown at the end of long body messages to download more of it -->
     <string name="ConversationItem_download_more">  Pobierz więcej</string>
     <string name="ConversationItem_pending">  Oczekiwanie</string>
-    <string name="ConversationItem_this_message_was_deleted">Wiadomość została usunięta.</string>
-    <string name="ConversationItem_you_deleted_this_message">Wiadomość została przez Ciebie usunięta.</string>
+    <string name="ConversationItem_this_message_was_deleted">This message was deleted</string>
+    <!-- Conversation message shown when someone deletes their own message. Placeholder is the name of the person. -->
+    <string name="ConversationItem_s_deleted_this_message">%1$s deleted this message</string>
+    <string name="ConversationItem_you_deleted_this_message">You deleted this message</string>
+    <!-- First part of a conversation message when a message has been deleted by an admin. -->
+    <string name="ConversationItem_admin">Administrator</string>
+    <!-- Second part of a conversation message when a message has been deleted by an admin. -->
+    <string name="ConversationItem_deleted_this_message">deleted this message</string>
     <!-- Dialog error message shown when user can\'t download a message from someone else due to a permanent failure (e.g., unable to decrypt), placeholder is other\'s name -->
     <string name="ConversationItem_cant_download_message_s_will_need_to_send_it_again">Nie udało się pobrać wiadomości. Zapytaj, czy %1$s może ją wysłać ponownie.</string>
     <!-- Dialog error message shown when user can\'t download an image message from someone else due to a permanent failure (e.g., unable to decrypt), placeholder is other\'s name -->
@@ -636,13 +642,31 @@
     <string name="ConversationFragment_deleting_messages">Usuwanie wiadomości…</string>
     <string name="ConversationFragment_delete_for_me">Usuń u mnie</string>
     <string name="ConversationFragment_delete_for_everyone">Usuń u wszystkich</string>
+    <!-- Title of dialog confirming whether to delete the message -->
+    <plurals name="ConversationFragment_delete_selected_title">
+        <item quantity="one">Usunąć zaznaczoną wiadomość?</item>
+        <item quantity="few">Usunąć zaznaczone wiadomości?</item>
+        <item quantity="many">Usunąć zaznaczone wiadomości?</item>
+        <item quantity="other">Usunąć zaznaczone wiadomości?</item>
+    </plurals>
+    <!-- Body of dialog confirming whether to delete the message -->
+    <plurals name="ConversationFragment_delete_selected_body">
+        <item quantity="one">U kogo chcesz usunąć tę wiadomość?</item>
+        <item quantity="few">U kogo chcesz usunąć te wiadomości?</item>
+        <item quantity="many">U kogo chcesz usunąć te wiadomości?</item>
+        <item quantity="other">U kogo chcesz usunąć te wiadomości?</item>
+    </plurals>
+    <!-- Confirmation button to delete the message -->
+    <string name="ConversationFragment_delete_for_everyone_title">Delete for everyone?</string>
+    <!-- Body of dialog explaining what happens during deletion -->
+    <string name="ConversationFragment_delete_for_everyone_body">As an admin, group members will see that you deleted these messages.</string>
     <!-- Dialog button for deleting one or more note-to-self messages only on this device, leaving that same message intact on other devices. -->
     <string name="ConversationFragment_delete_on_this_device">Usuń z tego urządzenia</string>
     <!-- Dialog button for deleting one or more note-to-self messages that will be sync\'d to other devices -->
     <string name="ConversationFragment_delete">Usuń</string>
     <!-- Dialog button for deleting one or more note-to-self messages on all linked devices. -->
     <string name="ConversationFragment_delete_everywhere">Usuń wszędzie</string>
-    <string name="ConversationFragment_this_message_will_be_deleted_for_everyone_in_the_conversation">Wiadomość zostanie usunięta u wszystkich osób na tym czacie, pod warunkiem że mają najnowszą wersję aplikacji Signal. Wyświetli się u nich informacja, że wiadomość została przez Ciebie usunięta.</string>
+    <string name="ConversationFragment_this_message_will_be_deleted_for_everyone_in_the_conversation">Wiadomość zostanie usunięta u wszystkich osób w tym czacie, pod warunkiem że mają najnowszą wersję aplikacji Signal. Wyświetli się u nich informacja, że wiadomość została przez Ciebie usunięta.</string>
     <string name="ConversationFragment_quoted_message_not_found">Nie znaleziono oryginalnej wiadomości</string>
     <string name="ConversationFragment_quoted_message_no_longer_available">Oryginalna wiadomość nie jest już dostępna</string>
     <string name="ConversationFragment_failed_to_open_message">Nie udało się otworzyć wiadomości</string>
@@ -760,7 +784,7 @@
     <!-- Title of tip 4 -->
     <string name="SafetyTips_tip4_title">Fałszywe konta firm i instytucji</string>
     <!-- Message of tip 4 -->
-    <string name="SafetyTips_tip4_message">Zachowaj ostrożność, jeśli rzekomo kontaktuje się z Tobą urząd lub firma. Wiadomości, których nadawcami mieliby być kurierzy, instytucje podatkowe itp., mogą być spamem.</string>
+    <string name="SafetyTips_tip4_message">Zachowaj ostrożność, jeśli rzekomo kontaktuje się z Tobą urząd lub firma. Wiadomości, których nadawcami mieliby być kurierzy, urzędy podatkowe itp., mogą być spamem.</string>
 
     <!-- Bottom sheet text explaining that profile names are chosen by the account holder. Placeholder will be \'Profile names\' -->
     <string name="ProfileNameBottomSheet__profile_names_on_signal">%1$s Signal podaje osoba, do której należy dane konto.</string>
@@ -890,7 +914,7 @@
     <!-- Title for a reminder bottom sheet to users who have re-registered that they need to go back to re-link their devices. -->
     <string name="RelinkDevicesReminderFragment__relink_your_devices">Połącz urządzenia ponownie</string>
     <!-- Description for a reminder bottom sheet to users who have re-registered that they need to go back to re-link their devices. -->
-    <string name="RelinkDevicesReminderFragment__the_devices_you_added_were_unlinked">Gdy to urządzenie zostało wyrejestrowane, zostały od niego odłączone inne dodane przez Ciebie urządzenia. Aby połączyć je ponownie, przejdź do ustawień.</string>
+    <string name="RelinkDevicesReminderFragment__the_devices_you_added_were_unlinked">Gdy to urządzenie zostało wyrejestrowane, zostały od niego odłączone inne dodane przez Ciebie urządzenia. Możesz połączyć je ponownie w ustawieniach.</string>
     <!-- Button label for the re-link devices bottom sheet reminder to navigate to the Devices page in the settings. -->
     <string name="RelinkDevicesReminderFragment__open_settings">Przejdź do ustawień</string>
     <!-- Button label for the re-link devices bottom sheet reminder to dismiss the pop up. -->
@@ -1060,7 +1084,7 @@
     <!-- Title for dialog explaining to users how the scheduled messages work -->
     <string name="ScheduleMessageFTUXBottomSheet__title">Zaplanowane wiadomości</string>
     <!-- Disclaimer text for scheduled messages explaining to users that the scheduled messages will only send if connected to the internet -->
-    <string name="ScheduleMessageFTUXBottomSheet__disclaimer">Jeśli masz zaplanowaną wiadomość, upewnij się, że w momencie planowanej wysyłki Twoje urządzenie będzie włączone i połączone z internetem. W innym przypadku wiadomość zostanie wysłana, gdy urządzenie z powrotem połączy się z internetem.</string>
+    <string name="ScheduleMessageFTUXBottomSheet__disclaimer">Jeśli masz zaplanowaną wiadomość, w momencie planowanej wysyłki Twoje urządzenie musi być włączone i połączone z internetem. W przeciwnym razie wiadomość zostanie wysłana, gdy urządzenie z powrotem połączy się z internetem.</string>
     <!-- Confirmation button text acknowledging the user understands the disclaimer -->
     <string name="ScheduleMessageFTUXBottomSheet__okay">OK</string>
     <!-- Title for dialog asking users to allow alarm permissions for scheduled messages -->
@@ -1076,9 +1100,9 @@
     <!-- Disclaimer in message scheduling dialog. %1$s replaced with a GMT offset (e.g. GMT-05:00), and %2$s is replaced with the time zone name (e.g. Eastern Standard Time) -->
     <string name="ScheduleMessageTimePickerBottomSheet__timezone_disclaimer">Strefa czasowa: %2$s (%1$s)</string>
     <!-- Warning dialog message text shown when select time for scheduled send is in the past resulting in an immediate send if scheduled. -->
-    <string name="ScheduleMessageTimePickerBottomSheet__select_time_in_past_dialog_warning">Wybrany czas już minął. Jeśli go nie zmienisz, wiadomość zostanie wysłana od razu.</string>
+    <string name="ScheduleMessageTimePickerBottomSheet__select_time_in_past_dialog_warning">Wybrany czas już minął. Jeśli nie wybierzesz innego, wiadomość zostanie wysłana od razu.</string>
     <!-- Positive button text for warning dialog shown when scheduled send is in the past -->
-    <string name="ScheduleMessageTimePickerBottomSheet__select_time_in_past_dialog_positive_button">Wyślij teraz</string>
+    <string name="ScheduleMessageTimePickerBottomSheet__select_time_in_past_dialog_positive_button">Wyślij od razu</string>
 
     <!-- Context menu option to send a scheduled message now -->
     <string name="ScheduledMessagesBottomSheet_menu_send_now">Wyślij teraz</string>
@@ -1443,7 +1467,7 @@
     <!-- Title for dialog asking user to submit logs for debugging slow notification issues -->
     <string name="PromptLogsSlowNotificationsDialog__title">Zauważyliśmy opóźnienie w powiadomieniach. Przesłać dziennik debugowania?</string>
     <!-- Message for dialog asking user to submit logs for debugging a crash -->
-    <string name="PromptLogsSlowNotificationsDialog__message">Dzienniki debugowania ułatwiają namierzenie i naprawę błędu. Nie zawierają danych umożliwiających identyfikację.</string>
+    <string name="PromptLogsSlowNotificationsDialog__message">Dzienniki debugowania ułatwiają nam namierzenie i naprawę błędu. Nie zawierają danych umożliwiających identyfikację.</string>
     <!-- Title for dialog asking user to submit logs for debugging slow notification issues -->
     <string name="PromptLogsSlowNotificationsDialog__title_crash">W aplikacji Signal wystąpił błąd. Przesłać dziennik debugowania?</string>
     <!-- Title for dialog asking user to submit logs for a situation where they\'re not able to connect to the signal service -->
@@ -1676,7 +1700,7 @@
     <!-- Displayed above the conversation list when a user needs to address an issue with their username link -->
     <string name="UsernameOutOfSyncReminder__link_corrupt">Coś poszło nie tak z kodem QR i linkiem do udostępniania Twojej nazwy użytkownika. Przestały działać. Utwórz nowy link, aby udostępniać go innym.</string>
     <!-- Action text to navigate user to manually fix the issue with their username -->
-    <string name="UsernameOutOfSyncReminder__fix_now">Napraw błąd teraz</string>
+    <string name="UsernameOutOfSyncReminder__fix_now">Napraw teraz</string>
 
 
     <!-- ManageRecipientActivity -->
@@ -1974,9 +1998,9 @@
     <!-- Update message shown when receiving an incoming 1:1 video call and not answered -->
     <string name="MessageRecord_declined_video_call">Odrzucone połączenie wideo</string>
     <!-- Update message shown when receiving an incoming voice call and declined due to notification profile -->
-    <string name="MessageRecord_missed_voice_call_notification_profile">Nieodebrane połączenie głosowe, podczas gdy włączony był profil powiadomień</string>
+    <string name="MessageRecord_missed_voice_call_notification_profile">Nieodebrane połączenie głosowe, podczas gdy był włączony profil powiadomień</string>
     <!-- Update message shown when receiving an incoming video call and declined due to notification profile -->
-    <string name="MessageRecord_missed_video_call_notification_profile">Nieodebrane połączenie wideo, podczas gdy włączony był profil powiadomień</string>
+    <string name="MessageRecord_missed_video_call_notification_profile">Nieodebrane połączenie wideo, podczas gdy był włączony profil powiadomień</string>
     <!-- Call update formatter string to place the update message next to a time stamp. e.g., \'Incoming voice call · 11:11am\' -->
     <string name="MessageRecord_call_message_with_date">%1$s · %2$s</string>
     <string name="MessageRecord_s_updated_group">%1$s wprowadza zmiany w grupie.</string>
@@ -2736,6 +2760,8 @@
     <string name="WebRtcCallView__s_remotely_muted_s">%1$s wycisza tę osobę: %2$s.</string>
     <!-- Alert message indicating that the local user joined a call on a second device and muted this one from the other one. -->
     <string name="WebRtcCallView__you_muted_yourself">Wyciszasz siebie na innym urządzeniu.</string>
+    <!-- Toast message shown when user is auto-muted because they are joining a large group call. -->
+    <string name="WebRtcCallView__youve_been_muted_large_group">Twój mikrofon został wyciszony, ponieważ w połączeniu uczestniczy duża liczba osób.</string>
 
     <!-- Error message when the developer added a button in the wrong place. -->
     <string name="WebRtcAudioOutputToggleButton_fragment_activity_error">Wystąpił błąd interfejsu. Prosimy o zgłoszenie tego błędu twórcom aplikacji.</string>
@@ -2846,6 +2872,8 @@
     <string name="AboutSheet__you">Ty</string>
     <!-- Displays the name of a contact. The first placeholder is the name the user has assigned to that contact, the second name is the name the contact assigned to themselves -->
     <string name="AboutSheet__user_set_display_name_and_profile_name">%1$s (%2$s)</string>
+    <!-- Placeholder text in the group member label row when the user has no label set. -->
+    <string name="AboutSheet__add_group_member_label">Podaj rolę w grupie</string>
 
     <!-- Title of the screen showing which groups they have in common with another user. -->
     <plurals name="GroupsInCommon__n_groups_in_common_title">
@@ -2943,8 +2971,6 @@
     <string name="RegistrationActivity_i_understand">Rozumiem</string>
     <string name="RegistrationActivity_play_services_error">Błąd Usług Play</string>
     <string name="RegistrationActivity_google_play_services_is_updating_or_unavailable">Usługi Google Play są aktualizowane lub czasowo niedostępne. Spróbuj ponownie.</string>
-    <!-- Non-English translations should use "Signal is a nonprofit" instead, dropping the 501c3 reference. -->
-    <string name="RegistrationActivity_terms_and_privacy">Signal to organizacja non profit\nRegulamin i polityka prywatności</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_and_media_in_order_to_connect_with_friends">Aby ułatwić Ci komunikację ze znajomymi oraz wysyłanie wiadomości, Signal potrzebuje dostępu do Twoich kontaktów i multimediów. Twoje kontakty będą przesyłane do aplikacji za pomocą bezpiecznej funkcji wykrywania kontaktów, a więc będą szyfrowane metodą end-to-end i niewidoczne dla usługi Signal.</string>
     <string name="RegistrationActivity_signal_needs_access_to_your_contacts_in_order_to_connect_with_friends">Aby ułatwić Ci komunikację ze znajomymi, Signal potrzebuje dostępu do Twoich kontaktów. Twoje kontakty będą przesyłane do aplikacji za pomocą bezpiecznej funkcji wykrywania kontaktów, a więc będą szyfrowane metodą end-to-end i niewidoczne dla usługi Signal.</string>
     <string name="RegistrationActivity_rate_limited_to_service">Zbyt wiele prób rejestracji tego numeru. Spróbuj ponownie później.</string>
@@ -2979,8 +3005,6 @@
     <!-- Dialog button to cancel the pending action and return to the previous state. -->
     <string name="RegistrationActivity_cancel">Anuluj</string>
     <string name="RegistrationActivity_next">Dalej</string>
-    <string name="RegistrationActivity_continue">Kontynuuj</string>
-    <string name="RegistrationActivity_take_privacy_with_you_be_yourself_in_every_message">Prywatność, gdziekolwiek jesteś.\nSwoboda w każdej wiadomości.</string>
     <!-- Title of registration screen when asking for the users phone number -->
     <string name="RegistrationActivity_phone_number">Numer telefonu</string>
     <!-- Subtitle of registration screen when asking for the users phone number -->
@@ -3219,8 +3243,14 @@
     <string name="ThreadRecord_view_once_photo">Zdjęcie jednorazowe</string>
     <string name="ThreadRecord_view_once_video">Wideo jednorazowe</string>
     <string name="ThreadRecord_view_once_media">Multimedia jednorazowe</string>
-    <string name="ThreadRecord_this_message_was_deleted">Wiadomość została usunięta.</string>
-    <string name="ThreadRecord_you_deleted_this_message">Wiadomość została przez Ciebie usunięta.</string>
+    <!-- Thread preview when someone has deleted their own message -->
+    <string name="ThreadRecord_this_message_was_deleted">This message was deleted</string>
+    <!-- Thread preview when someone has deleted their own message. Placeholder is the name of the person. -->
+    <string name="ThreadRecord_s_deleted_this_message">%1$s deleted this message</string>
+    <!-- Thread preview when you deleted a message -->
+    <string name="ThreadRecord_you_deleted_this_message">You deleted this message</string>
+    <!-- Thread preview when an admin has deleted a message -->
+    <string name="ThreadRecord_admin_deleted_this_message">Admin %1$s deleted this message</string>
     <!-- Displayed in the notification when the user sends a request to activate payments -->
     <string name="ThreadRecord_you_sent_request">Wysyłasz prośbę o aktywację płatności</string>
     <!-- Displayed in the notification when the recipient wants to activate payments -->
@@ -3371,7 +3401,22 @@
     <string name="MessageDisplayHelper_message_encrypted_for_non_existing_session">Wiadomość zaszyfrowana w nieistniejącej sesji</string>
 
     <!-- MuteDialog -->
+    <!-- Title for a dialog where a user chooses how long they\'d like to mute notifications for -->
     <string name="MuteDialog_mute_notifications">Wycisz powiadomienia</string>
+    <!-- Dialog option that, when pressed, will open a time picker to let the user choose how long they\'d like to mute notifications for -->
+    <string name="MuteDialog__mute_until">Mute until…</string>
+
+    <!-- MuteUntilTimePickerBottomSheet -->
+    <!-- Title for a dialog where a user chooses how long they\'d like to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__dialog_title">Mute notifications until…</string>
+    <!-- Label for a data selector where the user chooses how long they\'d like to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__select_date_title">Wybierz datę</string>
+    <!-- Label for a time selector where the user chooses how long they\'d like to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__select_time_title">Wybierz godzinę</string>
+    <!-- Label for a button that, when pressed, will confirm the user\'s choice on how long to mute notifications for -->
+    <string name="MuteUntilTimePickerBottomSheet__mute_notifications">Wycisz powiadomienia</string>
+    <!-- Subtitle in a dialog that describes the timezone the user is picking times in. The first placeholder is a UTC offset, and the second placeholder is a user-friendly name for the timezone, e.g. "All times in (GMT-05:00) Eastern Standard Time" -->
+    <string name="MuteUntilTimePickerBottomSheet__timezone_disclaimer">Strefa czasowa: %2$s (%1$s)</string>
 
     <!-- KeyCachingService -->
     <string name="KeyCachingService_signal_passphrase_cached">Dotknij, aby otworzyć.</string>
@@ -4083,13 +4128,13 @@
     <string name="EncryptionVerifiedSheet__body_unavailable">Signal może automatycznie weryfikować szyfrowanie wyłącznie w przypadku tych osób, z którym kontakt nawiązano przez numer telefonu. Jeżeli kontakt został nawiązany przez nazwę użytkownika lub wspólną grupę, szyfrowanie end-to-end możesz zweryfikować ręcznie. W tym celu porównaj Wasze numery bezpieczeństwa z poprzedniego ekranu lub zeskanuj kod QR z urządzenia kontaktu.</string>
 
     <!-- Title for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__title">Signal can now auto-verify encryption</string>
+    <string name="VerifyAutomaticallyEducationSheet__title">Signal może teraz automatycznie weryfikować szyfrowanie</string>
     <!-- Body for auto verification education sheet -->
-    <string name="VerifyAutomaticallyEducationSheet__body">For contacts you’re connected to by phone number, Signal can automatically confirm whether the connection is secure using a process called key transparency. For added security, you can still verify connections manually using a QR code or safety number.</string>
+    <string name="VerifyAutomaticallyEducationSheet__body">W przypadku osób, z którymi kontakt został nawiązany za pomocą numeru telefonu, Signal może automatycznie potwierdzić, czy połączenie jest bezpieczne – robi to za pomocą mechanizmu przejrzystości kluczy. Jeśli chcesz mieć absolutną pewność, że komunikujesz się z właściwą osobą, możesz dodatkowo weryfikować kontakty ręcznie za pomocą kodu QR lub numeru bezpieczeństwa.</string>
     <!-- Button to learn more about automatic verification -->
     <string name="VerifyAutomaticallyEducationSheet__learn_more">Dowiedz się więcej</string>
     <!-- Button to go to verification page -->
-    <string name="VerifyAutomaticallyEducationSheet__continue">Continue</string>
+    <string name="VerifyAutomaticallyEducationSheet__continue">Kontynuuj</string>
 
     <!-- Title for bottom sheet when self verification fails -->
     <string name="SelfVerificationFailureSheet__title">Automatyczna weryfikacja kluczy jest obecnie niedostępna na Twoim urządzeniu. Przesłać dziennik debugowania?</string>
@@ -4566,32 +4611,6 @@
     <!-- Alert dialog button to update now -->
     <string name="PaymentsHomeFragment__update_now">Zaktualizuj teraz</string>
 
-    <!-- GrantPermissionsFragment -->
-    <!-- Displayed as a text-only action button at the bottom start of the screen -->
-    <string name="GrantPermissionsFragment__not_now">Nie teraz</string>
-    <!-- Displayed as an action button at the bottom end of the screen -->
-    <string name="GrantPermissionsFragment__next">Dalej</string>
-    <!-- Displayed as a title at the top of the screen -->
-    <string name="GrantPermissionsFragment__allow_permissions">Włącz uprawnienia</string>
-    <!-- Displayed as a subtitle at the top of the screen -->
-    <string name="GrantPermissionsFragment__to_help_you_message_people_you_know">Aby ułatwić Ci komunikację ze znajomymi osobami, Signal potrzebuje tych uprawnień. </string>
-    <!-- Notifications permission row title -->
-    <string name="GrantPermissionsFragment__notifications">Powiadomienia</string>
-    <!-- Notifications permission row description -->
-    <string name="GrantPermissionsFragment__get_notified_when">Otrzymuj powiadomienia o nowych wiadomościach.</string>
-    <!-- Contacts permission row title -->
-    <string name="GrantPermissionsFragment__contacts">Kontakty</string>
-    <!-- Contacts permission row description -->
-    <string name="GrantPermissionsFragment__find_people_you_know">Znajdź w aplikacji znajome osoby. Twoje kontakty są szyfrowane i nieczytelne dla usługi Signal.</string>
-    <!-- Phone calls permission row title -->
-    <string name="GrantPermissionsFragment__phone_calls">Połączenia telefoniczne</string>
-    <!-- Phone calls permission row description -->
-    <string name="GrantPermissionsFragment__make_registering_easier">Ułatw sobie rejestrację i zyskaj dodatkowe funkcje połączeń.</string>
-    <!-- Storage permission row title -->
-    <string name="GrantPermissionsFragment__storage">Pamięć</string>
-    <!-- Storage permission row description -->
-    <string name="GrantPermissionsFragment__send_photos_videos_and_files">Wysyłaj zdjęcia, filmy i inne pliki ze swojego urządzenia.</string>
-
 
     <!-- PaymentsSecuritySetupFragment -->
     <!-- Toolbar title -->
@@ -4896,7 +4915,7 @@
     <!-- Label for a button in a banner to learn more about why we temporarily can\'t process the user\'s contacts -->
     <string name="reminder_cds_warning_learn_more">Dowiedz się więcej</string>
     <!-- Body text of a banner that will show at the top of the chat list when the user has so many contacts that we cannot ever process them -->
-    <string name="reminder_cds_permanent_error_body">Dostępna w aplikacji Signal funkcja wykrywania kontaktów nie może przetworzyć kontaktów z Twojego telefonu.</string>
+    <string name="reminder_cds_permanent_error_body">Funkcja wykrywania kontaktów dostępna w aplikacji Signal nie może przetworzyć kontaktów z Twojego telefonu.</string>
     <!-- Label for a button in a banner to learn more about why we cannot process the user\'s contacts -->
     <string name="reminder_cds_permanent_error_learn_more">Dowiedz się więcej</string>
 
@@ -5071,8 +5090,6 @@
     <string name="backup_enable_dialog__i_have_written_down_this_passphrase">Hasło zostało przeze mnie zapisane. Bez niego nie uda mi się przywrócić kopii zapasowej.</string>
     <string name="registration_activity__restore_backup">Przywróć kopię zapasową</string>
     <string name="registration_activity__transfer_or_restore_account">Przenieś lub przywróć konto</string>
-    <!-- Screen title for restoring or transfering account -->
-    <string name="registration_activity__restore_or_transfer">Przywróć lub przenieś</string>
     <string name="registration_activity__transfer_account">Przenieś konto</string>
     <string name="registration_activity__skip">Pomiń</string>
     <!-- Text label button to skip restoring -->
@@ -5186,13 +5203,6 @@
     <string name="RegistrationActivity_error_connecting_to_service">Podczas łączenia z usługą wystąpił błąd</string>
     <string name="preferences_chats__backups">Kopie zapasowe</string>
 
-    <!-- Button label to indicate that a feature is in beta mode -->
-    <string name="Beta__beta_title">Beta</string>
-    <!-- Content description for info icon -->
-    <string name="Beta__info">Informacje</string>
-    <!-- Text in header describing that the feature is a beta feature and prone to frequent changes -->
-    <string name="Beta__this_is_beta">Jest to funkcja w wersji beta – wciąż pracujemy nad jej ulepszeniem.</string>
-
     <!-- Title text shown when Signal is locked and needs to be unlocked -->
     <string name="prompt_passphrase_activity__unlock_signal">Odblokuj Signal</string>
     <!-- Description text explaining how to unlock Signal -->
@@ -5200,7 +5210,7 @@
     <!-- Text shown in a dialog that further explains how to unlock Signal by using the same unlocking methods that are used to unlock their own device -->
     <string name="prompt_passphrase_activity__screen_lock_is_on">Na urządzeniu masz włączoną blokadę ekranu, która chroni również dostęp do aplikacji Signal. Odblokuj Signal tą samą metodą, którą odblokowujesz telefon: twarzą, odciskiem palca, PIN-em, hasłem lub wzorem.</string>
     <!-- Button in a dialog that will contact Signal support if pressed -->
-    <string name="prompt_passphrase_activity__contact_support">Skotaktuj się z pomocą techniczną</string>
+    <string name="prompt_passphrase_activity__contact_support">Skontaktuj się z pomocą techniczną</string>
     <!-- Button text to try again after unlocking has previously failed -->
     <string name="prompt_passphrase_activity__try_again">Spróbuj ponownie</string>
 
@@ -5418,6 +5428,8 @@
     <!-- Button text to approve a user that has requested to join a group -->
     <string name="GroupRecipientListItem_approve_description">Zatwierdź</string>
     <string name="GroupRecipientListItem_deny_description">Odrzuć</string>
+    <!-- Placeholder shown in the group member list when the user has not yet set a member label. -->
+    <string name="GroupRecipientListItem__add_member_label">Podaj rolę w grupie</string>
 
 
     <!-- GroupsLearnMoreBottomSheetDialogFragment -->
@@ -5831,7 +5843,7 @@
     <!-- Shown in a dialog with a spinner while the report is downloading -->
     <string name="ExportAccountDataFragment__download_progress">Generowanie raportu…</string>
     <!-- Explanation that the report is only generated on export and is not saved on the device -->
-    <string name="ExportAccountDataFragment__report_not_stored_disclaimer">Raport jest generowany wyłącznie wtedy, gdy prosisz o eksport, i nie jest przechowywany przez Signal na Twoim urządzeniu.</string>
+    <string name="ExportAccountDataFragment__report_not_stored_disclaimer">Raport jest generowany tylko wtedy, gdy go eksportujesz, i nie jest przechowywany przez Signal na Twoim urządzeniu.</string>
 
     <!-- ChangeNumberFragment -->
     <string name="ChangeNumberFragment__use_this_to_change_your_current_phone_number_to_a_new_phone_number">Użyj tej opcji, aby zmienić swój obecny numer telefonu na nowy. Tej zmiany nie będzie można cofnąć.\n\nZanim zaczniesz, upewnij się, że możesz odbierać SMS-y lub połączenia kierowane na nowy numer.</string>
@@ -5988,7 +6000,7 @@
     <!-- Text next to button that allows users to add chats to the folder    -->
     <string name="CreateFoldersFragment__add_chats">Dodaj czaty</string>
     <!-- Description explaining the purpose of the included chats section -->
-    <string name="CreateFoldersFragment__choose_chats_you_want">Wybierz czaty, które ma zawierać ten folder.</string>
+    <string name="CreateFoldersFragment__choose_chats_you_want">Wybierz czaty, które mają się znaleźć w tym folderze.</string>
     <!-- Section title representing what chats are excluded from the folder -->
     <string name="CreateFoldersFragment__exceptions">Wkluczone czaty</string>
     <!-- Text next to button that allows users to exclude chats from the folder   -->
@@ -6312,7 +6324,7 @@
     <!-- Snackbar message after removing a contact -->
     <string name="NewConversationActivity__s_has_been_removed">Ta osoba została usunięta: %1$s</string>
     <!-- Snackbar message after blocking a contact -->
-    <string name="NewConversationActivity__s_has_been_blocked">Ta osoba została zablokowana %1$s</string>
+    <string name="NewConversationActivity__s_has_been_blocked">Ta osoba została zablokowana: %1$s</string>
     <!-- Snackbar message when blocking a contact has failed -->
     <string name="NewConversationActivity__block_failed">Nie udało się zablokować</string>
     <!-- Error message shown when looking up a person by phone number and that phone number is not associated with a signal account -->
@@ -6717,7 +6729,7 @@
     <!-- Displayed as a dialog title when the selected recipient for a gift doesn\'t support gifting -->
     <string name="DonationsErrors__cannot_send_donation">Nie można wpłacić darowizny</string>
     <!-- Displayed as a dialog message when the selected recipient for a gift doesn\'t support gifting -->
-    <string name="DonationsErrors__this_user_cant_receive_donations_until">Ta osoba nie może otrzymywać darowizn, dopóki nie zaktualizuje aplikacji Signal.</string>
+    <string name="DonationsErrors__this_user_cant_receive_donations_until">Nie można wpłacać darowizn w imieniu tej osoby, dopóki nie zaktualizuje ona aplikacji Signal.</string>
     <!-- Displayed as a dialog message when the user\'s profile could not be fetched, likely due to lack of internet -->
     <string name="DonationsErrors__your_donation_could_not_be_sent">Nie udało się wpłacić darowizny z powodu błędu sieci. Sprawdź połączenie z internetem i spróbuj ponownie.</string>
     <!-- Displayed as a dialog message when the user encounters an error during an iDEAL donation -->
@@ -7073,7 +7085,7 @@
         <item quantity="other">%1$d odpowiedzi</item>
     </plurals>
     <!-- Toast / Snackbar label when unhiding a story during viewer -->
-    <string name="StoryViewerPageFragment__story_no_longer_hidden">Relacja nie jest już ukryta</string>
+    <string name="StoryViewerPageFragment__story_no_longer_hidden">Relacje nie są już ukryte</string>
     <!-- Label on group stories to add a story -->
     <string name="StoryViewerPageFragment__add">Dodaj</string>
     <!-- Used when view receipts are disabled -->
@@ -7179,7 +7191,7 @@
     <!-- Signal connections bolded text in the Signal Connections sheet -->
     <string name="SignalConnectionsBottomSheet___signal_connections">Kontakty Signal</string>
     <!-- Displayed at the top of the signal connections sheet. Please remember to insert strong tag as required. -->
-    <string name="SignalConnectionsBottomSheet__signal_connections_are_people">Kontakty Signal to osoby, które zostały uznane za zaufane z jednego z tych powodów:</string>
+    <string name="SignalConnectionsBottomSheet__signal_connections_are_people">Kontakty Signal to osoby uznane za zaufane z jednego z tych powodów:</string>
     <!-- Signal connections sheet bullet point 1 -->
     <string name="SignalConnectionsBottomSheet__starting_a_conversation">Został przez Ciebie rozpoczęty z nimi czat</string>
     <!-- Signal connections sheet bullet point 2 -->
@@ -7501,10 +7513,10 @@
     <string name="SafetyNumberBottomSheetFragment__all_connections_have_been_reviewed">Wszystkie kontakty zostały sprawdzone. Aby przejść dalej, dotknij opcji „Wyślij”.</string>
     <!-- Message of safety number changes bottom sheet when not showing individual records -->
     <plurals name="SafetyNumberBottomSheetFragment__you_have_d_connections_plural">
-        <item quantity="one">Wśród kontaktów masz %1$d osobę, która mogła ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować jej numer bezpieczeństwa lub wysłać bez weryfikacji.</item>
-        <item quantity="few">Wśród kontaktów masz %1$d osoby, które mogły ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować ich numer bezpieczeństwa lub wysłać bez weryfikacji.</item>
-        <item quantity="many">Wśród kontaktów masz %1$d osób, które mogły ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować ich numer bezpieczeństwa lub wysłać bez weryfikacji.</item>
-        <item quantity="other">Wśród kontaktów masz %1$d osób, które mogły ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować ich numer bezpieczeństwa lub wysłać bez weryfikacji.</item>
+        <item quantity="one">Wśród kontaktów masz %1$d osobę, która mogła ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować jej numer bezpieczeństwa lub kontynuować bez weryfikacji.</item>
+        <item quantity="few">Wśród kontaktów masz %1$d osoby, które mogły ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować ich numer bezpieczeństwa lub kontynuować bez weryfikacji.</item>
+        <item quantity="many">Wśród kontaktów masz %1$d osób, które mogły ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować ich numer bezpieczeństwa lub kontynuować bez weryfikacji.</item>
+        <item quantity="other">Wśród kontaktów masz %1$d osób, które mogły ponownie zainstalować aplikację Signal albo zmienić urządzenie. Możesz zweryfikować ich numer bezpieczeństwa lub kontynuować bez weryfikacji.</item>
     </plurals>
     <!-- Menu action to launch safety number verification screen -->
     <string name="SafetyNumberBottomSheetFragment__verify_safety_number">Zweryfikuj numer bezpieczeństwa</string>
@@ -7716,8 +7728,8 @@
     <string name="BankTransferDetailsFragment__iban_country_code_is_not_supported">Nieobsługiwany kod kraju IBAN</string>
     <!-- Error label for IBAN field when number is invalid -->
     <string name="BankTransferDetailsFragment__invalid_iban">Nieprawidłowy IBAN</string>
-    <!-- Error label for name field when name is not at least two characters long -->
-    <string name="BankTransferDetailsFragment__minimum_2_characters">Minimum 2 znaki</string>
+    <!-- Error label for name field when name is not at least three characters long (Stripe API enforced minimum) -->
+    <string name="BankTransferDetailsFragment__minimum_3_characters">Minimum 3 characters</string>
     <!-- Error label for email field when email is not valid -->
     <string name="BankTransferDetailsFragment__invalid_email_address">Nieprawidłowy adres e-mail</string>
 
@@ -7757,7 +7769,7 @@
     <!-- Top text block of donation pending sheet displayed after subscribing via a bank transfer. Placeholder is the badge name. -->
     <string name="DonationPendingBottomSheet__your_monthly_donation_is_pending">Twoja comiesięczna darowizna jest w trakcie realizacji. Odznaka %1$s pojawi się w Twoim profilu, gdy otrzymamy darowiznę</string>
     <!-- Top text block of donation pending sheet displayed after one-time donation via a bank transfer. Placeholder is the badge name. -->
-    <string name="DonationPendingBottomSheet__your_one_time_donation_is_pending">Twoja darowizna jednorazowa jest w trakcie realizacji. Odznaka %1$s pojawi się w Twoim profilu, gdy otrzymamy darowiznę</string>
+    <string name="DonationPendingBottomSheet__your_one_time_donation_is_pending">Twoja jednorazowa darowizna jest w trakcie realizacji. Odznaka %1$s pojawi się w Twoim profilu, gdy otrzymamy darowiznę</string>
     <!-- Bottom text block of donation pending sheet displayed after donating via a bank transfer. Placeholder is for learn more. -->
     <string name="DonationPendingBottomSheet__bank_transfers_usually_take">Przetworzenie przelewu bankowego może potrwać od 1 do 14 dni roboczych. %1$s</string>
     <!-- Learn more text for donation pending sheet displayed after donating via a bank transfer. -->
@@ -7820,7 +7832,7 @@
     <string name="YourInformationIsPrivateBottomSheet__signal_does_not_collect">Signal nie gromadzi ani nie przechowuje Twoich danych osobowych potrzebnych do wpłacenia darowizny.</string>
     <string name="YourInformationIsPrivateBottomSheet__we_use_stripe">Do przetwarzania darowizn używamy systemu płatności Stripe. Nie zapisujemy, nie przechowujemy ani nie mamy dostępu do żadnych danych, które przekazujesz.</string>
     <string name="YourInformationIsPrivateBottomSheet__signal_does_not_and_cannot">Signal nie wiąże ani nie może powiązać darowizny z Twoim kontem Signal.</string>
-    <string name="YourInformationIsPrivateBottomSheet__thank_you">Dziękujemy za Twoje wsparcie!</string>
+    <string name="YourInformationIsPrivateBottomSheet__thank_you">Dziękujemy Ci za wsparcie!</string>
 
     <!-- GroupStoryEducationSheet -->
     <!-- Displayed as the title of the education bottom sheet -->
@@ -7990,7 +8002,7 @@
     <!-- Shown during empty state -->
     <string name="CallLogFragment__no_calls">Brak połączeń.</string>
     <!-- Shown during empty state -->
-    <string name="CallLogFragment__get_started_by_calling_a_friend">Zadzwoń do kogoś.</string>
+    <string name="CallLogFragment__get_started_by_calling_a_friend">Może do kogoś zadzwonisz?</string>
     <!-- Displayed as a message in a dialog when deleting multiple items -->
     <string name="CallLogFragment__call_links_youve_created">Utworzone przez Ciebie linki do połączenia nie będą już działały u osób, które je mają.</string>
 
@@ -8004,7 +8016,7 @@
     <!-- Displayed when the user disables group call ringing -->
     <string name="CallStateUpdatePopupWindow__ringing_off">Bez dzwonienia</string>
     <!-- Displayed when the user cannot enable group call ringing -->
-    <string name="CallStateUpdatePopupWindow__group_is_too_large">Grupa jest zbyt duża, aby użyć trybu dzwonienia.</string>
+    <string name="CallStateUpdatePopupWindow__group_is_too_large">Grupa jest zbyt duża, aby użyć trybu dzwonienia</string>
     <!-- Displayed when the user turns on their mic -->
     <string name="CallStateUpdatePopupWindow__mic_on">Mikrofon włączony</string>
     <!-- Displayed when the user turns off their mic -->
@@ -8029,7 +8041,7 @@
     <!-- Missed group call while notification profile on in call info -->
     <string name="CallPreference__missed_group_call_notification_profile">Nieodebrane połączenie grupowe przy włączonym profilu powiadomień</string>
     <!-- Incoming group call in call info -->
-    <string name="CallPreference__incoming_group_call">Nadchodzące połączenie grupowe</string>
+    <string name="CallPreference__incoming_group_call">Przychodzące połączenie grupowe</string>
     <!-- Outgoing group call in call info -->
     <string name="CallPreference__outgoing_group_call">Wychodzące połączenie grupowe</string>
 
@@ -8222,8 +8234,6 @@
 
     <!-- Title of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups -->
     <string name="TurnOnSignalBackups__title">Włącz bezpieczne kopie zapasowe Signal</string>
-    <!-- Title of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups. Special string for the beta period. -->
-    <string name="TurnOnSignalBackups__title_beta">Wypróbuj bezpieczne kopie zapasowe Signal</string>
     <!-- Body of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups -->
     <string name="TurnOnSignalBackups__body">Dzięki temu nie stracisz wiadomości nawet po zmianie telefonu czy ponownej instalacji aplikacji Signal.</string>
     <!-- Button of a megaphone shown at the bottom of the chat list to prompt the user to enable message backups that will take the user to the flow to enable backups -->
@@ -9017,11 +9027,11 @@
     <!-- Screen body part 3 -->
     <string name="MessageBackupsKeyEducationScreen__if_you_lose_it">Jeśli zgubisz ten kod, stracisz możliwość przywrócenia historii wiadomości.</string>
     <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 1). -->
-    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description">Your recovery key is a 64-character code that lets you restore all backup types.</string>
+    <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description">Kod odzyskiwania to sekwencja 64 znaków potrzebna do przywrócenia wszystkich rodzajów kopii zapasowej.</string>
     <!-- Screen body shown when upgrading on-device backups to a new recovery key (part 2, bolded). -->
     <string name="MessageBackupsKeyEducationScreen__local_backup_upgrade_description_bold">Tym kodem zostanie zastąpiony Twój kod do lokalnej kopii zapasowej.</string>
     <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 1). -->
-    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description">Your backup key is a 64-character code that lets you restore your backups when you re-install Signal.</string>
+    <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description">Kod kopii zapasowej, składający się z 64 znaków, umożliwi Ci przywrócenie kopii zapasowej po ponownej instalacji aplikacji Signal.</string>
     <!-- Screen body shown when enabling Signal Secure Backups while on-device backups are already enabled (part 2, bolded). -->
     <string name="MessageBackupsKeyEducationScreen__remote_backup_with_local_enabled_description_bold">To ten sam kod, co kod do lokalnej kopii zapasowej.</string>
     <!-- Label shown above a list of actions that the recovery key can be used for. -->
@@ -9209,11 +9219,13 @@
     <!-- Screen subtitle for selecting which restore method to use during registration -->
     <string name="SelectRestoreMethodFragment__get_your_signal_account">Zyskaj dostęp do swojego konta Signal i historii wiadomości na tym urządzeniu.</string>
     <!-- Option title for restoring via signal secure backups -->
-    <string name="SelectRestoreMethodFragment__from_signal_backups">Z bezpiecznej kopii zapasowej Signal</string>
+    <string name="SelectRestoreMethodFragment__restore_signal_backup">Przywróć kopię zapasową Signal</string>
     <!-- Option subtitle for restoring via signal secure backups -->
-    <string name="SelectRestoreMethodFragment__your_free_or_paid_signal_backup_plan">Czyli bezpłatnej lub płatnej usługi kopii zapasowych Signal</string>
-    <!-- Option title for restoring via a local backup folder -->
-    <string name="SelectRestoreMethodFragment__from_a_backup_folder">Z folderu kopii zapasowej</string>
+    <string name="SelectRestoreMethodFragment__restore_your_text_messages_and_media_from">Restore your text messages and media from your Signal backup plan.</string>
+    <!-- Option title for restoring via a local backup file or folder -->
+    <string name="SelectRestoreMethodFragment__restore_on_device_backup">Restore on-device backup</string>
+    <!-- Option subtitle fdor restoring via a local backup file or folder -->
+    <string name="SelectRestoreMethodFragment__restore_your_messages_from">Restore your messages from a backup you saved on your device.</string>
     <!-- Option title for restoring via a local backup file -->
     <string name="SelectRestoreMethodFragment__from_a_backup_file">Z pliku kopii zapasowej</string>
     <!-- Option subtitle for restoring via a local backup -->
@@ -9287,6 +9299,87 @@
     <!-- Email subject when contacting support on a permanent backup import failure -->
     <string name="EnterBackupKey_permanent_failure_support_email">Błąd podczas przywracania kopii zapasowej Signal Android</string>
   <!-- Removed by excludeNonTranslatables <string name="EnterBackupKey_permanent_failure_support_email_filter" translatable="false">Android SignalBackups Import Permanent Failure</string> -->
+
+    <!-- EnterLocalBackupKeyScreen: Screen title for entering recovery key for local backup restore -->
+    <string name="EnterLocalBackupKeyScreen__enter_your_recovery_key">Wprowadź kod odzyskiwania</string>
+    <!-- EnterLocalBackupKeyScreen: Screen subtitle explaining what the recovery key is -->
+    <string name="EnterLocalBackupKeyScreen__your_recovery_key_is_a_64_character_code">Kod odzyskiwania to sekwencja 64 znaków potrzebna do przywrócenia konta i danych.</string>
+    <!-- EnterLocalBackupKeyScreen: Button text when user does not have a backup key -->
+    <string name="EnterLocalBackupKeyScreen__no_backup_key">Nie masz kodu kopii zapasowej?</string>
+    <!-- EnterLocalBackupKeyScreen: Button to proceed to next step -->
+    <string name="EnterLocalBackupKeyScreen__next">Dalej</string>
+
+    <!-- RestoreLocalBackupDialog: Error message when the selected archive fails to load -->
+    <string name="RestoreLocalBackupDialog__failed_to_load_archive">Failed to load archive. Please select a different directory.</string>
+    <!-- RestoreLocalBackupDialog: Dismiss button for dialog -->
+    <string name="RestoreLocalBackupDialog__ok">OK</string>
+
+    <!-- RestoreLocalBackupActivity: Toast message when backup restore fails -->
+    <string name="RestoreLocalBackupActivity__backup_restore_failed">Backup restore failed</string>
+    <!-- RestoreLocalBackupActivity: Screen title shown during restore -->
+    <string name="RestoreLocalBackupActivity__restoring_backup">Restoring backup</string>
+    <!-- RestoreLocalBackupActivity: Screen subtitle explaining restore duration -->
+    <string name="RestoreLocalBackupActivity__depending_on_the_size">Depending on the size of your backup, this could take a few minutes.</string>
+    <!-- RestoreLocalBackupActivity: Status text while restoring messages -->
+    <string name="RestoreLocalBackupActivity__restoring_messages">Przywracanie wiadomości…</string>
+    <!-- RestoreLocalBackupActivity: Status text while finalizing restore -->
+    <string name="RestoreLocalBackupActivity__finalizing">Finalizing…</string>
+    <!-- RestoreLocalBackupActivity: Status text when restore is complete -->
+    <string name="RestoreLocalBackupActivity__restore_complete">Przywracanie zakończone</string>
+    <!-- RestoreLocalBackupActivity: Status text when restore fails -->
+    <string name="RestoreLocalBackupActivity__restore_failed">Nie udało się przywrócić</string>
+    <!-- RestoreLocalBackupActivity: Progress text showing bytes read of total with percentage, e.g. "1.2 MB of 5.0 MB (24%)" -->
+    <string name="RestoreLocalBackupActivity__s_of_s_d_percent">%1$s z %2$s (%3$d)</string>
+
+    <!-- SelectInstructionsSheet: Title for the select backup folder instruction sheet -->
+    <string name="SelectInstructionsSheet__select_your_backup_folder">Select your backup folder</string>
+    <!-- SelectInstructionsSheet: Instruction to tap the select this folder button -->
+    <string name="SelectInstructionsSheet__tap_select_this_folder">Tap \"Select this folder\"</string>
+    <!-- SelectInstructionsSheet: Instruction not to select individual files -->
+    <string name="SelectInstructionsSheet__do_not_select_individual_files">Do not select individual files</string>
+    <!-- SelectInstructionsSheet: Title for the select backup file instruction sheet -->
+    <string name="SelectInstructionsSheet__select_your_backup_file">Select your backup file</string>
+    <!-- SelectInstructionsSheet: Instruction to tap the backup file saved to device -->
+    <string name="SelectInstructionsSheet__tap_on_the_backup_file">Tap on the backup file you saved to your device</string>
+    <!-- SelectInstructionsSheet: Subtitle explaining how to access backup after tapping continue -->
+    <string name="SelectInstructionsSheet__after_tapping_continue">After tapping \"Continue,\" here\'s how to access your backup:</string>
+    <!-- SelectInstructionsSheet: Instruction to select the top-level backup folder -->
+    <string name="SelectInstructionsSheet__select_the_top_level_folder">Select the top-level folder where your backup is stored</string>
+    <!-- SelectInstructionsSheet: Continue button text -->
+    <string name="SelectInstructionsSheet__continue_button">Kontynuuj</string>
+
+    <!-- SelectLocalBackupScreen: Screen title for restoring on-device backup -->
+    <string name="SelectLocalBackupScreen__restore_on_device_backup">Restore on-device backup</string>
+    <!-- SelectLocalBackupScreen: Screen subtitle explaining the restore process -->
+    <string name="SelectLocalBackupScreen__restore_your_messages_from_the_backup_folder">Restore your messages from the backup folder you saved on your device. If you don\'t restore now, you won\'t be able to restore later.</string>
+    <!-- SelectLocalBackupScreen: Button to initiate backup restoration -->
+    <string name="SelectLocalBackupScreen__restore_backup">Przywróć kopię zapasową</string>
+    <!-- SelectLocalBackupScreen: Button to choose an earlier backup when current is latest -->
+    <string name="SelectLocalBackupScreen__choose_an_earlier_backup">Choose an earlier backup</string>
+    <!-- SelectLocalBackupScreen: Button to choose a different backup -->
+    <string name="SelectLocalBackupScreen__choose_a_different_backup">Choose a different backup</string>
+    <!-- SelectLocalBackupScreen: Label for latest backup card -->
+    <string name="SelectLocalBackupScreen__your_latest_backup">Your latest backup:</string>
+    <!-- SelectLocalBackupScreen: Label for non-latest backup card -->
+    <string name="SelectLocalBackupScreen__your_backup">Your backup:</string>
+
+    <!-- SelectLocalBackupSheet: Title for backup selection bottom sheet -->
+    <string name="SelectLocalBackupSheet__choose_a_backup_to_restore">Choose a backup to restore</string>
+    <!-- SelectLocalBackupSheet: Subtitle warning about choosing an older backup -->
+    <string name="SelectLocalBackupSheet__choosing_an_older_backup">Choosing an older backup may result in lost messages or media.</string>
+    <!-- SelectLocalBackupSheet: Continue button text -->
+    <string name="SelectLocalBackupSheet__continue_button">Kontynuuj</string>
+
+    <!-- SelectLocalBackupTypeScreen: Screen title for selecting backup type -->
+    <string name="SelectLocalBackupTypeScreen__restore_on_device_backup">Restore on-device backup</string>
+    <!-- SelectLocalBackupTypeScreen: Screen subtitle explaining restore options -->
+    <string name="SelectLocalBackupTypeScreen__restore_your_messages_from_the_backup">Przywróć wiadomości z kopii zapasowej zapisanej na urządzeniu. Jeśli nie przywrócisz ich teraz, nie będzie można tego zrobić później.</string>
+    <!-- SelectLocalBackupTypeScreen: Button for users who saved backup as single file -->
+    <string name="SelectLocalBackupTypeScreen__i_saved_my_backup_as_a_single_file">I saved my backup as a single file</string>
+    <!-- SelectLocalBackupTypeScreen: Card title for choosing backup folder -->
+    <string name="SelectLocalBackupTypeScreen__choose_backup_folder">Choose backup folder</string>
+    <!-- SelectLocalBackupTypeScreen: Card description for choosing backup folder -->
+    <string name="SelectLocalBackupTypeScreen__select_the_folder_on_your_device">Select the folder on your device where your backup is stored</string>
 
     <!-- Email subject when contacting support on a create backup failure -->
     <string name="BackupAlertBottomSheet_network_failure_support_email">Błąd sieci podczas eksportowania kopii zapasowej aplikacji Signal Android</string>
@@ -9652,15 +9745,31 @@
     <string name="GroupMemberLabel__label_text_placeholder">Podaj swoją rolę</string>
     <!-- Group member label preview section header. -->
     <string name="GroupMemberLabel__preview_section_header">Podgląd</string>
+    <!-- Sample message shown in the group member label message preview. -->
+    <string name="GroupMemberLabel__preview_sample_message">Cześć!</string>
     <!-- Group member label save button label. -->
     <string name="GroupMemberLabel__save">Zapisz</string>
+    <!-- Description explaining the group member labels feature. -->
+    <string name="GroupMemberLabel__description">Podaj swoją rolę w grupie, aby się przedstawić lub określić funkcję, jaką pełnisz. Rola będzie widoczna tylko dla osób w tej grupie.</string>
+    <!-- Error message shown when the group member label fails to save due to a network error. -->
+    <string name="GroupMemberLabel__error_cant_save_no_network">Couldn\'t save label. Check your network and try again.</string>
+    <!-- Error message shown when trying to edit a member label without adequate permission. -->
+    <string name="GroupMemberLabel__error_no_edit_permission">Only admins can add member labels in this group.</string>
     <!-- Accessibility label for the button to open the group member label emoji picker. -->
     <string name="GroupMemberLabel__accessibility_select_emoji">Wybierz emoji</string>
     <!-- Accessibility label for the group member label close screen button. -->
     <string name="GroupMemberLabel__accessibility_close_screen">Zamknij ekran</string>
     <!-- Accessibility label for the group member label text field clear button. -->
     <string name="GroupMemberLabel__accessibility_clear_label">Wyczyść pole</string>
-    <string name="GroupMemberLabel__description">Add a member label to describe yourself or your role in this group. Labels are only visible within this group.</string>
+
+    <!-- Title for the member labels education sheet. -->
+    <string name="MemberLabelsEducation__title">Rola w grupie</string>
+    <!-- Body for the member labels education sheet. -->
+    <string name="MemberLabelsEducation__body">Podaj swoją rolę w grupie, aby się przedstawić lub określić funkcję, jaką pełnisz. Rola będzie widoczna tylko dla osób w tej grupie.</string>
+    <!-- Button to set a new member label. -->
+    <string name="MemberLabelsEducation__set_label">Ustaw rolę w grupie</string>
+    <!-- Button to edit an existing member label. -->
+    <string name="MemberLabelsEducation__edit_label">Edytuj swoją rolę</string>
 
     <!-- EOF -->
 </resources>
